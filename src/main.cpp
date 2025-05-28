@@ -174,9 +174,11 @@ void initgsm() {
 
   delay(500);
 
-  // DELETE ALL SMS UNREAD  
+  //              PREVENTIVELY DELETE ALL SMS UNREAD
+  // Determines the n. of received SMS Unread  
   messageIndex = gprs.isSMSunread();
     delay(2000);
+
   for (int i = messageIndex; i > 0; i--)
     {
     gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
@@ -184,26 +186,14 @@ void initgsm() {
 
     //In order not to full SIM Memory, is better to delete it
     gprs.deleteSMS(i);
-        //Serial.print("DELETED SMS n. ");
-        //Serial.println(i);
-        delay(2000);
+    delay(2000);
     } 
     
-    messageIndex = gprs.isSMSunread();
-    delay(1000);
-    Serial.print(F("messageIndex dopo cancellazione SMS: "));
-    Serial.flush();
-    Serial.println(messageIndex);
-    Serial.flush();
-
-    delay(1000);
-
   // Invia SMS al numero Coop Voce 42 43 688 INFO SIM per credito residuo
   // in modo da ricavare la data e l'ora corrente
   Serial.print(F("Invio Messaggio INFO\n"));
-  //gprs.sendSMS(INFO_NUMBER, INFOTXT);
 
-  if (gprs.sendSMS(INFO_NUMBER, INFOTXT)) { //define phone number and text
+  if (gprs.sendSMS(INFO_NUMBER, INFOTXT)) { // Send SMS to defined phone number and text
     Serial.print(F("Send SMS Succeed!\r\n"));
     Serial.flush();
   } 
@@ -211,57 +201,25 @@ else {
     Serial.print(F("Send SMS failed!\r\n"));
     Serial.flush();
   }
-   
-  messageIndex = gprs.isSMSunread();
-  delay(500);
-  Serial.print(F("N messaggi SMS in coda - messageIndex: "));
-  Serial.flush();
-  Serial.println(messageIndex);
-  Serial.flush();
-  delay(500);
 
-  while (messageIndex == 0) {
-    Serial.print("dopo SMS - messageIndex: ");
-    Serial.flush();
-    Serial.println(messageIndex);
-    Serial.flush();
-    messageIndex = gprs.isSMSunread();
-    delay(500);
-  }
-
-  // delay (2000);
-    Serial.print(F("Legge i messaggi INFO ricevuti"));
-  
-    //There are 2 UNREAD SMS following INFO SIM SMS
-    //gprs.readSMS(2, message, MESSAGE_LENGTH, phone, datetime);
-    //In order not to full SIM Memory, is better to delete it
-    //gprs.deleteSMS(2);
-    //delay (2000);
-    gprs.readSMS(1, message, MESSAGE_LENGTH, phone, datetime);
-    //In order not to full SIM Memory, is better to delete it
-    gprs.deleteSMS(1);
-    delay (2000);
-
+  //                   Legge i messaggi INFO ricevuti
+  // C'è il rischio che si frapponga un SMS di servizio del provider
+  // Solo se non passa molto tempo dalla registrazione alla rete
+  // (Vedi cancellazione preventiva)
+    Serial.print(F("Legge i messaggi ricevuti"));
+  // Determines the n. of received SMS Unread
     messageIndex = gprs.isSMSunread();
     delay(2000);
+
+  // Legge tutti gli SMS e usa i dati del primo
   for (int i = messageIndex; i > 0; i--)
     {
     gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
     delay(2000);
-    //In order not to full SIM Memory, is better to delete it
+    //In order to not full SIM Memory, is better to delete it
     gprs.deleteSMS(i);
-        //Serial.print("DELETED SMS n. ");
-        //Serial.println(i);
-        delay(2000);
-    } 
-
-    messageIndex = gprs.isSMSunread();
-    delay(500);
-    Serial.print(F("N messaggi SMS rimanenti - dopo SMS INFO: "));
-    Serial.flush();
-    Serial.println(messageIndex);
-    Serial.flush();
     delay(2000);
+    } 
 
     Serial.print("From number: ");
     Serial.println(phone);
@@ -273,7 +231,14 @@ else {
     Serial.println(message);
     Serial.flush();
 
+    // RTC Network Time updating is disabled
     sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
+    /* Set RTC time to i.e (datetime). 
+    "yy/MM/dd,hh:mm:ss+/-zz"
+    zz quarter (-47....+48)of hour between local time and GMT
+    6 maggio 2010,00:01:52 GMT +2 ore
+    "10/05/06,00:01:52+08
+  */ 
     sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
     Serial.println (outmessage);
     Serial.flush();
@@ -284,6 +249,7 @@ else {
       else {
     Serial.println ("Non a buon Fine");
     Serial.flush();
+    // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
     } 
 
    //AT+CLTS=1	// Enable date and time from network - WIND Funziona COOP VOCE NON FUNZIONA
@@ -319,8 +285,7 @@ else {
 
   
 }
-
-bool ©() {
+bool TimeToReset () {
   // Reset Now?
 
   //String tmp;
