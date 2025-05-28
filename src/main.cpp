@@ -15,6 +15,10 @@
   - stato pin ingresso su richiesta SMS a numero richiedente abilitato
   - OK    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
 
+  Comandi SMS "A+393334188263" AGGIUNGI cellulare                
+  Comandi SMS "D" CANCELLA tutti i cellulari    
+  EEPROM.read(5) Alimentazione presente (0) Alimentazione assente (1)
+
   SoftwareSerial library Notes
   With Arduino 1.0 you should be able to use the SoftwareSerial library included with the distribution (instead of NewSoftSerial).
   However, you must be aware that the buffer reserved for incoming messages are hardcoded to 64 bytes in the library header,
@@ -73,16 +77,23 @@ int ORAr = 03, MINr = 00;
 int size,nphone;
 String EStr;
 
+//          VARIABILI
+//phoneT => phone Temporaneo
+//phoneS => phone Stringa
+//Autphone => Authorized phone
+//nphone => numero di phone
+//EStr => EEPROM String
 
 int messageIndex = 0;
 float PowerVoltage;
 char phone[16], Autphone[16], phoneT[16];
+
 char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
 //char *phoneAut[] = {"+393460607220","+393383418818", "",""};
 //char *phoneAut[] = {"+393460607220","", "",""};
 char *phoneAut[] = {"+393334188263","","",""};
-// phoneAut[0] authorized master number - Can athorize up to 3 phone numbers
+// phoneAut[0] authorized master number - Can authorize up to 3 phone numbers - "" used as terminator
 
 
 char outmessage[50];
@@ -97,10 +108,6 @@ uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minut
 #define INFO_NUMBER "4243688"
 #define INFOTXT  "SALDO"
 //#define INFOTXT "INFO SIM"
-
-//void writeString(int offs,String edata);
-//String read_String(int offs);
-//, tReadStr;
 
 void writeString(int offs,String edata)
 {
@@ -233,12 +240,13 @@ else {
 
     // RTC Network Time updating is disabled
     sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
+
     /* Set RTC time to i.e (datetime). 
     "yy/MM/dd,hh:mm:ss+/-zz"
     zz quarter (-47....+48)of hour between local time and GMT
     6 maggio 2010,00:01:52 GMT +2 ore
     "10/05/06,00:01:52+08
-  */ 
+    */ 
     sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
     Serial.println (outmessage);
     Serial.flush();
@@ -269,12 +277,11 @@ else {
     6 maggio 2010,00:01:52 GMT +2 ore
     "10/05/06,00:01:52+08
   */
+
+ // Ricava da RTC Data e ora e li pone in locDateTime
   gprs.getDateTime(locDateTime);
   Serial.print(" Data e Ora da rete: ");
   Serial.println(locDateTime);
-  //AT+CLTS=0  // DISable date and time from network - Only once, later the internal RTC should remember it
-  //sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
-  //delay(1000);
 
   //AT+CMGF=1	// Enable ASCII TEXT mode for SMS
   if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD)) { // Set message mode to ASCII
@@ -338,17 +345,17 @@ void setup() {
   initgsm(); // Inizializza GSM e Valore Tempo iniziale
   EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0
 
-// Load in EEPROM predefined phone numbers
+//               Load in EEPROM predefined phone numbers
   for (int i = 0; i < 4; i++) {
       EStr = read_String(6+i*17);
 
     // If in EEPROM the first char is '+' it is considered that a phone is loaded
     // otherwise load the predefined number if defined in FLASH (phoneAut).
     // Used to save EEPROM writing
+
     //Serial.print (strlen(phoneAut[i]));
     //Serial.print (EStr[0]);
     //Serial.print (EStr);
-
       if ((EStr[0] != '+') && (strlen(phoneAut[i]) == 0)) {
         nphone=i;
         break;
@@ -361,7 +368,6 @@ void setup() {
         }
 
       Serial.print ("EEPROM autorized phone n.");
-      //delay(100);
       Serial.print (i);
       Serial.print (": ");
       Serial.println (EStr);
@@ -446,11 +452,12 @@ void loop() {
 
 
   unsigned long currentMillis = millis();
-  // Verifica ogni 5 secondi (intervalcc)
+  // Verifica ogni 10 secondi (intervalcc)
   if (currentMillis - previousMilliscc > intervalcc) {
       previousMilliscc = currentMillis;
-  
-      messageIndex = gprs.isSMSunread();
+     
+      // Controlla se ci sono nuovi messaggi SMS
+        messageIndex = gprs.isSMSunread();
       if (messageIndex > 0) { 
         //At least, there is one UNREAD SMS
         gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
@@ -470,13 +477,14 @@ void loop() {
         String messageS = String(message);
     
       if (phoneS == AutphoneS) { 
-                
+// Comandi SMS "A+393334188263" AGGIUNGI cellulare                
           if (messageS.substring(0,1) == "A"){ 
               messageS.substring(2).toCharArray(phoneT, 16);
               phoneAut[1] = phoneT;
                 }
           if (messageS.substring(0,1) == "D"){ 
             // Delete in EEPROM predefined aux phone numbers
+            // Comandi SMS "D" CANCELLA tutti i cellulari    
             for (int i = 1; i < 4; i++) {
                 writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])
                 Serial.print("Delete all numbers");
@@ -492,24 +500,15 @@ void loop() {
       Serial.flush();
 	  
     if (PowerVoltage <= 180.0) {
-
-      // MANCANZA ALIMENTAZIONE
+      //                    MANCANZA ALIMENTAZIONE
       // EEPROM.read(5)  0 Alimentazione presente 1 Alimentazione assente
-        /* Serial.println("MANCANZA ALIMENTAZIONE");
-        int ER = (int) EEPROM.read(5);
-        Serial.println(ER);
-        */
-        // Identifica transizione da Alimentazione Presente a Alimentazione Assente
+
+        // Identifica transizione da 0 Alimentazione Presente a 1 Alimentazione Assente
         if (EEPROM.read(5) == 0) {
             EEPROM.update(5, 1);  // Aggiorna EEPROM a 1 solo se non è già a 1
-            Serial.println("INVIO SMS PWR OFF");
 			      int power = (int)(PowerVoltage);
-
             gprs.getDateTime(locDateTime);
-            Serial.print(" Data e Ora da rete: ");
-            Serial.println(locDateTime);
-
-			      sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA ALIMENTAZIONE, ultima lettura:", power);
+            sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA ALIMENTAZIONE, ultima lettura:", power);
 			      Serial.println(outmessage);
 
             // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
@@ -524,20 +523,12 @@ void loop() {
 
     }
     // ALIMENTAZIONE PRESENTE
+    // EEPROM.read(5)  0 Alimentazione presente 1 Alimentazione assente
     else {
-         /* Serial.println("ALIMENTAZIONE PRESENTE");
-         int ER = (int) EEPROM.read(5);
-         Serial.println(ER);
-         */
          if (EEPROM.read(5) == 1){
-             // Identifica transizione da Alimentazione assente ad Alimentazione a presente
              EEPROM.update(5, 0); // Aggiorna EEPROM a 0 solo se non è già a 0
-             Serial.println("INVIO SMS POWER ON");
              int power = (int)(PowerVoltage);
              gprs.getDateTime(locDateTime);
-             Serial.print(" Data e Ora da rete: ");
-             Serial.println(locDateTime);
-
              sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA ALIMENTAZIONE, ultima lettura:", power);
               Serial.println(outmessage);
 
