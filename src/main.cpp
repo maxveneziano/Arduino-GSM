@@ -154,23 +154,8 @@ void initgsm() {
     emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave with a 2000ms Timeout
   }
 
-  //  poweron();	//Initialize Modem
-  gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
-  delay(5000);
-
-  //  gprs.checkPowerUp(); // Verifica se ritorna AT - Duplicato ?
-  //  Serial.println("Verificato AT e regitrazione");
-  /* Check "AT" - "OK"
-    Check"AT+CFUN=1" - "OK"
-    Set SMS to text mode
-    Set message mode to ASCII Text Mode "AT+CMGF=1" - "OK"
-    Set New Message Indicator "AT+CNMI=1,1,0,0,0" - "OK"
-  */
-
-   //Serial.println(" - Start GSM Modem Reset");
-   
-  while (!gprs.init()) {
-    //Serial.print(" - init error\r\n");
+  // Start GSM Modem Reset
+    while (!gprs.init()) {
     gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
     delay(1000);
   }
@@ -179,7 +164,7 @@ void initgsm() {
   Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
   iniTime = millis(); // Valore Tempo iniziale
   
-// Garantisce che sia registrato sulla rete
+// Garantisce che il Modem sia registrato sulla rete
   while (!gprs.isNetworkRegistered()) {
     delay(1000);
     Serial.print(F("Network has not registered yet!\n"));
@@ -189,8 +174,7 @@ void initgsm() {
 
   delay(500);
 
-  //Serial.println("DELETE ALL SMS UNREAD");
-  
+  // DELETE ALL SMS UNREAD  
   messageIndex = gprs.isSMSunread();
     delay(2000);
   for (int i = messageIndex; i > 0; i--)
@@ -336,7 +320,7 @@ else {
   
 }
 
-bool TimeToReset () {
+bool ©() {
   // Reset Now?
 
   //String tmp;
