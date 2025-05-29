@@ -15,9 +15,19 @@
   - stato pin ingresso su richiesta SMS a numero richiedente abilitato
   - OK    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
 
-  Comandi SMS "A+393334188263" AGGIUNGI cellulare                
-  Comandi SMS "D" CANCELLA tutti i cellulari    
-  EEPROM.read(5) Alimentazione presente (0) Alimentazione assente (1)
+  Comandi SMS 
+  "M+393391255597" Sostituisci cellulare autorizzato Master con un altro
+  "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare in posizione....
+  "D" CANCELLA tutti i cellulari ausiliari (non il Master)
+
+  EEPROM.read(5) Rete presente (0) Rete assente (1)
+
+  1st Power On
+  -  inizialmente la EEPROM non ha numeri (tutti "") 
+  -  Definire il numero Master (M)
+  -  Una volta definito il numero master è possibile definire il primo numero ausiliario (A1)
+     e poi il secondo numero Ausiliario (A2)
+  -  Successivamente con "D" si possono CANCELLARE tutti i cellulari eccetto il numero Master autorizzato (0)    
 
   SoftwareSerial library Notes
   With Arduino 1.0 you should be able to use the SoftwareSerial library included with the distribution (instead of NewSoftSerial).
@@ -74,7 +84,7 @@ consentirebbe il reset fin dalla prima ora giusta del primo giorno */
 int day, rday=0, hh, mm;
 //Ora e Minuto di Reset giornaliero
 int ORAr = 03, MINr = 00;
-int size,nphone;
+int size,nphone,phoneI;
 String EStr;
 
 //          VARIABILI
@@ -82,6 +92,7 @@ String EStr;
 //phoneS => phone Stringa
 //Autphone => Authorized phone
 //nphone => numero di phone
+//phoneI => Index phone (escluso Autorizzato (0) )
 //EStr => EEPROM String
 
 int messageIndex = 0;
@@ -92,8 +103,9 @@ char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
 //char *phoneAut[] = {"+393460607220","+393383418818", "",""};
 //char *phoneAut[] = {"+393460607220","", "",""};
+//char *phoneAut[] = {"","", "",""}; // Condizione Iniziale
 char *phoneAut[] = {"+393334188263","","",""};
-// phoneAut[0] authorized master number - Can authorize up to 3 phone numbers - "" used as terminator
+// phoneAut[0] authorized master number - Can authorize up to 2 phone numbers - "" used as terminator
 
 
 char outmessage[50];
@@ -339,19 +351,15 @@ bool TimeToReset () {
 }
 
 
-void setup() {
-  // analogReference(DEFAULT);
-  pinMode(PIN_RST, OUTPUT);
-  initgsm(); // Inizializza GSM e Valore Tempo iniziale
-  EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0
 
-//               Load in EEPROM predefined phone numbers
-  for (int i = 0; i < 4; i++) {
+  void PhoneList() {
+  //               Load in EStr the EEPROM content (predefined phone numbers)
+  for (int i = 0; i < 3; i++) {
       EStr = read_String(6+i*17);
 
-    // If in EEPROM the first char is '+' it is considered that a phone is loaded
-    // otherwise load the predefined number if defined in FLASH (phoneAut).
-    // Used to save EEPROM writing
+    // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
+    // Otherwise load the predefined number as defined in FLASH (phoneAut).
+    // EStr used to save EEPROM writing (16 char single phone)
 
     //Serial.print (strlen(phoneAut[i]));
     //Serial.print (EStr[0]);
@@ -376,6 +384,16 @@ void setup() {
 
   Serial.print ("Numero di telefoni: ");
   Serial.println(nphone);
+
+}
+
+void setup() {
+  // analogReference(DEFAULT);
+  pinMode(PIN_RST, OUTPUT);
+  initgsm(); // Inizializza GSM e Valore Tempo iniziale
+  EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - presenza rete
+  PhoneList(); // Aggiorna Lista delefoni e n. telefoni
+
 }
 
 void loop() {
@@ -475,23 +493,38 @@ void loop() {
         String phoneS = String(phone);
         String AutphoneS = String(phoneAut[0]);
         String messageS = String(message);
-    
-      if (phoneS == AutphoneS) { 
-// Comandi SMS "A+393334188263" AGGIUNGI cellulare                
-          if (messageS.substring(0,1) == "A"){ 
+
+      // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota ""
+      if (phoneS == AutphoneS || strlen(phoneAut[0]) == 0) { 
+          // Comandi SMS "M+393391255597" Sostituisce o Imposta cellulare Autorizzato MASTER              
+          if (messageS.substring(0,1) == "M"){ 
               messageS.substring(2).toCharArray(phoneT, 16);
-              phoneAut[1] = phoneT;
+              phoneAut[0] = phoneT;
+              writeString((6), phoneT); //Scrive in EEPROM
+              // Initial Address 6 and String type data [16 char])
                 }
+       } 
+      // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
+      if (phoneS == AutphoneS) { 
+// Comandi SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
+          if (messageS.substring(0,1) == "A"){ 
+              messageS.substring(3).toCharArray(phoneT, 16);
+              phoneI = messageS.substring(1,2).toInt(); // position [1-2]
+              phoneAut[phoneI] = phoneT;
+              writeString((6+phoneI*17), phoneT); //Initial Address 6 and String type data [16 char])
+                }
+
           if (messageS.substring(0,1) == "D"){ 
-            // Delete in EEPROM predefined aux phone numbers
-            // Comandi SMS "D" CANCELLA tutti i cellulari    
-            for (int i = 1; i < 4; i++) {
+            // Delete in EEPROM predefined aux phone numbers except the Authorized
+            // Comandi SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
+            for (int i = 1; i < 3; i++) {
                 writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])
                 Serial.print("Delete all numbers");
                 }        
             }
       }
         } 
+// Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
       calc();				//	Calculates PowerVoltage Vrms
       Serial.print(" Current Voltage: ");
@@ -500,15 +533,15 @@ void loop() {
       Serial.flush();
 	  
     if (PowerVoltage <= 180.0) {
-      //                    MANCANZA ALIMENTAZIONE
-      // EEPROM.read(5)  0 Alimentazione presente 1 Alimentazione assente
+      //                    MANCANZA RETE
+      // EEPROM.read(5)  0 Rete presente 1 Rete assente
 
-        // Identifica transizione da 0 Alimentazione Presente a 1 Alimentazione Assente
+        // Identifica transizione da 0 Rete Presente a 1 Rete Assente
         if (EEPROM.read(5) == 0) {
             EEPROM.update(5, 1);  // Aggiorna EEPROM a 1 solo se non è già a 1
 			      int power = (int)(PowerVoltage);
             gprs.getDateTime(locDateTime);
-            sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA ALIMENTAZIONE, ultima lettura:", power);
+            sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA RETE, ultima lettura:", power);
 			      Serial.println(outmessage);
 
             // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
@@ -522,14 +555,14 @@ void loop() {
 		      }
 
     }
-    // ALIMENTAZIONE PRESENTE
-    // EEPROM.read(5)  0 Alimentazione presente 1 Alimentazione assente
+    // RETE PRESENTE
+    // EEPROM.read(5)  0 Rete presente 1 Rete assente
     else {
          if (EEPROM.read(5) == 1){
              EEPROM.update(5, 0); // Aggiorna EEPROM a 0 solo se non è già a 0
              int power = (int)(PowerVoltage);
              gprs.getDateTime(locDateTime);
-             sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA ALIMENTAZIONE, ultima lettura:", power);
+             sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
               Serial.println(outmessage);
 
             // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
