@@ -103,7 +103,7 @@ char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
 //char *phoneAut[] = {"+393460607220","+393383418818", "",""};
 //char *phoneAut[] = {"+393460607220","", "",""};
-//char *phoneAut[] = {"","", "",""}; // Condizione Iniziale
+//char *phoneAut[] = {"","","",""}; // Condizione Iniziale
 char *phoneAut[] = {"+393334188263","","",""};
 // phoneAut[0] authorized master number - Can authorize up to 2 phone numbers - "" used as terminator
 
@@ -305,38 +305,13 @@ else {
   
 }
 bool TimeToReset () {
-  // Reset Now?
+// Reset Now?
 
-  //String tmp;
-  char BuffDateTime[30];
-  //MARCO EDIT   char hh[2];
-  //MARCO EDIT   char mm[2];
-  // int day, rday, hh, mm;
-  gprs.getDateTime(BuffDateTime);
-  //delay(500);
-  //Serial.print(" TimeToReset Data e Ora: ");
-  //Serial.println(BuffDateTime);
-  //tmp = String(BuffDateTime);
-  /*MARCO EDIT   hh[0] = BuffDateTime[9];
-    hh[1] = BuffDateTime[10];
-    mm[0] = BuffDateTime[12];
-    mm[1] = BuffDateTime[13];
-    MARCO EDIT */
-  day = (BuffDateTime[0] - '0') * 10 + (BuffDateTime[1] - '0');
-  hh = (BuffDateTime[9] - '0') * 10 + (BuffDateTime[10] - '0');
-  mm = (BuffDateTime[12] - '0') * 10 + (BuffDateTime[13] - '0');
+//    locDateTime - String like "24/05/29,10:30:15+08" "yy/MM/dd,hh:mm:ss+/-zz"
 
-  //hh=tmp.substring(13, 15);
-  //mm=tmp.substring(16, 18);
-  //(tmp.substring(13, 15)).toCharArray(hh, 2);
-  //(tmp.substring(16, 18)).toCharArray(mm, 2);
-
-  //Serial.println(" TimeToReset Ora e minuti -->");
-  //.println(hh);
-  //delay (1000);
-  //Serial.println(" TimeToReset Minuti");
-  //Serial.println(mm);
-  //Serial.println("...");
+  day = (locDateTime[0] - '0') * 10 + (locDateTime[1] - '0');
+  hh = (locDateTimee[10] - '0') * 10 + (locDateTime[11] - '0');
+  mm = (locDateTime[13] - '0') * 10 + (locDateTime[14] - '0');
 
   Serial.print("ORA, MIN --> ");
   Serial.print(hh);
@@ -350,10 +325,18 @@ bool TimeToReset () {
   return false;
 }
 
+void CalcNphone() {
+  // Loop - Calculates number of phones (nphone)
+  for (int i = 0; i < 3; i++) {
+       if (strlen(phoneAut[i]) == 0) {
+        nphone=i;
+        break;
+      }
+   }
+  }
 
-
-  void PhoneList() {
-  //               Load in EStr the EEPROM content (predefined phone numbers)
+void PhoneInit() {
+  //               Loop - Load in EStr the EEPROM content (predefined phone numbers)
   for (int i = 0; i < 3; i++) {
       EStr = read_String(6+i*17);
 
@@ -365,11 +348,13 @@ bool TimeToReset () {
     //Serial.print (EStr[0]);
     //Serial.print (EStr);
       if ((EStr[0] != '+') && (strlen(phoneAut[i]) == 0)) {
+      // Posizione Vuota in EEPROM e in FLASH
         nphone=i;
         break;
       }
 
       if((EStr[0] != '+') && (strlen(phoneAut[i]) > 0)) {
+      // Posizione Vuota in EEPROM ma numero presente in FLASH
         writeString((6+i*17), phoneAut[i]);  //Initial Address 6 and String type data [16 char])
         //EStr = read_String(6+i*17); crea problemi anche se non viene eseguita. Mah?!
         EStr=phoneAut[i];
@@ -392,73 +377,11 @@ void setup() {
   pinMode(PIN_RST, OUTPUT);
   initgsm(); // Inizializza GSM e Valore Tempo iniziale
   EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - presenza rete
-  PhoneList(); // Aggiorna Lista delefoni e n. telefoni
-
+  PhoneInit();  // At Power Up o Reset, inizializza Lista telefoni EEPROM e n. telefoni (nphone)
 }
 
 void loop() {
-/*
-  messageIndex = gprs.isSMSunread();
-  delay(1000);
-  Serial.print(F("N messaggi SMS in coda - LOOPx: "));
-  Serial.flush();
-  Serial.println(messageIndex);
-  Serial.flush();
-  delay(2000);
 
-  messageIndex = gprs.isSMSunread();
-  if (messageIndex > 0) { 
-    //At least, there is one UNREAD SMS
-    gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
-    Serial.print("At least, there is one UNREAD SMS");
-    //In order not to full SIM Memory, is better to delete it
-    gprs.deleteSMS(messageIndex);
-
-    Serial.print("From number: ");
-    Serial.println(phone);
-    Serial.print("Datetime: ");
-    Serial.println(datetime);
-    Serial.print("Received Message: ");
-    Serial.println(message);
-
-    String phoneS = String(phone);
-    String AutphoneS = String(phoneAut[0]);
-    String messageS = String(message);
-
-  if (phoneS == AutphoneS) { 
-            
-      if (messageS.substring(0,1) == "A"){ 
-          messageS.substring(2).toCharArray(phoneT, 16);
-          phoneAut[1] = phoneT;
-            }
-      if (messageS.substring(0,1) == "D"){ 
-        // Delete in EEPROM predefined aux phone numbers
-        for (int i = 1; i < 4; i++) {
-            writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])
-            Serial.print("Delete all numbers");
-            }        
-        }
-  }
-    } 
-*/
-
-/*
-  */
-  //  AT+CLTS=1	// Enable date and time from network
-
-  //	AT+CCLK?						--> 8 + CR = 9
-  //+CCLK: "14/11/13,21:14:41+04"	--> CRLF + 29+ CRLF = 33
-  //
-  //OK							--> CRLF + 2 + CRLF =  6
-  /*
-    "yy/MM/dd,hh:mm:ss+/-zz"
-    zz quarter (-47....+48)of hour between local time and GMT
-    6 maggio 2010,00:01:52 GMT +2 ore
-    "10/05/06,00:01:52+08
-  */
-  // passTime = millis() - iniTime; // Tempo trascorso da inizializzazione ?
-  //if ((millis() - passTime) > 86400000) {
-    //	  powerDown();
     /*
       Restart the modem using Software Restart command AT+CFUN=1,1
       or you can hardware restart it.
@@ -494,9 +417,9 @@ void loop() {
         String AutphoneS = String(phoneAut[0]);
         String messageS = String(message);
 
-      // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota ""
+      // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
       if (phoneS == AutphoneS || strlen(phoneAut[0]) == 0) { 
-          // Comandi SMS "M+393391255597" Sostituisce o Imposta cellulare Autorizzato MASTER              
+          // Comando SMS "M+393391255597" Sostituisce o Imposta cellulare Autorizzato MASTER              
           if (messageS.substring(0,1) == "M"){ 
               messageS.substring(2).toCharArray(phoneT, 16);
               phoneAut[0] = phoneT;
@@ -506,7 +429,7 @@ void loop() {
        } 
       // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
       if (phoneS == AutphoneS) { 
-// Comandi SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
+      // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
           if (messageS.substring(0,1) == "A"){ 
               messageS.substring(3).toCharArray(phoneT, 16);
               phoneI = messageS.substring(1,2).toInt(); // position [1-2]
@@ -516,12 +439,14 @@ void loop() {
 
           if (messageS.substring(0,1) == "D"){ 
             // Delete in EEPROM predefined aux phone numbers except the Authorized
-            // Comandi SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
+            // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
             for (int i = 1; i < 3; i++) {
                 writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])
                 Serial.print("Delete all numbers");
                 }        
             }
+
+        CalcNphone(); // Calcola n. telefoni (nphone)
       }
         } 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
