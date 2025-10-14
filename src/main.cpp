@@ -85,7 +85,8 @@ int day, rday=0, hh, mm;
 //Ora e Minuto di Reset giornaliero
 int ORAr = 03, MINr = 00;
 int size,nphone,phoneI;
-String EStr;
+//String EStr;
+char EStr[20];  // buffer fisso da 20 caratteri
 
 //          VARIABILI
 //phoneT => phone Temporaneo
@@ -97,7 +98,8 @@ String EStr;
 
 int messageIndex = 0;
 float PowerVoltage;
-char phone[16], AutphoneS[16], phoneT[16];
+char phone[16], phoneT[16];
+//char AutphoneS[16];
 
 char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
@@ -147,32 +149,26 @@ uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minut
 #define INFOTXT  "SALDO"
 //#define INFOTXT "INFO SIM"
 
-void writeString(int offs,String edata)
-{
-  int _size = edata.length();
-  int i;
-  for(i=0;i<_size;i++)
-  {
-    EEPROM.write(offs+i,edata[i]);
+void writeString(int offs, const char *edata) {
+  int i = 0;
+  while (edata[i] != '\0' && i < 20) {
+    EEPROM.write(offs + i, edata[i]);
+    i++;
   }
-  EEPROM.write(offs+_size,'\0');   //Add termination null character for String Data
+  EEPROM.write(offs + i, '\0'); // terminatore
 }
 
-String read_String(int offs)
-{
-  //int i;
-  char edata[20]; //Max 20 Bytes
-  int len=0;
+void read_String(int offs, char *dest) {
+  int len = 0;
   unsigned char k;
-  k=EEPROM.read(offs);
-  while(k != '\0' && len<20)   //Read until null character
-  {    
-    k=EEPROM.read(offs+len);
-    edata[len]=k;
+
+  do {
+    k = EEPROM.read(offs + len);
+    dest[len] = k;
     len++;
-  }
-  edata[len]='\0';
-  return String(edata);
+  } while (k != '\0' && len < 20);
+
+  dest[len - 1] = '\0'; // assicurati che termini con \0
 }
 
 GPRS gprs(PIN_TX, PIN_RX, BAUDRATE); //RX,TX,BaudRate
@@ -364,7 +360,8 @@ void CalcNphone() {
 void PhoneInit() {
   //               Loop - Load in EStr the EEPROM content (predefined phone numbers)
   for (int i = 0; i < 3; i++) {
-      EStr = read_String(6+i*17);
+      //EStr = read_String(6+i*17);
+      read_String(6 + i*17, EStr);  // nuova funzione che riempie un buffer char[]
 
     // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
     // Otherwise load the predefined number as defined in FLASH (phoneAut).
@@ -383,7 +380,10 @@ void PhoneInit() {
       // Posizione Vuota in EEPROM ma numero presente in FLASH
         writeString((6+i*17), phoneAut[i]);  //Initial Address 6 and String type data [16 char])
         //EStr = read_String(6+i*17); crea problemi anche se non viene eseguita. Mah?!
-        EStr=phoneAut[i];
+        //EStr=phoneAut[i];
+        // Copia la stringa dal primo elemento dell’array phoneAut in EStr
+        strcpy(EStr, phoneAut[i]);
+        
         }
 
       Serial.print ("EEPROM autorized phone n.");
@@ -439,8 +439,8 @@ void loop() {
         Serial.print("Received Message: ");
         Serial.println(message);
     
-        String phoneS = String(phone);
-        String AutphoneS = String(phoneAut[0]);
+        //String phoneS = String(phone);
+        //String AutphoneS = String(phoneAut[0]);
 
         //String messageS = String(message);
         //char messageS[160];  // buffer ricevuto da GSM
@@ -454,12 +454,6 @@ void loop() {
              phoneT[sizeof(phoneT) - 1] = '\0';
              strcpy(phoneAut[0], phoneT);
              writeString(6, phoneT);  // salva in EEPROM  
-            
-            //messageS.substring(2).toCharArray(phoneT, 16);
-                    //phoneAut[0] = phoneT;
-              //strcpy(phoneAut[0], phoneT);
-              //writeString((6), phoneT); //Scrive in EEPROM
-                 // Initial Address 6 and String type data [16 char])
                 }
        } 
       // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
@@ -475,16 +469,6 @@ void loop() {
                     writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
         }
       }
-    
-
-
-              //messageS.substring(3).toCharArray(phoneT, 16);
-              //phoneI = messageS.substring(1,2).toInt(); // position [1-2]
-              //phoneAut[phoneI] = phoneT;
-              //strcpy(phoneAut[phoneI], phoneT);
-              //writeString((6+phoneI*17), phoneT); //Initial Address 6 and String type data [16 char])
-              //  }
-
             if (message[0] == 'D') {
               // Delete in EEPROM predefined aux phone numbers except the Authorized
               // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
