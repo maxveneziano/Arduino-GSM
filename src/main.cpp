@@ -1,7 +1,7 @@
 #include <Arduino.h>
 /* SMS Manager for Power monitoring
 
-  Uses GSM Library GPRS_Shield_Arduino.h
+  Uses GSM Library GPRS_Shield_Arduino.h v2 (Non Suli)
 
   Specifiche:
   - OK    Verifica corretta registrazione
@@ -90,22 +90,48 @@ String EStr;
 //          VARIABILI
 //phoneT => phone Temporaneo
 //phoneS => phone Stringa
-//Autphone => Authorized phone
+//AutphoneS => Authorized phone Stringa
 //nphone => numero di phone
 //phoneI => Index phone (escluso Autorizzato (0) )
 //EStr => EEPROM String
 
 int messageIndex = 0;
 float PowerVoltage;
-char phone[16], Autphone[16], phoneT[16];
+char phone[16], AutphoneS[16], phoneT[16];
 
 char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
 //char *phoneAut[] = {"+393460607220","+393383418818", "",""};
 //char *phoneAut[] = {"+393460607220","", "",""};
 //char *phoneAut[] = {"","","",""}; // Condizione Iniziale
-char *phoneAut[] = {"+393334188263","","",""};
-// phoneAut[0] authorized master number - Can authorize up to 2 phone numbers - "" used as terminator
+
+
+// Precarica il primo numero
+
+// Se devi modificarle a runtime, poi nel codice scrivi qualcosa tipo phoneAut[1] = "+390000000000"; o modifichi i contenuti, allora devi usare buffer modificabili:
+
+//char phoneAut[][20] = {
+//    "+393334188263",
+//   "",
+//   "",
+//   ""
+//};
+// In questo modo ogni cella ha spazio per una stringa di max 19 caratteri (più il terminatore \0).
+
+
+//A char *phoneAut[] = {"+393334188263","","",""};
+//B const char *phoneAut[] = {"+393334188263","","",""};
+//C
+
+char phoneAut[][16] = {
+    "+393334188263",
+    "",
+    "",
+    ""
+};
+// In questo modo ogni cella ha spazio per una stringa di max 15 caratteri (più il terminatore \0).
+
+// phoneAut[0] authorized master number - Can authorize up to 4 phone numbers - "" used as terminator
 
 
 char outmessage[50];
@@ -310,7 +336,7 @@ bool TimeToReset () {
 //    locDateTime - String like "24/05/29,10:30:15+08" "yy/MM/dd,hh:mm:ss+/-zz"
 
   day = (locDateTime[0] - '0') * 10 + (locDateTime[1] - '0');
-  hh = (locDateTimee[10] - '0') * 10 + (locDateTime[11] - '0');
+  hh = (locDateTime[10] - '0') * 10 + (locDateTime[11] - '0');
   mm = (locDateTime[13] - '0') * 10 + (locDateTime[14] - '0');
 
   Serial.print("ORA, MIN --> ");
@@ -415,31 +441,53 @@ void loop() {
     
         String phoneS = String(phone);
         String AutphoneS = String(phoneAut[0]);
-        String messageS = String(message);
+
+        //String messageS = String(message);
+        //char messageS[160];  // buffer ricevuto da GSM
 
       // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
-      if (phoneS == AutphoneS || strlen(phoneAut[0]) == 0) { 
+      //if (phoneS == AutphoneS || strlen(phoneAut[0]) == 0) { 
+      if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0) { 
           // Comando SMS "M+393391255597" Sostituisce o Imposta cellulare Autorizzato MASTER              
-          if (messageS.substring(0,1) == "M"){ 
-              messageS.substring(2).toCharArray(phoneT, 16);
-              phoneAut[0] = phoneT;
-              writeString((6), phoneT); //Scrive in EEPROM
-              // Initial Address 6 and String type data [16 char])
+          if (message[0] == 'M') {
+             strncpy(phoneT, message + 2, sizeof(phoneT) - 1);
+             phoneT[sizeof(phoneT) - 1] = '\0';
+             strcpy(phoneAut[0], phoneT);
+             writeString(6, phoneT);  // salva in EEPROM  
+            
+            //messageS.substring(2).toCharArray(phoneT, 16);
+                    //phoneAut[0] = phoneT;
+              //strcpy(phoneAut[0], phoneT);
+              //writeString((6), phoneT); //Scrive in EEPROM
+                 // Initial Address 6 and String type data [16 char])
                 }
        } 
       // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
-      if (phoneS == AutphoneS) { 
+            if (strcmp(phone, phoneAut[0]) == 0) { 
+      //if (phoneS == AutphoneS) { 
       // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
-          if (messageS.substring(0,1) == "A"){ 
-              messageS.substring(3).toCharArray(phoneT, 16);
-              phoneI = messageS.substring(1,2).toInt(); // position [1-2]
-              phoneAut[phoneI] = phoneT;
-              writeString((6+phoneI*17), phoneT); //Initial Address 6 and String type data [16 char])
-                }
+            if (message[0] == 'A') {
+                phoneI = atoi(message + 1);  // es. '1' → 1
+                if (phoneI >= 1 && phoneI <= 3) { // sicurezza: solo slot validi
+                    strncpy(phoneT, message + 3, sizeof(phoneT) - 1);
+                    phoneT[sizeof(phoneT) - 1] = '\0';
+                    strcpy(phoneAut[phoneI], phoneT);
+                    writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
+        }
+      }
+    
 
-          if (messageS.substring(0,1) == "D"){ 
-            // Delete in EEPROM predefined aux phone numbers except the Authorized
-            // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
+
+              //messageS.substring(3).toCharArray(phoneT, 16);
+              //phoneI = messageS.substring(1,2).toInt(); // position [1-2]
+              //phoneAut[phoneI] = phoneT;
+              //strcpy(phoneAut[phoneI], phoneT);
+              //writeString((6+phoneI*17), phoneT); //Initial Address 6 and String type data [16 char])
+              //  }
+
+            if (message[0] == 'D') {
+              // Delete in EEPROM predefined aux phone numbers except the Authorized
+              // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
             for (int i = 1; i < 3; i++) {
                 writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])
                 Serial.print("Delete all numbers");
