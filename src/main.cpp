@@ -85,21 +85,18 @@ int day, rday=0, hh, mm;
 //Ora e Minuto di Reset giornaliero
 int ORAr = 03, MINr = 00;
 int size,nphone,phoneI;
-//String EStr;
-char EStr[20];  // buffer fisso da 20 caratteri
+//char EStr[20];  // buffer fisso da 20 caratteri
+char EStr[4][20];
 
 //          VARIABILI
 //phoneT => phone Temporaneo
-//phoneS => phone Stringa
-//AutphoneS => Authorized phone Stringa
 //nphone => numero di phone
 //phoneI => Index phone (escluso Autorizzato (0) )
-//EStr => EEPROM String
+//EStr => buffer EEPROM character array
 
 int messageIndex = 0;
 float PowerVoltage;
 char phone[16], phoneT[16];
-//char AutphoneS[16];
 
 char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
@@ -343,8 +340,10 @@ bool TimeToReset () {
   if (hh == ORAr && (day != rday)) {
     rday = day;
     return true;
+    // Esegui Reset ed aggiorna il giorno di Reset (domani)
   }
   return false;
+  // Non è ancora l'ora di Reset 
 }
 
 void CalcNphone() {
@@ -358,38 +357,33 @@ void CalcNphone() {
   }
 
 void PhoneInit() {
-  //               Loop - Load in EStr the EEPROM content (predefined phone numbers)
-  for (int i = 0; i < 3; i++) {
-      //EStr = read_String(6+i*17);
-      read_String(6 + i*17, EStr);  // nuova funzione che riempie un buffer char[]
+  //               Loop - Load in EStr the EEPROM content (predefined phone numbers - Master included)
+  for (int i = 0; i < 4; i++) {
+      read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
     // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
     // Otherwise load the predefined number as defined in FLASH (phoneAut).
     // EStr used to save EEPROM writing (16 char single phone)
 
-    //Serial.print (strlen(phoneAut[i]));
-    //Serial.print (EStr[0]);
-    //Serial.print (EStr);
-      if ((EStr[0] != '+') && (strlen(phoneAut[i]) == 0)) {
+      if ((EStr[i][0] != '+') && (strlen(phoneAut[i]) == 0)) {
       // Posizione Vuota in EEPROM e in FLASH
         nphone=i;
         break;
       }
 
-      if((EStr[0] != '+') && (strlen(phoneAut[i]) > 0)) {
+      if((EStr[i][0] != '+') && (strlen(phoneAut[i]) > 0)) {
       // Posizione Vuota in EEPROM ma numero presente in FLASH
-        writeString((6+i*17), phoneAut[i]);  //Initial Address 6 and String type data [16 char])
-        //EStr = read_String(6+i*17); crea problemi anche se non viene eseguita. Mah?!
-        //EStr=phoneAut[i];
+        writeString((6+i*17), phoneAut[i]);  //Write to EEPROM (Initial Address 6 and String type data [16 char])
+
         // Copia la stringa dal primo elemento dell’array phoneAut in EStr
-        strcpy(EStr, phoneAut[i]);
+        strcpy(EStr[i], phoneAut[i]); // Write to EStr the number in phoneAut. The content in FLASH(phoneAut)=EEPROM=EStr
         
         }
 
       Serial.print ("EEPROM autorized phone n.");
       Serial.print (i);
       Serial.print (": ");
-      Serial.println (EStr);
+      Serial.println (EStr[i]);
       
    } 
 
@@ -419,7 +413,7 @@ void loop() {
 
 
   unsigned long currentMillis = millis();
-  // Verifica ogni 10 secondi (intervalcc)
+  // Verifica ogni 10 secondi (intervalcc) se ci sono SMS da processare o ci sono state variazioni sulla rete elettrica
   if (currentMillis - previousMilliscc > intervalcc) {
       previousMilliscc = currentMillis;
      
@@ -438,15 +432,8 @@ void loop() {
         Serial.println(datetime);
         Serial.print("Received Message: ");
         Serial.println(message);
-    
-        //String phoneS = String(phone);
-        //String AutphoneS = String(phoneAut[0]);
-
-        //String messageS = String(message);
-        //char messageS[160];  // buffer ricevuto da GSM
 
       // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
-      //if (phoneS == AutphoneS || strlen(phoneAut[0]) == 0) { 
       if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0) { 
           // Comando SMS "M+393391255597" Sostituisce o Imposta cellulare Autorizzato MASTER              
           if (message[0] == 'M') {
@@ -458,7 +445,6 @@ void loop() {
        } 
       // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
             if (strcmp(phone, phoneAut[0]) == 0) { 
-      //if (phoneS == AutphoneS) { 
       // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
             if (message[0] == 'A') {
                 phoneI = atoi(message + 1);  // es. '1' → 1
@@ -478,7 +464,7 @@ void loop() {
                 }        
             }
 
-        CalcNphone(); // Calcola n. telefoni (nphone)
+        CalcNphone(); // Calcola/Aggiorna n. telefoni (nphone)
       }
         } 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
