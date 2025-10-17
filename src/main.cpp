@@ -8,8 +8,9 @@
   - OK    Reinizializzazione ogni 24 ore (ogni giorno) ad ora prestabilita
   - invio SMS mancanza energia fino a 3 numeri
   - invio SMS riattivazione energia fino a 3 numeri
-  - disabilitazione o abilitazione notifica a numero da richiesta SMS
-  - disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS
+  - Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
+  - (disabilitazione o abilitazione notifica a numero da richiesta SMS)
+  - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS)
   - invio stato consumi da richiesta SMS a numero richiedente
   - set/reset pin uscita da SMS numero richiedente abilitato
   - stato pin ingresso su richiesta SMS a numero richiedente abilitato
@@ -86,6 +87,7 @@ int day, rday=0, hh, mm;
 int ORAr = 03, MINr = 00;
 int size,nphone,phoneI;
 //char EStr[20];  // buffer fisso da 20 caratteri
+int Auth;
 char EStr[4][20];
 
 //          VARIABILI
@@ -93,6 +95,7 @@ char EStr[4][20];
 //nphone => numero di phone
 //phoneI => Index phone (escluso Autorizzato (0) )
 //EStr => buffer EEPROM character array
+//Auth => 0= numero non autorizzato 1= numero autorizzato
 
 int messageIndex = 0;
 float PowerVoltage;
@@ -413,10 +416,10 @@ void loop() {
 
 
   unsigned long currentMillis = millis();
-  // Verifica ogni 10 secondi (intervalcc) se ci sono SMS da processare o ci sono state variazioni sulla rete elettrica
+
+  // Verifica ogni 10 secondi (intervalcc) se ci sono SMS da processare o ci sono state variazioni sulla rete elettrica. Gestisce la richieste via SMS di STATUS
   if (currentMillis - previousMilliscc > intervalcc) {
-      previousMilliscc = currentMillis;
-     
+      previousMilliscc = currentMillis;     
       // Controlla se ci sono nuovi messaggi SMS
         messageIndex = gprs.isSMSunread();
       if (messageIndex > 0) { 
@@ -433,7 +436,7 @@ void loop() {
         Serial.print("Received Message: ");
         Serial.println(message);
 
-      // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
+// Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
       if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0) { 
           // Comando SMS "M+393391255597" Sostituisce o Imposta cellulare Autorizzato MASTER              
           if (message[0] == 'M') {
@@ -442,19 +445,20 @@ void loop() {
              strcpy(phoneAut[0], phoneT);
              writeString(6, phoneT);  // salva in EEPROM  
                 }
-       } 
-      // Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
+       }
+// Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
             if (strcmp(phone, phoneAut[0]) == 0) { 
       // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
             if (message[0] == 'A') {
                 phoneI = atoi(message + 1);  // es. '1' → 1
-                if (phoneI >= 1 && phoneI <= 3) { // sicurezza: solo slot validi
+                if (phoneI >= 1 && phoneI <= 3) { // sicurezza: solo entry valide
                     strncpy(phoneT, message + 3, sizeof(phoneT) - 1);
                     phoneT[sizeof(phoneT) - 1] = '\0';
                     strcpy(phoneAut[phoneI], phoneT);
                     writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
-        }
-      }
+                    }
+            }
+
             if (message[0] == 'D') {
               // Delete in EEPROM predefined aux phone numbers except the Authorized
               // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
@@ -463,10 +467,44 @@ void loop() {
                 Serial.print("Delete all numbers");
                 }        
             }
+            }
 
+      if (message[0] == 'S') {
+            // Comando SMS "S" Ritorna lo stato della tensione di rete
+            // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
+
+            Auth=0; // Inizializza Auth=0 prima dello scan per numeri non autorizzati
+            for (int i = 0; i < nphone; i++) {
+                if (strcmp(phone, phoneAut[i]) == 0){
+                  Auth=1; // Il numero richiedente è nella lista degli autorizzati
+                  break;
+                }
+            }
+            if (Auth) {
+                  calc();	//	Calculates PowerVoltage Vrms - Supply voltage
+                  Serial.print(" Current Voltage: ");
+                  Serial.flush();
+                  Serial.println(PowerVoltage);
+                  Serial.flush();
+                  
+                  int power = (int)(PowerVoltage);
+                  sprintf(outmessage, "%s %d","CURRENT SUPPLY VOLTAGE: ", power);
+
+                  if (gprs.sendSMS(phone, outmessage)) { 
+                        Serial.print("Send SMS Succeed!\r\n");
+		                }   else {
+                              Serial.print("Send SMS failed!\r\n");
+			              }
+            }
+                else {
+                // Notifica tentativo non autorizzato
+                Serial.println("S request from NOT AUTHORIZED number");
+                }
+            }
+
+                
         CalcNphone(); // Calcola/Aggiorna n. telefoni (nphone)
-      }
-        } 
+
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
       calc();				//	Calculates PowerVoltage Vrms
@@ -514,12 +552,13 @@ void loop() {
                   Serial.print("Send SMS Succeed!\r\n");
 		            } else {
                      Serial.print("Send SMS failed!\r\n");
-			              }
-            }
-          }
-    }
+			              } // close the Else
+            } // Close the for 1
+          } // Close the if
+     } // Close the for 2
 
-	  }
+	  } // close the if (messageIndex > 0) { 
+  } // Close the  if (currentMillis - previousMilliscc > intervalcc) {
 
 /* RESET GIORNALIERO 
 Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
@@ -534,7 +573,6 @@ Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
     if (TimeToReset() == true)  {
 	    Serial.print (" Devo fare Reset ");
       initgsm();
-    }
-    }
-
-}
+    } // close the if 2
+ } // close the if 1
+ } // close the loop function
