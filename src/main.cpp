@@ -162,27 +162,7 @@ uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minut
 #define INFOTXT  "SALDO"
 //#define INFOTXT "INFO SIM"
 
-void writeString(int offs, const char *edata) {
-  int i = 0;
-  while (edata[i] != '\0' && i < 20) {
-    EEPROM.write(offs + i, edata[i]);
-    i++;
-  }
-  EEPROM.write(offs + i, '\0'); // terminatore
-}
 
-void read_String(int offs, char *dest) {
-  int len = 0;
-  unsigned char k;
-
-  do {
-    k = EEPROM.read(offs + len);
-    dest[len] = k;
-    len++;
-  } while (k != '\0' && len < 20);
-
-  dest[len - 1] = '\0'; // assicurati che termini con \0
-}
 
 GPRS gprs(PIN_TX, PIN_RX, BAUDRATE); //RX,TX,BaudRate
 EnergyMonitor emon1;	//Initialize EnergyMonitor ?
@@ -339,6 +319,33 @@ else {
 
   
 }
+
+void writeString(int offs, const char *edata)
+  {
+    int i = 0;
+    while (edata[i] != '\0' && i < 20) {
+    EEPROM.write(offs + i, edata[i]);
+    i++;
+  }
+  EEPROM.write(offs + i, '\0'); // terminatore
+  }
+
+void read_String(int offs, char *dest)
+  {
+    int len = 0;
+    unsigned char k;
+
+  do
+    {
+        k = EEPROM.read(offs + len);
+        dest[len] = k;
+        len++;
+    }
+  while (k != '\0' && len < 20);
+
+  dest[len - 1] = '\0'; // assicurati che termini con \0
+  }
+
 bool TimeToReset () {
 // Reset Now?
 
