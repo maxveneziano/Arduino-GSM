@@ -167,14 +167,12 @@ uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minut
 GPRS gprs(PIN_TX, PIN_RX, BAUDRATE); //RX,TX,BaudRate
 EnergyMonitor emon1;	//Initialize EnergyMonitor ?
 
-void calc() {
-  emon1.calcVI(20,2000);  // Calculate Emoncms parameters - Measurement on 20 halfwave with a 2000ms Timeout
-  PowerVoltage   = emon1.Vrms;  //extract Vrms into Variable
-  //irms[0] = emon1.calcIrms(4000);  // Calculate Irms only
-  //irms[1] = irms[0] * 225.0;
-}
 
-void initgsm() {
+
+//   ============  F U N Z I O N I ======================
+
+void initgsm()
+  {
   //Initialize Modem and emoncms
 
   Serial.begin(9600);
@@ -184,26 +182,28 @@ void initgsm() {
   
   emon1.voltage(0, VOLT_CAL, 1.7);  // Defines Voltage: input pin, Voltage calibration, phase_shift
   //emon1.current(0, 32);
-  for (int i = 0; i < 5; i++) { //clean up data
+  for (int i = 0; i < 5; i++)
+   { //clean up data
     emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave with a 2000ms Timeout
-  }
+   }
 
   // Start GSM Modem Reset
-    while (!gprs.init()) {
+    while (!gprs.init())
+    {
     gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
     delay(1000);
-  }
+    }
   delay(1000);
  
   Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
   iniTime = millis(); // Valore Tempo iniziale
   
 // Garantisce che il Modem sia registrato sulla rete
-  while (!gprs.isNetworkRegistered()) {
-    delay(1000);
-    Serial.print(F("Network has not registered yet!\n"));
-    
-}
+  while (!gprs.isNetworkRegistered())
+    {
+        delay(1000);
+        Serial.print(F("Network has not registered yet!\n"));
+    }
   Serial.print(F("GSM network initialization done!\n"));
 
   delay(500);
@@ -215,26 +215,28 @@ void initgsm() {
 
   for (int i = messageIndex; i > 0; i--)
     {
-    gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
-    delay(2000);
+        gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
+        delay(2000);
 
-    //In order not to full SIM Memory, is better to delete it
-    gprs.deleteSMS(i);
-    delay(2000);
+//In order not to full SIM Memory, is better to delete it
+        gprs.deleteSMS(i);
+        delay(2000);
     } 
     
   // Invia SMS al numero Coop Voce 42 43 688 INFO SIM per credito residuo
   // in modo da ricavare la data e l'ora corrente
   Serial.print(F("Invio Messaggio INFO\n"));
 
-  if (gprs.sendSMS(INFO_NUMBER, INFOTXT)) { // Send SMS to defined phone number and text
-    Serial.print(F("Send SMS Succeed!\r\n"));
-    Serial.flush();
-  } 
-else {
-    Serial.print(F("Send SMS failed!\r\n"));
-    Serial.flush();
-  }
+  if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
+    { // Send SMS to defined phone number and text
+        Serial.print(F("Send SMS Succeed!\r\n"));
+        Serial.flush();
+    } 
+  else
+    {
+      Serial.print(F("Send SMS failed!\r\n"));
+      Serial.flush();
+    }
 
   //                   Legge i messaggi INFO ricevuti
   // C'è il rischio che si frapponga un SMS di servizio del provider
@@ -277,15 +279,17 @@ else {
     sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
     Serial.println (outmessage);
     Serial.flush();
-    if (sim900_check_with_cmd (outmessage, "OK", CMD)){
-      Serial.println ("A buon Fine");
-      Serial.flush();
-    }
-      else {
-    Serial.println ("Non a buon Fine");
-    Serial.flush();
+    if (sim900_check_with_cmd (outmessage, "OK", CMD))
+      {
+        Serial.println ("A buon Fine");
+        Serial.flush();
+      }
+      else
+        {
+            Serial.println ("Non a buon Fine");
+            Serial.flush();
     // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
-    } 
+        } 
 
    //AT+CLTS=1	// Enable date and time from network - WIND Funziona COOP VOCE NON FUNZIONA
   
@@ -310,15 +314,17 @@ else {
   Serial.print(" Data e Ora da rete: ");
   Serial.println(locDateTime);
 
-  //AT+CMGF=1	// Enable ASCII TEXT mode for SMS
-  if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD)) { // Set message mode to ASCII
+//AT+CMGF=1	// Enable ASCII TEXT mode for SMS
+  if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
+    {
+// Set message mode to ASCII
       Serial.println(" Set ASCII TEXT mode for SMS....");
-  }
+    }
 
-   delay(500);
-
-  
+   delay(500);  
 }
+
+//   ============  A L T R E   F U N Z I O N I ======================
 
 void writeString(int offs, const char *edata)
   {
@@ -368,6 +374,14 @@ bool TimeToReset () {
   return false;
   // Non è ancora l'ora di Reset 
 }
+
+void calc()
+  {
+    emon1.calcVI(20,2000);  // Calculate Emoncms parameters - Measurement on 20 halfwave with a 2000ms Timeout
+    PowerVoltage   = emon1.Vrms;  //extract Vrms into Variable
+  //irms[0] = emon1.calcIrms(4000);  // Calculate Irms only
+  //irms[1] = irms[0] * 225.0;
+  }
 
 void CalcNphone() {
   // Loop - Calculates number of phones (nphone) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
@@ -441,16 +455,19 @@ if (gprs.sendSMS(phone, outmessage))
 			              }
 }       
 
-void setup() {
+//   ============  F U N Z I O N I    S T A N D A R D ======================
+
+void setup()
+  {
   // analogReference(DEFAULT);
   pinMode(PIN_RST, OUTPUT);
   initgsm(); // Inizializza GSM e Valore Tempo iniziale
   EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - presenza rete
   PhoneInit();  // At Power Up o Reset, inizializza Lista telefoni EEPROM e n. telefoni (nphone)
-}
+  }
 
 void loop()
-{
+  {
 
     /*
       Restart the modem using Software Restart command AT+CFUN=1,1
