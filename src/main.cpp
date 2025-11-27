@@ -459,16 +459,15 @@ if (gprs.sendSMS(phone, outmessage))
 
 void setup()
   {
-  // analogReference(DEFAULT);
-  pinMode(PIN_RST, OUTPUT);
-  initgsm(); // Inizializza GSM e Valore Tempo iniziale
-  EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - presenza rete
-  PhoneInit();  // At Power Up o Reset, inizializza Lista telefoni EEPROM e n. telefoni (nphone)
+// analogReference(DEFAULT);
+    pinMode(PIN_RST, OUTPUT);
+    initgsm(); // Inizializza GSM e Valore Tempo iniziale
+    EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - presenza rete
+    PhoneInit();  // At Power Up o Reset, inizializza Lista telefoni EEPROM e n. telefoni (nphone)
   }
 
 void loop()
   {
-
     /*
       Restart the modem using Software Restart command AT+CFUN=1,1
       or you can hardware restart it.
@@ -476,8 +475,6 @@ void loop()
     */
     //	  gprs.powerReset(PIN_RESET); //PIN_RESET (7) - Si resetta veramente il Modem GSM?
     //	  init(); // Re-Inizializza - Si res-inizializzazione veramente il Modem GSM?
-  //}
-
 
 
   unsigned long currentMillis = millis();
@@ -491,49 +488,50 @@ void loop()
       if (messageIndex > 0)
           { 
 // At least, there is one UNREAD SMS
-            gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
-            Serial.print("At least, there is one UNREAD SMS");
+                gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
+                Serial.print("At least, there is one UNREAD SMS");
 // In order not to full SIM Memory, is better to delete it
-            gprs.deleteSMS(messageIndex);
+                gprs.deleteSMS(messageIndex);
     
-            Serial.print("From number: ");
-            Serial.println(phone);
-            Serial.print("Datetime: ");
-            Serial.println(datetime);
-            Serial.print("Received Message: ");
-            Serial.println(message);
+                Serial.print("From number: ");
+                Serial.println(phone);
+                Serial.print("Datetime: ");
+                Serial.println(datetime);
+                Serial.print("Received Message: ");
+                Serial.println(message);
 
 // ============================
 
 // Se messaggio SMS "M" arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
-if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
-        {
+                if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
+            {
 // Comando SMS "M+393391255597" (13) "M+393334188263" (13) Sostituisce o Imposta cellulare Autorizzato MASTER 
-            if (message[0] == 'M')
-                {
+                if (message[0] == 'M')
+                    {
 // Formato Numero errato ?      
-                  if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
-                  {
-                      sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
-                      Serial.println(outmessage);
-                      SendMsg();
-                  } else
-                        {
+                        if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
+                            {
+                                sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
+                                Serial.println(outmessage);
+                                SendMsg();
+                            }
+                            else
+                                {
 // Formato Numero corretto   
-                            strncpy(phoneT, message + 1, strlen(message) - 1);
-                            phoneT[strlen(message) - 1] = '\0';
-                            strcpy(phoneAut[0], phoneT);
-                            writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
+                                    strncpy(phoneT, message + 1, strlen(message) - 1);
+                                    phoneT[strlen(message) - 1] = '\0';
+                                    strcpy(phoneAut[0], phoneT);
+                                    writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
 
-                            sprintf(outmessage, "%s %s","M TELEPHONE NUMBER SAVED", message);
-                            Serial.println(outmessage);
-                            SendMsg(); 
-                         }
-                }             
-        }
+                                    sprintf(outmessage, "%s %s","M TELEPHONE NUMBER SAVED", message);
+                                    Serial.println(outmessage);
+                                    SendMsg(); 
+                                }
+                    }             
+            }
 
 // Se messaggio SMS "D" arriva dal numero telefonico autorizzato Master [0]
-if (strcmp(phone, phoneAut[0]) == 0)
+    if (strcmp(phone, phoneAut[0]) == 0)
         {
           if (message[0] == 'D')
                   {
@@ -549,8 +547,8 @@ if (strcmp(phone, phoneAut[0]) == 0)
                   }
         }
 
-// Se messaggio SMS "E" arriva da qualsiasi telefonico autorizzato Master [0]
-            if (message[0] == 'E')
+// Se messaggio SMS "E" arriva da qualsiasi telefonico - NON DOCUMENTATO
+if (message[0] == 'E')
                 {
 // Formato Numero errato ?      
                   if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
@@ -564,16 +562,18 @@ if (strcmp(phone, phoneAut[0]) == 0)
 // Delete in EEPROM all phone numbers - RISERVATO
                             for (int i = 0; i < 3; i++)
                               {
+                                phoneAut[i][0] = '\0';
                                 writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
                               }
+                        }
+                           
                             nphone = 0;
                             sprintf(outmessage, "%s","ALL NUMBERS DELETED");
                             Serial.println(outmessage);
                             SendMsg();                                   
                          }
 // Aggiornare nphone e EEPROM
-
-                }             
+           
 
 
 
@@ -583,7 +583,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
  { 
 // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
     if (message[0] == 'A')
-    {
+          {
 // Formato Numero errato ?      
             if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
               {
@@ -613,12 +613,12 @@ if (strcmp(phone, phoneAut[0]) == 0)
                           SendMsg();
                         }
                 }
-    }
+          } // Messaggio A numero valido
  
-  }
+      } // Messaggio A
 
   if (message[0] == 'S')
-  {
+        {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
             // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
 
@@ -660,13 +660,13 @@ if (strcmp(phone, phoneAut[0]) == 0)
                   Serial.println(outmessage);
                   SendMsg();
                 }
-  }
- //           }
-
-                
+        } // Messaggio S
+               
 CalcNphone(); // Calcola/Aggiorna n. telefoni (nphone)
 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
+
+// ============ VISUALIZZA STATO SU SERIALE =====================
 
 calc();				//	Calculates PowerVoltage Vrms
 Serial.print(" Current Voltage: ");
@@ -675,22 +675,21 @@ Serial.println(PowerVoltage);
 Serial.flush();
 	  
 if (PowerVoltage <= 180.0)
-// Magari considerare anche un limite a 200.0 V 
+// Magari considerare anche un limite a 200.0 V per la ripresa 
       {
-//                    MANCANZA RETE
+// =====================   MANCANZA RETE    =====================
 // EEPROM.read(5)  0 Rete presente 1 Rete assente
-
 // Identifica transizione da 0 Rete Presente a 1 Rete Assente
         if (EEPROM.read(5) == 0)
             {
               EEPROM.update(5, 1);  // Aggiorna EEPROM a 1 solo se non è già a 1
 			        int power = (int)(PowerVoltage);
-              gprs.getDateTime(locDateTime);
-              sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA RETE, ultima lettura:", power);
+                    gprs.getDateTime(locDateTime);
+                    sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA RETE, ultima lettura:", power);
 			        Serial.println(outmessage);
 
-            // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
-                for (int i = 0; i < nphone; i++)
+// Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
+              for (int i = 0; i < nphone; i++)
                     {
                         if (gprs.sendSMS(phoneAut[i], outmessage))
                           { 
@@ -701,49 +700,53 @@ if (PowerVoltage <= 180.0)
 			                        }
                     }
 		        }
-
-        }
     //                  RETE PRESENTE
     // EEPROM.read(5)  0 Rete presente 1 Rete assente
-    else {
-         if (EEPROM.read(5) == 1)
-              {
-                  EEPROM.update(5, 0); // Aggiorna EEPROM a 0 solo se non è già a 0
-                  int power = (int)(PowerVoltage);
-                  gprs.getDateTime(locDateTime);
-                  sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
-                  Serial.println(outmessage);
+            else
+                {
+                    if (EEPROM.read(5) == 1)
+                      {
+                          EEPROM.update(5, 0); // Aggiorna EEPROM a 0 solo se non è già a 0
+                          int power = (int)(PowerVoltage);
+                          gprs.getDateTime(locDateTime);
+                          sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
+                          Serial.println(outmessage);
 
-            // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
-                  for (int i = 0; i < nphone; i++)
-                  {
-                      if (gprs.sendSMS(phoneAut[i], outmessage))
-                        { 
-                          Serial.print("Send SMS Succeed!\r\n");
-		                    } else
-                            {
-                                Serial.print("Send SMS failed!\r\n");
-			                      } // close the Else
-                  } // Close the for 1
-              } // Close the if
-          } // Close the Else
+// Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
+                          for (int i = 0; i < nphone; i++)
+                                {
+                                    if (gprs.sendSMS(phoneAut[i], outmessage))
+                                        { 
+                                          Serial.print("Send SMS Succeed!\r\n");
+		                                    }
+                                        else
+                                            {
+                                                Serial.print("Send SMS failed!\r\n");
+			                                      } // close the Else
+                                } // Close the for 1
+                        } // Close the EEPROM if
+                } // Close the Else Rete Presente
 
-	  } // close the if (messageIndex > 0) { 
-  } // Close the  if (currentMillis - previousMilliscc > intervalcc) {
+	  } // close the Power Voltage check
+  } // Close the  if (currentMillis - previousMilliscc > intervalcc) { SMS da Processare
 
 /* RESET GIORNALIERO 
 Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
 (il controllo viene effettuato ogni 15 Minuti) */
-  if (currentMillis - previousMillisora > intervalora) {
-    previousMillisora = currentMillis;
-    gprs.getDateTime(locDateTime);
-    Serial.print("Verifica ogni 15 Min del RESET Data e Ora: ");
-    Serial.println(locDateTime);
-    Serial.println("Ora chiama TimeToReset per verificare se è il momento di resettare");
+  if (currentMillis - previousMillisora > intervalora) 
+    {
+      previousMillisora = currentMillis;
+      gprs.getDateTime(locDateTime);
+      Serial.print("Verifica ogni 15 Min del RESET Data e Ora: ");
+      Serial.println(locDateTime);
+      Serial.println("Ora chiama TimeToReset per verificare se è il momento di resettare");
 	
-    if (TimeToReset() == true)  {
-	    Serial.print (" Devo fare Reset ");
-      initgsm();
-    } // close the if 2
- } // close the if 1
- } // close the loop function
+      if (TimeToReset() == true)
+        {
+	        Serial.print (" Devo fare Reset ");
+          initgsm();
+        } // close the if 2
+      } // close the if 1
+    } // close the current millis loop function
+
+  } // close the loop function
