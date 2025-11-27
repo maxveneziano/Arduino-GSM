@@ -522,7 +522,7 @@ void loop()
                                           phoneT[strlen(message) - 1] = '\0';
                                           strcpy(phoneAut[0], phoneT);
                                           writeString(6 + phoneI * 17, phoneT);
-// salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
+// Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
                                           sprintf(outmessage, "%s %s","M TELEPHONE NUMBER SAVED", message);
                                           Serial.println(outmessage);
                                           SendMsg(); 
@@ -549,7 +549,7 @@ void loop()
                   }
         }
 
-// Se messaggio SMS "E" arriva da qualsiasi telefonico - NON DOCUMENTATO
+// Se messaggio SMS "E" arriva da qualsiasi telefono - NON DOCUMENTATO
 if (message[0] == 'E')
         {
 // Formato Numero corretto   
@@ -649,6 +649,9 @@ if (strcmp(phone, phoneAut[0]) == 0)
                   SendMsg();
                 }
         } // Messaggio S
+      } // Presenza Messaggi
+  } // VERIFICA OGNI 10 secondi (intervalcc)
+
                
 CalcNphone(); // Calcola/Aggiorna n. telefoni (nphone)
 
@@ -688,40 +691,41 @@ if (PowerVoltage <= 180.0)
 			                        }
                     }
 		        }
+      } // Power Voltage <= 180V
+
+if (PowerVoltage >= 200.0)
+// Soglia 200.0 V per la ripresa 
+      {
     //                  RETE PRESENTE
     // EEPROM.read(5)  0 Rete presente 1 Rete assente
-            else
+        if (EEPROM.read(5) == 1)
                 {
-                    if (EEPROM.read(5) == 1)
-                      {
-                          EEPROM.update(5, 0); // Aggiorna EEPROM a 0 solo se non è già a 0
-                          int power = (int)(PowerVoltage);
-                          gprs.getDateTime(locDateTime);
-                          sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
-                          Serial.println(outmessage);
+                    EEPROM.update(5, 0); // Aggiorna EEPROM a 0
+                    int power = (int)(PowerVoltage);
+                    gprs.getDateTime(locDateTime);
+                    sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
+                    Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
-                          for (int i = 0; i < nphone; i++)
-                                {
-                                    if (gprs.sendSMS(phoneAut[i], outmessage))
-                                        { 
-                                          Serial.print("Send SMS Succeed!\r\n");
-		                                    }
-                                        else
-                                            {
-                                                Serial.print("Send SMS failed!\r\n");
-			                                      } // close the Else
-                                } // Close the for 1
-                        } // Close the EEPROM if (Rete presente)
-                } // Close the Else Rete Presente
+                    for (int i = 0; i < nphone; i++)
+                          {
+                              if (gprs.sendSMS(phoneAut[i], outmessage))
+                                    { 
+                                      Serial.print("Send SMS Succeed!\r\n");
+		                                }
+                                    else
+                                      {
+                                        Serial.print("Send SMS failed!\r\n");
+			                                } // close the Else
 
-	  } // close the Power Voltage check
-  } // Close the  if (currentMillis - previousMilliscc > intervalcc) { SMS da Processare
+                          } // Close the for 1
+                } // Close the EEPROM if (Rete presente)
+      } // Close the soglia 200V Presente
 
 /* RESET GIORNALIERO 
 Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
 (il controllo viene effettuato ogni 15 Minuti) */
-  if (currentMillis - previousMillisora > intervalora) 
+if (currentMillis - previousMillisora > intervalora) 
         {
             previousMillisora = currentMillis;
             gprs.getDateTime(locDateTime);
@@ -736,5 +740,5 @@ Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
                 } // close the if 2
       } // close the if 1
 
-    } // close the current millis loop function RESET GIORNALIERO
+  
   } // close the loop function
