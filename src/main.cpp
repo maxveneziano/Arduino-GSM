@@ -734,19 +734,19 @@ if (PowerVoltage <= 180.0)
 Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
 (il controllo viene effettuato ogni 15 Minuti) */
   if (currentMillis - previousMillisora > intervalora) 
-    {
-      previousMillisora = currentMillis;
-      gprs.getDateTime(locDateTime);
-      Serial.print("Verifica ogni 15 Min del RESET Data e Ora: ");
-      Serial.println(locDateTime);
-      Serial.println("Ora chiama TimeToReset per verificare se è il momento di resettare");
-	
-      if (TimeToReset() == true)
         {
-	        Serial.print (" Devo fare Reset ");
-          initgsm();
-        } // close the if 2
+            previousMillisora = currentMillis;
+            gprs.getDateTime(locDateTime);
+            Serial.print("Verifica ogni 15 Min del RESET Data e Ora: ");
+            Serial.println(locDateTime);
+            Serial.println("Ora chiama TimeToReset per verificare se è il momento di resettare");
+	
+            if (TimeToReset() == true)
+                {
+	                Serial.print (" Devo fare Reset ");
+                    initgsm();
+                } // close the if 2
       } // close the if 1
-    } // close the current millis loop function
 
+    } // close the current millis loop function RESET GIORNALIERO
   } // close the loop function
