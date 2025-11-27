@@ -420,7 +420,6 @@ void PhoneInit() {
 
   Serial.print ("Numero di telefoni: ");
   Serial.println(nphone);
-
 }
 
 void SendMsg()
