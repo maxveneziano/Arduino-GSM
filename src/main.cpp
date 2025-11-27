@@ -6,22 +6,35 @@
   Specifiche:
   - OK    Verifica corretta registrazione
   - OK    Reinizializzazione ogni 24 ore (ogni giorno) ad ora prestabilita
-  - invio SMS mancanza energia fino a 3 numeri
-  - invio SMS riattivazione energia fino a 3 numeri
+  - OK    invio SMS mancanza energia fino a 3 numeri
+  - OK    invio SMS riattivazione energia fino a 3 numeri
+  - OK    Comando SMS (S) per stato Power Supply e SMS a numero richiedente
+          + Messaggio SMS per richiedente non autorizzato 
+  - OK    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
   - Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
-  - (disabilitazione o abilitazione notifica a numero da richiesta SMS)
+  - NO   (disabilitazione o abilitazione notifica a numero da richiesta SMS)
   - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS)
-  - invio stato consumi da richiesta SMS a numero richiedente
   - set/reset pin uscita da SMS numero richiedente abilitato
   - stato pin ingresso su richiesta SMS a numero richiedente abilitato
-  - OK    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
 
-  Comandi SMS 
+  - Prevedre SMS di conferma comandi (richiesta eseguita per il n.)
+
+
+  Comandi SMS
+  Numeri GSM 
+  Italia    totale cifre 12 senza +
+  Germania  totale cifre 13 senza +
+  Svezia    totale cifre 11 senza +
+  Finlandia totale cifre 10 senza +
+
   "M+393391255597" Sostituisci cellulare autorizzato Master con un altro
   "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare in posizione....
   "D" CANCELLA tutti i cellulari ausiliari (non il Master)
 
-  EEPROM.read(5) Rete presente (0) Rete assente (1)
+  "N" Elenca tutti i numeri autorizzati - solo per il Master
+  "E" Cancella tutti i numeri incluso il Master - NON DOCUMENTATO. Accetta qualsiasi numero.
+
+  EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1)
 
   1st Power On
   -  inizialmente la EEPROM non ha numeri (tutti "") 
@@ -350,7 +363,8 @@ bool TimeToReset () {
 }
 
 void CalcNphone() {
-  // Loop - Calculates number of phones (nphone)
+  // Loop - Calculates number of phones (nphone) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
+  // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0) di quante stringhe piene c'erano.
   for (int i = 0; i < 3; i++) {
        if (strlen(phoneAut[i]) == 0) {
         nphone=i;
@@ -360,29 +374,43 @@ void CalcNphone() {
   }
 
 void PhoneInit() {
-  //               Loop - Load in EStr the EEPROM content (predefined phone numbers - Master included)
+  // At INIT copy EEPROM (EStr) to phoneAut
+  // At RUNTIME copy phoneAut to EStr (EEPROM)
+
+  // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
+  // Otherwise load the predefined number as defined in FLASH (phoneAut).
+  // EStr used to save EEPROM writing (16 char single phone)
+
+  // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
   for (int i = 0; i < 4; i++) {
       read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
-    // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
-    // Otherwise load the predefined number as defined in FLASH (phoneAut).
-    // EStr used to save EEPROM writing (16 char single phone)
-
       if ((EStr[i][0] != '+') && (strlen(phoneAut[i]) == 0)) {
-      // Posizione Vuota in EEPROM e in FLASH
+    // Checks a empty position in EEPROM and in FLASH. If yes breaks the loop and set nphone to i
         nphone=i;
         break;
       }
 
-      if((EStr[i][0] != '+') && (strlen(phoneAut[i]) > 0)) {
-      // Posizione Vuota in EEPROM ma numero presente in FLASH
-        writeString((6+i*17), phoneAut[i]);  //Write to EEPROM (Initial Address 6 and String type data [16 char])
+    // It works at INIT only, not at RUNTIME.
+      else if ((EStr[i][0] == '+') && (strlen(phoneAut[i]) == 0)) {
+    // Checks a used position in EEPROM but enpty in (FLASH).
+         strcpy(phoneAut[i], EStr[i]); 
+    // Copy the string from EStr to phoneAut. Write to phoneAut the number in EStrt.
 
-        // Copia la stringa dal primo elemento dell’array phoneAut in EStr
-        strcpy(EStr[i], phoneAut[i]); // Write to EStr the number in phoneAut. The content in FLASH(phoneAut)=EEPROM=EStr
-        
-        }
+        // Now the content in FLASH(phoneAut)=EEPROM=EStr
+      }
 
+    // It works at RUNTIME only, not at INIT
+      else if( (EStr[i][0] != '+') && (strlen(phoneAut[i]) > 0)) {
+    // An empty position in EEPROM but phone number PRESENT in phoneAut (FLASH)
+        writeString((6+i*17), phoneAut[i]);
+    // Write to EEPROM (Initial Address 6 and String type data [16 char])
+        strcpy(EStr[i], phoneAut[i]);
+    // Copy the string from phoneAut to EStr. Write to EStr the number in phoneAut.
+
+    // Now the content in FLASH(phoneAut)=EEPROM=EStr
+      }
+      
       Serial.print ("EEPROM autorized phone n.");
       Serial.print (i);
       Serial.print (": ");
@@ -395,6 +423,18 @@ void PhoneInit() {
 
 }
 
+void SendMsg()
+{
+if (gprs.sendSMS(phone, outmessage))
+                  { 
+                        Serial.print("Send SMS Succeed!\r\n");
+		              }
+                       else
+                    {
+                        Serial.print("Send SMS failed!\r\n");
+			              }
+}       
+
 void setup() {
   // analogReference(DEFAULT);
   pinMode(PIN_RST, OUTPUT);
@@ -403,7 +443,8 @@ void setup() {
   PhoneInit();  // At Power Up o Reset, inizializza Lista telefoni EEPROM e n. telefoni (nphone)
 }
 
-void loop() {
+void loop()
+{
 
     /*
       Restart the modem using Software Restart command AT+CFUN=1,1
@@ -415,72 +456,163 @@ void loop() {
   //}
 
 
+
   unsigned long currentMillis = millis();
 
   // Verifica ogni 10 secondi (intervalcc) se ci sono SMS da processare o ci sono state variazioni sulla rete elettrica. Gestisce la richieste via SMS di STATUS
-  if (currentMillis - previousMilliscc > intervalcc) {
+  if (currentMillis - previousMilliscc > intervalcc)
+   {
       previousMilliscc = currentMillis;     
       // Controlla se ci sono nuovi messaggi SMS
-        messageIndex = gprs.isSMSunread();
-      if (messageIndex > 0) { 
-        //At least, there is one UNREAD SMS
-        gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
-        Serial.print("At least, there is one UNREAD SMS");
-        //In order not to full SIM Memory, is better to delete it
-        gprs.deleteSMS(messageIndex);
+      messageIndex = gprs.isSMSunread();
+      if (messageIndex > 0)
+          { 
+// At least, there is one UNREAD SMS
+            gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
+            Serial.print("At least, there is one UNREAD SMS");
+// In order not to full SIM Memory, is better to delete it
+            gprs.deleteSMS(messageIndex);
     
-        Serial.print("From number: ");
-        Serial.println(phone);
-        Serial.print("Datetime: ");
-        Serial.println(datetime);
-        Serial.print("Received Message: ");
-        Serial.println(message);
+            Serial.print("From number: ");
+            Serial.println(phone);
+            Serial.print("Datetime: ");
+            Serial.println(datetime);
+            Serial.print("Received Message: ");
+            Serial.println(message);
 
-// Se messaggio SMS arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
-      if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0) { 
-          // Comando SMS "M+393391255597" Sostituisce o Imposta cellulare Autorizzato MASTER              
-          if (message[0] == 'M') {
-             strncpy(phoneT, message + 2, sizeof(phoneT) - 1);
-             phoneT[sizeof(phoneT) - 1] = '\0';
-             strcpy(phoneAut[0], phoneT);
-             writeString(6, phoneT);  // salva in EEPROM  
-                }
-       }
-// Se messaggio SMS arriva dal numero telefonico autorizzato Master [0]
-            if (strcmp(phone, phoneAut[0]) == 0) { 
-      // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
-            if (message[0] == 'A') {
-                phoneI = atoi(message + 1);  // es. '1' → 1
-                if (phoneI >= 1 && phoneI <= 3) { // sicurezza: solo entry valide
-                    strncpy(phoneT, message + 3, sizeof(phoneT) - 1);
-                    phoneT[sizeof(phoneT) - 1] = '\0';
+// ============================
+
+// Se messaggio SMS "M" arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
+if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
+        {
+// Comando SMS "M+393391255597" (13) "M+393334188263" (13) Sostituisce o Imposta cellulare Autorizzato MASTER 
+            if (message[0] == 'M')
+                {
+// Formato Numero errato ?      
+                  if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
+                  {
+                      sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
+                      Serial.println(outmessage);
+                      SendMsg();
+                  } else
+                        {
+// Formato Numero corretto   
+                            strncpy(phoneT, message + 1, strlen(message) - 1);
+                            phoneT[strlen(message) - 1] = '\0';
+                            strcpy(phoneAut[0], phoneT);
+                            writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
+
+                            sprintf(outmessage, "%s %s","M TELEPHONE NUMBER SAVED", message);
+                            Serial.println(outmessage);
+                            SendMsg(); 
+                         }
+                }             
+        }
+
+// Se messaggio SMS "D" arriva dal numero telefonico autorizzato Master [0]
+if (strcmp(phone, phoneAut[0]) == 0)
+        {
+          if (message[0] == 'D')
+                  {
+// Delete in EEPROM predefined aux phone numbers except the Authorized
+// Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
+                    for (int i = 1; i < 3; i++)
+                      {
+                        writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
+                      }
+                    sprintf(outmessage, "%s","DELETED ALL THE AUXILIARY NUMBERS");
+                    Serial.println(outmessage);
+                    SendMsg();       
+                  }
+        }
+
+// Se messaggio SMS "E" arriva da qualsiasi telefonico autorizzato Master [0]
+            if (message[0] == 'E')
+                {
+// Formato Numero errato ?      
+                  if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
+                  {
+                      sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
+                      Serial.println(outmessage);
+                      SendMsg();
+                  } else
+                        {
+// Formato Numero corretto   
+// Delete in EEPROM all phone numbers - RISERVATO
+                            for (int i = 0; i < 3; i++)
+                              {
+                                writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
+                              }
+                            nphone = 0;
+                            sprintf(outmessage, "%s","ALL NUMBERS DELETED");
+                            Serial.println(outmessage);
+                            SendMsg();                                   
+                         }
+// Aggiornare nphone e EEPROM
+
+                }             
+
+
+
+// ===========================================
+// Se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
+if (strcmp(phone, phoneAut[0]) == 0)
+ { 
+// Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
+    if (message[0] == 'A')
+    {
+// Formato Numero errato ?      
+            if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
+              {
+                sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
+                Serial.println(outmessage);
+                SendMsg();
+              } else
+                {
+// Formato Numero corretto
+                  phoneI = atoi(message + 1);  // es. '1' → 1 perchè si ferma al primo carattere non numerico (+)
+// Trova l'indice
+                  if (phoneI >= 1 && phoneI <= 3)
+// Per sicurezza solo numeri ausiliari A1 A2 A3
+                  {
+                    strncpy(phoneT, message + 2, strlen(message) - 2);
+                    phoneT[strlen(message -2)] = '\0';
                     strcpy(phoneAut[phoneI], phoneT);
                     writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
-                    }
-            }
 
-            if (message[0] == 'D') {
-              // Delete in EEPROM predefined aux phone numbers except the Authorized
-              // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
-            for (int i = 1; i < 3; i++) {
-                writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])
-                Serial.print("Delete all numbers");
-                }        
-            }
-            }
+                    sprintf(outmessage, "%s %d %s %s","A", phoneI, "TELEPHONE NUMBER SAVED ", message);
+                    Serial.println(outmessage);
+                    SendMsg();
+                  } else
+                        {
+                          printf(outmessage, "%s %s","WRONG INDEX ", message);
+                          Serial.println(outmessage);
+                          SendMsg();
+                        }
+                }
+    }
+ 
+  }
 
-      if (message[0] == 'S') {
+  if (message[0] == 'S')
+  {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
             // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
 
-            Auth=0; // Inizializza Auth=0 prima dello scan per numeri non autorizzati
-            for (int i = 0; i < nphone; i++) {
-                if (strcmp(phone, phoneAut[i]) == 0){
-                  Auth=1; // Il numero richiedente è nella lista degli autorizzati
+            Auth=0;
+            // Inizializza Auth=0 prima dello scan per la verifica 
+            // di una richiesta proveniente da un numero autorizzato
+            for (int i = 0; i < nphone; i++)
+            {
+                if (strcmp(phone, phoneAut[i]) == 0)
+                {
+                  Auth=1;
+                  // Il numero richiedente è nella lista dei telefoni (autorizzati)
                   break;
                 }
             }
-            if (Auth) {
+            if (Auth)
+             {
                   calc();	//	Calculates PowerVoltage Vrms - Supply voltage
                   Serial.print(" Current Voltage: ");
                   Serial.flush();
@@ -490,72 +622,88 @@ void loop() {
                   int power = (int)(PowerVoltage);
                   sprintf(outmessage, "%s %d","CURRENT SUPPLY VOLTAGE: ", power);
 
-                  if (gprs.sendSMS(phone, outmessage)) { 
-                        Serial.print("Send SMS Succeed!\r\n");
-		                }   else {
+                  if (gprs.sendSMS(phone, outmessage))
+                      { 
+                          Serial.print("Send SMS Succeed!\r\n");
+		                  }   else
+                          {
                               Serial.print("Send SMS failed!\r\n");
-			              }
+			                    }
             }
-                else {
-                // Notifica tentativo non autorizzato
-                Serial.println("S request from NOT AUTHORIZED number");
+            else
+                {
+// Notifica tentativo non autorizzato
+                  strcpy(outmessage, "Request from NOT AUTHORIZED number");
+                  Serial.println(outmessage);
+                  SendMsg();
                 }
-            }
+  }
+ //           }
 
                 
-        CalcNphone(); // Calcola/Aggiorna n. telefoni (nphone)
+CalcNphone(); // Calcola/Aggiorna n. telefoni (nphone)
 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
-      calc();				//	Calculates PowerVoltage Vrms
-      Serial.print(" Current Voltage: ");
-      Serial.flush();
-      Serial.println(PowerVoltage);
-      Serial.flush();
+calc();				//	Calculates PowerVoltage Vrms
+Serial.print(" Current Voltage: ");
+Serial.flush();
+Serial.println(PowerVoltage);
+Serial.flush();
 	  
-    if (PowerVoltage <= 180.0) {
-      //                    MANCANZA RETE
-      // EEPROM.read(5)  0 Rete presente 1 Rete assente
+if (PowerVoltage <= 180.0)
+// Magari considerare anche un limite a 200.0 V 
+      {
+//                    MANCANZA RETE
+// EEPROM.read(5)  0 Rete presente 1 Rete assente
 
-        // Identifica transizione da 0 Rete Presente a 1 Rete Assente
-        if (EEPROM.read(5) == 0) {
-            EEPROM.update(5, 1);  // Aggiorna EEPROM a 1 solo se non è già a 1
-			      int power = (int)(PowerVoltage);
-            gprs.getDateTime(locDateTime);
-            sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA RETE, ultima lettura:", power);
-			      Serial.println(outmessage);
+// Identifica transizione da 0 Rete Presente a 1 Rete Assente
+        if (EEPROM.read(5) == 0)
+            {
+              EEPROM.update(5, 1);  // Aggiorna EEPROM a 1 solo se non è già a 1
+			        int power = (int)(PowerVoltage);
+              gprs.getDateTime(locDateTime);
+              sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA RETE, ultima lettura:", power);
+			        Serial.println(outmessage);
 
             // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
-            for (int i = 0; i < nphone; i++){
-            if (gprs.sendSMS(phoneAut[i], outmessage)) { 
-                  Serial.print("Send SMS Succeed!\r\n");
-		          } else {
-                     Serial.print("Send SMS failed!\r\n");
-			              }
-            }
-		      }
+                for (int i = 0; i < nphone; i++)
+                    {
+                        if (gprs.sendSMS(phoneAut[i], outmessage))
+                          { 
+                              Serial.print("Send SMS Succeed!\r\n");
+		                      } else
+                              {
+                                  Serial.print("Send SMS failed!\r\n");
+			                        }
+                    }
+		        }
 
-    }
-    // RETE PRESENTE
+        }
+    //                  RETE PRESENTE
     // EEPROM.read(5)  0 Rete presente 1 Rete assente
     else {
-         if (EEPROM.read(5) == 1){
-             EEPROM.update(5, 0); // Aggiorna EEPROM a 0 solo se non è già a 0
-             int power = (int)(PowerVoltage);
-             gprs.getDateTime(locDateTime);
-             sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
-              Serial.println(outmessage);
+         if (EEPROM.read(5) == 1)
+              {
+                  EEPROM.update(5, 0); // Aggiorna EEPROM a 0 solo se non è già a 0
+                  int power = (int)(PowerVoltage);
+                  gprs.getDateTime(locDateTime);
+                  sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
+                  Serial.println(outmessage);
 
             // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
-            for (int i = 0; i < nphone; i++){
-                if (gprs.sendSMS(phoneAut[i], outmessage)) { 
-                  Serial.print("Send SMS Succeed!\r\n");
-		            } else {
-                     Serial.print("Send SMS failed!\r\n");
-			              } // close the Else
-            } // Close the for 1
-          } // Close the if
-     } // Close the for 2
+                  for (int i = 0; i < nphone; i++)
+                  {
+                      if (gprs.sendSMS(phoneAut[i], outmessage))
+                        { 
+                          Serial.print("Send SMS Succeed!\r\n");
+		                    } else
+                            {
+                                Serial.print("Send SMS failed!\r\n");
+			                      } // close the Else
+                  } // Close the for 1
+              } // Close the if
+          } // Close the Else
 
 	  } // close the if (messageIndex > 0) { 
   } // Close the  if (currentMillis - previousMilliscc > intervalcc) {
