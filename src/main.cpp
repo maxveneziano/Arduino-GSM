@@ -384,12 +384,12 @@ void calc()
   }
 
 void CalcNphone() {
-  // Loop - Calculates number of phones (nphone) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
+  // POTREBBE NON SERVIRE
+  //Loop - Calculates number of phones (nphone) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
   // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0) di quante stringhe piene c'erano.
   // ATTENZIONE ! Nel caso di nphone=0 
   // vale in presenza/assenza del numero Master
   // Quindi in realtà indica il numero di numeri An ausiliari
-
   /*
   phoneAut[0]=Master
   phoneAut[1]=A1
@@ -405,9 +405,48 @@ void CalcNphone() {
    }
   }
 
+void RestorePhones()
+ {
+  // At INIT copy EEPROM (EStr) to phoneAut
+  // ======== NO ======== At RUNTIME copy phoneAut to EStr (EEPROM)
+
+  // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
+  // Otherwise load the predefined number as defined in FLASH (phoneAut).
+  // EStr used to save EEPROM writing (16 char single phone)
+
+  // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
+  for (int i = 0; i < 4; i++)
+    {
+      read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
+
+      if (EStr[i][0] != '+')
+      {
+    // Checks a empty position in EEPROM. If yes breaks the loop and set nphone to i
+        nphone=i;
+        break; // Esce dal ciclo FOR
+      }
+        else if (EStr[i][0] == '+')
+      {
+        strcpy(phoneAut[i], EStr[i]); 
+// Copy the string from EStr to phoneAut. Write to phoneAut the number in EStrt.
+// Now the content in FLASH(phoneAut)=EEPROM=EStr
+      }
+    // Now the content in FLASH(phoneAut)=EEPROM=EStr
+    
+      
+      Serial.print ("EEPROM autorized phone n.");
+      Serial.print (i);
+      Serial.print (": ");
+      Serial.println (EStr[i]);
+   } 
+
+  Serial.print ("Numero di telefoni: ");
+  Serial.println(nphone);
+}
+
 void PhoneInit() {
   // At INIT copy EEPROM (EStr) to phoneAut
-  // At RUNTIME copy phoneAut to EStr (EEPROM)
+  // ======== NO ======== At RUNTIME copy phoneAut to EStr (EEPROM)
 
   // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
   // Otherwise load the predefined number as defined in FLASH (phoneAut).
@@ -473,8 +512,8 @@ void setup()
 // analogReference(DEFAULT);
     pinMode(PIN_RST, OUTPUT);
     initgsm(); // Inizializza GSM e Valore Tempo iniziale
-    EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - presenza rete
-    PhoneInit();  // At Power Up o Reset, inizializza Lista telefoni EEPROM e n. telefoni (nphone)
+    EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
+    RestorePhones();  // At Power Up o Reset, copia Lista telefoni da EEPROM su phoneAut e n. telefoni (nphone)
   }
 
 void loop()
