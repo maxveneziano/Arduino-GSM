@@ -386,16 +386,18 @@ void calc()
 void CalcNphone() {
   // Loop - Calculates number of phones (nphone) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
   // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0) di quante stringhe piene c'erano.
-  
-  /* Correggere in i<3 :
+  // ATTENZIONE ! Nel caso di nphone=0 
+  // vale in presenza/assenza del numero Master
+  // Quindi in realtà indica il numero di numeri An ausiliari
+
+  /*
   phoneAut[0]=Master
   phoneAut[1]=A1
   phoneAut[2]=A2
   phoneAut[3]=A3
-  .fn,sdnf,f
   */
   
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
        if (strlen(phoneAut[i]) == 0) {
         nphone=i;
         break;
