@@ -415,26 +415,26 @@ void RestorePhones()
   // EStr used to save EEPROM writing (16 char single phone)
 
   // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
-  for (int i = 0; i < 4; i++)
-    {
-      read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
-      if (EStr[i][0] != '+')
-      {
-    // Checks a empty position in EEPROM. If yes breaks the loop and set nphone to i
-        nphone=i;
-        break; // Esce dal ciclo FOR
-      }
-        else if (EStr[i][0] == '+')
-      {
-        strcpy(phoneAut[i], EStr[i]); 
-// Copy the string from EStr to phoneAut. Write to phoneAut the number in EStrt.
-// Now the content in FLASH(phoneAut)=EEPROM=EStr
-      }
-    // Now the content in FLASH(phoneAut)=EEPROM=EStr
-    
-      
-      Serial.print ("EEPROM autorized phone n.");
+for (int i = 0; i < 4; i++)
+{
+    read_String(6 + i*17, EStr[i]); // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
+
+    if (EStr[i][0] == '+')
+// Checks the presence of a Pnone number (*) in EEPROM. If not breaks the loop and set nphone to i
+    {
+        strcpy(phoneAut[i], EStr[i]);
+        nphone = i;
+// Copy the string from EStr to phoneAut
+// Now the content in RAM(phoneAut)=EEPROM=EStr
+// Counts valid phones
+    } 
+    else 
+    {
+        break;
+// Empty position
+    }
+      Serial.print ("Autorized phone n.");
       Serial.print (i);
       Serial.print (": ");
       Serial.println (EStr[i]);
@@ -457,18 +457,18 @@ void PhoneInit() {
       read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
       if ((EStr[i][0] != '+') && (strlen(phoneAut[i]) == 0)) {
-    // Checks a empty position in EEPROM and in FLASH. If yes breaks the loop and set nphone to i
+    // Checks a empty position in EEPROM and in RAM If yes breaks the loop and set nphone to i
         nphone=i;
         break;
       }
 
     // It works at INIT only, not at RUNTIME.
       else if ((EStr[i][0] == '+') && (strlen(phoneAut[i]) == 0)) {
-    // Checks a used position in EEPROM but enpty in (FLASH).
+    // Checks a used position in EEPROM but enpty in (RAM).
          strcpy(phoneAut[i], EStr[i]); 
     // Copy the string from EStr to phoneAut. Write to phoneAut the number in EStrt.
 
-        // Now the content in FLASH(phoneAut)=EEPROM=EStr
+        // Now the content in RAM(phoneAut)=EEPROM=EStr
       }
 
     // It works at RUNTIME only, not at INIT
