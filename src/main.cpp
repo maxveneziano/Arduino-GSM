@@ -457,7 +457,7 @@ void PhoneInit() {
       read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
       if ((EStr[i][0] != '+') && (strlen(phoneAut[i]) == 0)) {
-    // Checks a empty position in EEPROM and in RAM If yes breaks the loop and set Auxnphones to i
+    // Checks a empty position in EEPROM and in RAM. If yes breaks the loop and set Auxnphones to i
         Auxnphones=i;
         break;
       }
@@ -505,7 +505,7 @@ if (gprs.sendSMS(phone, outmessage))
 			              }
 }       
 
-//   ============  F U N Z I O N I    S T A N D A R D ======================
+//   ============  FUNZIONI    STANDARD ======================
 
 void setup()
   {
@@ -654,8 +654,10 @@ if (strcmp(phone, phoneAut[0]) == 0)
                         }
                 }
           } // Messaggio A numero valido
+} // Proveniente da numero MASTER
 
-  if (message[0] == 'S')
+
+    if (message[0] == 'S')
         {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
             // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
@@ -699,8 +701,57 @@ if (strcmp(phone, phoneAut[0]) == 0)
                   SendMsg();
                 }
         } // Messaggio S
-} // Proveniente da numero MASTER
-      } // Presenza Messaggi
+
+// =========================
+
+if (message[0] == 'N')
+        {
+            // Comando SMS "N" Ritorna i numeri autorizzati
+            // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
+
+            Auth=0;
+            // Inizializza Auth=0 prima dello scan per la verifica 
+            // di una richiesta proveniente da un numero autorizzato
+            for (int i = 0; i < Auxnphones + 1; i++)
+            {
+                if (strcmp(phone, phoneAut[i]) == 0)
+                {
+                  Auth=1;
+                  // Il numero richiedente è nella lista dei telefoni (autorizzati)
+                  break;
+                }
+            }
+            if (Auth)
+             {
+                  calc();	//	Calculates PowerVoltage Vrms - Supply voltage
+                  Serial.print(" Current Voltage: ");
+                  Serial.flush();
+                  Serial.println(PowerVoltage);
+                  Serial.flush();
+                  
+                  int power = (int)(PowerVoltage);
+                  sprintf(outmessage, "%s %d","CURRENT SUPPLY VOLTAGE: ", power);
+
+                  if (gprs.sendSMS(phone, outmessage))
+                      { 
+                          Serial.print("Send SMS Succeed!\r\n");
+		                  }   else
+                          {
+                              Serial.print("Send SMS failed!\r\n");
+			                    }
+            }
+            else
+                {
+// Notifica tentativo non autorizzato
+                  strcpy(outmessage, "Request from NOT AUTHORIZED number");
+                  Serial.println(outmessage);
+                  SendMsg();
+                }
+        } // Messaggio N
+
+// =======================       
+
+    } // Presenza Messaggi
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
                
