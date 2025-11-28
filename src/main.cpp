@@ -421,7 +421,6 @@ void RestorePhones()
     for (int i = 0; i < 4; i++)
     {
         read_String(6 + i*17, EStr[i]); // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
-
         if (EStr[i][0] == '+')
 // Checks the presence of a Pnone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
         {
@@ -705,7 +704,8 @@ if (strcmp(phone, phoneAut[0]) == 0)
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
                
-CalcNphone(); // Calcola/Aggiorna n. telefoni ausiliari (Auxnphones)
+// CalcNphone();
+// Calcola/Aggiorna n. telefoni ausiliari (Auxnphones)
 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
