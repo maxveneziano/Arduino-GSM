@@ -386,6 +386,14 @@ void calc()
 void CalcNphone() {
   // Loop - Calculates number of phones (nphone) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
   // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0) di quante stringhe piene c'erano.
+  
+  /* Correggere in i<3 :
+  phoneAut[0]=Master
+  phoneAut[1]=A1
+  phoneAut[2]=A2
+  phoneAut[3]=A3
+  */
+  
   for (int i = 0; i < 3; i++) {
        if (strlen(phoneAut[i]) == 0) {
         nphone=i;
@@ -535,25 +543,24 @@ void loop()
         {
           if (message[0] == 'D')
                   {
-// Delete in EEPROM predefined aux phone numbers except the Authorized
+// Delete in EEPROM and phoneAut auxiliaries phone numbers except the Authorized
 // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato (0)   
                     for (int i = 1; i < 3; i++)
                       {
                         phoneAut[i][0] = '\0';
                         writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
                       }
-                        nphone = 0;
-                        sprintf(outmessage, "%s","ALL THE AUXILIARY NUMBERS DELETED");
-                        Serial.println(outmessage);
-                        SendMsg();
+                    nphone = 0;
+                    sprintf(outmessage, "%s","ALL THE AUXILIARY NUMBERS DELETED");
+                    Serial.println(outmessage);
+                    SendMsg();
                   }
         }
 
-// Se messaggio SMS "E" arriva da qualsiasi telefono - NON DOCUMENTATO
+// Se messaggio SMS "E" arriva da qualsiasi telefono - COMANDO NON DOCUMENTATO
 if (message[0] == 'E')
-        {
-// Formato Numero corretto   
-// Delete in EEPROM all phone numbers - RISERVATO
+        {  
+// Delete in EEPROM and phoneAut all phone numbers - COMANDO RISERVATO
             for (int i = 0; i < 3; i++)
                   {
                       phoneAut[i][0] = '\0';
@@ -596,14 +603,12 @@ if (strcmp(phone, phoneAut[0]) == 0)
                     SendMsg();
                   } else
                         {
-                          printf(outmessage, "%s %s","WRONG INDEX ", message);
+                          printf(outmessage, "%s %s","INDEX OUTSIDE THE RANGE", message);
                           Serial.println(outmessage);
                           SendMsg();
                         }
                 }
           } // Messaggio A numero valido
- 
-      } // Messaggio A
 
   if (message[0] == 'S')
         {
@@ -649,6 +654,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
                   SendMsg();
                 }
         } // Messaggio S
+} // Proveniente da numero MASTER
       } // Presenza Messaggi
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
@@ -673,7 +679,7 @@ if (PowerVoltage <= 180.0)
 // Identifica transizione da 0 Rete Presente a 1 Rete Assente
         if (EEPROM.read(5) == 0)
             {
-              EEPROM.update(5, 1);  // Aggiorna EEPROM a 1 solo se non è già a 1
+              EEPROM.update(5, 1);  // Aggiorna EEPROM a 1
 			        int power = (int)(PowerVoltage);
               gprs.getDateTime(locDateTime);
               sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA RETE, ultima lettura:", power);
