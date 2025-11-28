@@ -105,7 +105,7 @@ char EStr[4][20];
 
 //          VARIABILI
 //phoneT => phone Temporaneo
-//Auxnphones => numero di phone
+//Auxnphones => numero di phones ausiliari
 //phoneI => Index phone (escluso Autorizzato (0) )
 //EStr => buffer EEPROM character array
 //Auth => 0= numero non autorizzato 1= numero autorizzato
@@ -385,10 +385,11 @@ void calc()
 
 void CalcNphone() {
   // POTREBBE NON SERVIRE
-  //Loop - Calculates number of phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
-  // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0) di quante stringhe piene c'erano.
+  //Loop - Calculates number of auxiliry phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
+  // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0)
+  // di quante stringhe di telefoni ausiliari c'erano.
   // ATTENZIONE ! Nel caso di Auxnphones=0 
-  // vale in presenza/assenza del numero Master
+  // vale anche in presenza/assenza del numero Master
   // Quindi in realtà indica il numero di numeri An ausiliari
   /*
   phoneAut[0]=Master
@@ -411,37 +412,37 @@ void RestorePhones()
   // ======== NO ======== At RUNTIME copy phoneAut to EStr (EEPROM)
 
   // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
-  // Otherwise load the predefined number as defined in FLASH (phoneAut).
+  // Otherwise load the predefined number as defined in RAM (phoneAut).
   // EStr used to save EEPROM writing (16 char single phone)
 
   // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
-Auxnphones = 0;
-for (int i = 0; i < 4; i++)
-{
-    read_String(6 + i*17, EStr[i]); // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
-
-    if (EStr[i][0] == '+')
-// Checks the presence of a Pnone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
+  // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
+  Auxnphones = 0;
+    for (int i = 0; i < 4; i++)
     {
-        strcpy(phoneAut[i], EStr[i]);
-        Auxnphones = i;
+        read_String(6 + i*17, EStr[i]); // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
+
+        if (EStr[i][0] == '+')
+// Checks the presence of a Pnone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
+        {
+            strcpy(phoneAut[i], EStr[i]);
+            Auxnphones = i;
 // Copy the string from EStr to phoneAut
 // Now the content in RAM(phoneAut)=EEPROM=EStr
 // Counts valid phones
-    } 
-    else 
-    {
+        } 
+        else 
+        {
         break;
 // Empty position
-    }
-      Serial.print ("Autorized phone n.");
-      Serial.print (i);
-      Serial.print (": ");
-      Serial.println (EStr[i]);
+        }
+    Serial.print ("Autorized phone n.");
+    Serial.print (i);
+    Serial.print (": ");
+    Serial.println (EStr[i]);
    } 
-
-  Serial.print ("Numero di telefoni ausiliari: ");
-  Serial.println(Auxnphones);
+  Serial.print ("Numero di telefoni ausiliari + Master: ");
+  Serial.println(Auxnphones+1);
 }
 
 void PhoneInit() {
@@ -511,9 +512,12 @@ void setup()
   {
 // analogReference(DEFAULT);
     pinMode(PIN_RST, OUTPUT);
-    initgsm(); // Inizializza GSM e Valore Tempo iniziale
-    EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
-    RestorePhones();  // At Power Up o Reset, copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
+    initgsm();
+// Inizializza GSM e Valore Tempo iniziale
+    EEPROM.update(5, 0);
+// Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
+    RestorePhones();
+// At Power Up o Reset, copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
   }
 
 void loop()
@@ -660,7 +664,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
             Auth=0;
             // Inizializza Auth=0 prima dello scan per la verifica 
             // di una richiesta proveniente da un numero autorizzato
-            for (int i = 0; i < Auxnphones; i++)
+            for (int i = 0; i < Auxnphones + 1; i++)
             {
                 if (strcmp(phone, phoneAut[i]) == 0)
                 {
@@ -701,7 +705,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
                
-CalcNphone(); // Calcola/Aggiorna n. telefoni (Auxnphones)
+CalcNphone(); // Calcola/Aggiorna n. telefoni ausiliari (Auxnphones)
 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
@@ -728,7 +732,7 @@ if (PowerVoltage <= 180.0)
 			        Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
-              for (int i = 0; i < Auxnphones; i++)
+              for (int i = 0; i < Auxnphones + 1; i++)
                     {
                         if (gprs.sendSMS(phoneAut[i], outmessage))
                           { 
@@ -755,7 +759,7 @@ if (PowerVoltage >= 200.0)
                     Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
-                    for (int i = 0; i < Auxnphones; i++)
+                    for (int i = 0; i < Auxnphones + 1; i++)
                           {
                               if (gprs.sendSMS(phoneAut[i], outmessage))
                                     { 
