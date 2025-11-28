@@ -392,6 +392,7 @@ void CalcNphone() {
   phoneAut[1]=A1
   phoneAut[2]=A2
   phoneAut[3]=A3
+  .fn,sdnf,f
   */
   
   for (int i = 0; i < 3; i++) {
