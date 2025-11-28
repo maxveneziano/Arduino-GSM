@@ -98,14 +98,14 @@ consentirebbe il reset fin dalla prima ora giusta del primo giorno */
 int day, rday=0, hh, mm;
 //Ora e Minuto di Reset giornaliero
 int ORAr = 03, MINr = 00;
-int size,nphone,phoneI;
+int size,Auxnphones,phoneI;
 //char EStr[20];  // buffer fisso da 20 caratteri
 int Auth;
 char EStr[4][20];
 
 //          VARIABILI
 //phoneT => phone Temporaneo
-//nphone => numero di phone
+//Auxnphones => numero di phone
 //phoneI => Index phone (escluso Autorizzato (0) )
 //EStr => buffer EEPROM character array
 //Auth => 0= numero non autorizzato 1= numero autorizzato
@@ -385,9 +385,9 @@ void calc()
 
 void CalcNphone() {
   // POTREBBE NON SERVIRE
-  //Loop - Calculates number of phones (nphone) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
+  //Loop - Calculates number of phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
   // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0) di quante stringhe piene c'erano.
-  // ATTENZIONE ! Nel caso di nphone=0 
+  // ATTENZIONE ! Nel caso di Auxnphones=0 
   // vale in presenza/assenza del numero Master
   // Quindi in realtà indica il numero di numeri An ausiliari
   /*
@@ -399,7 +399,7 @@ void CalcNphone() {
   
   for (int i = 0; i < 4; i++) {
        if (strlen(phoneAut[i]) == 0) {
-        nphone=i;
+        Auxnphones=i;
         break;
       }
    }
@@ -415,16 +415,16 @@ void RestorePhones()
   // EStr used to save EEPROM writing (16 char single phone)
 
   // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
-
+Auxnphones = 0;
 for (int i = 0; i < 4; i++)
 {
     read_String(6 + i*17, EStr[i]); // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
     if (EStr[i][0] == '+')
-// Checks the presence of a Pnone number (*) in EEPROM. If not breaks the loop and set nphone to i
+// Checks the presence of a Pnone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
     {
         strcpy(phoneAut[i], EStr[i]);
-        nphone = i;
+        Auxnphones = i;
 // Copy the string from EStr to phoneAut
 // Now the content in RAM(phoneAut)=EEPROM=EStr
 // Counts valid phones
@@ -440,8 +440,8 @@ for (int i = 0; i < 4; i++)
       Serial.println (EStr[i]);
    } 
 
-  Serial.print ("Numero di telefoni: ");
-  Serial.println(nphone);
+  Serial.print ("Numero di telefoni ausiliari: ");
+  Serial.println(Auxnphones);
 }
 
 void PhoneInit() {
@@ -457,8 +457,8 @@ void PhoneInit() {
       read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
       if ((EStr[i][0] != '+') && (strlen(phoneAut[i]) == 0)) {
-    // Checks a empty position in EEPROM and in RAM If yes breaks the loop and set nphone to i
-        nphone=i;
+    // Checks a empty position in EEPROM and in RAM If yes breaks the loop and set Auxnphones to i
+        Auxnphones=i;
         break;
       }
 
@@ -490,7 +490,7 @@ void PhoneInit() {
    } 
 
   Serial.print ("Numero di telefoni: ");
-  Serial.println(nphone);
+  Serial.println(Auxnphones);
 }
 
 void SendMsg()
@@ -513,7 +513,7 @@ void setup()
     pinMode(PIN_RST, OUTPUT);
     initgsm(); // Inizializza GSM e Valore Tempo iniziale
     EEPROM.update(5, 0); // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
-    RestorePhones();  // At Power Up o Reset, copia Lista telefoni da EEPROM su phoneAut e n. telefoni (nphone)
+    RestorePhones();  // At Power Up o Reset, copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
   }
 
 void loop()
@@ -592,7 +592,7 @@ void loop()
                         phoneAut[i][0] = '\0';
                         writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
                       }
-                    nphone = 0;
+                    Auxnphones = 0;
                     sprintf(outmessage, "%s","ALL THE AUXILIARY NUMBERS DELETED");
                     Serial.println(outmessage);
                     SendMsg();
@@ -608,7 +608,7 @@ if (message[0] == 'E')
                       phoneAut[i][0] = '\0';
                       writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
                   }
-            nphone = 0;
+            Auxnphones = 0;
             sprintf(outmessage, "%s","ALL NUMBERS DELETED");
             Serial.println(outmessage);
             SendMsg();                                   
@@ -660,7 +660,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
             Auth=0;
             // Inizializza Auth=0 prima dello scan per la verifica 
             // di una richiesta proveniente da un numero autorizzato
-            for (int i = 0; i < nphone; i++)
+            for (int i = 0; i < Auxnphones; i++)
             {
                 if (strcmp(phone, phoneAut[i]) == 0)
                 {
@@ -701,7 +701,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
                
-CalcNphone(); // Calcola/Aggiorna n. telefoni (nphone)
+CalcNphone(); // Calcola/Aggiorna n. telefoni (Auxnphones)
 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
@@ -728,7 +728,7 @@ if (PowerVoltage <= 180.0)
 			        Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
-              for (int i = 0; i < nphone; i++)
+              for (int i = 0; i < Auxnphones; i++)
                     {
                         if (gprs.sendSMS(phoneAut[i], outmessage))
                           { 
@@ -755,7 +755,7 @@ if (PowerVoltage >= 200.0)
                     Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
-                    for (int i = 0; i < nphone; i++)
+                    for (int i = 0; i < Auxnphones; i++)
                           {
                               if (gprs.sendSMS(phoneAut[i], outmessage))
                                     { 
