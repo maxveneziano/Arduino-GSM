@@ -554,7 +554,6 @@ void loop()
                 Serial.println(message);
 
 // ============================
-
 // Se messaggio SMS "M" arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
@@ -583,10 +582,13 @@ void loop()
                             } // Fine messaggio "M"           
                     } // Fine - Proveniente da Master o vuoto
 
-// Se messaggio SMS "D" arriva dal numero telefonico autorizzato Master [0]
+// #################################
+// Arriva da Master[0] ?
+
+// Arriva dal numero telefonico autorizzato Master [0]
     if (strcmp(phone, phoneAut[0]) == 0)
         {
-
+// Se messaggio SMS è di tipo "D"
           if (message[0] == 'D')
                   {
 // Delete in EEPROM and phoneAut auxiliaries phone numbers except the Authorized
@@ -601,9 +603,47 @@ void loop()
                     Serial.println(outmessage);
                     SendMsg();
                   } // Fine comando D
+// ===========================================
 
+// Se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
+//if (strcmp(phone, phoneAut[0]) == 0)
+//{ 
+// Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
+    if (message[0] == 'A')
+          {
+// Formato Numero errato ?      
+            if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
+              {
+                sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
+                Serial.println(outmessage);
+                SendMsg();
+              } else
+                {
+// Formato Numero corretto
+                  phoneI = atoi(message + 1);  // es. '1' → 1 perchè si ferma al primo carattere non numerico (+)
+// Trova l'indice
+                  if (phoneI >= 1 && phoneI <= 3)
+// Per sicurezza solo numeri ausiliari A1 A2 A3
+                  {
+                    strncpy(phoneT, message + 2, strlen(message) - 2);
+                    phoneT[strlen(message -2)] = '\0';
+                    strcpy(phoneAut[phoneI], phoneT);
+                    writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
+
+                    sprintf(outmessage, "%s %d %s %s","A", phoneI, "TELEPHONE NUMBER SAVED ", message);
+                    Serial.println(outmessage);
+                    SendMsg();
+                  } else
+                        {
+                          printf(outmessage, "%s %s","INDEX OUTSIDE THE RANGE", message);
+                          Serial.println(outmessage);
+                          SendMsg();
+                        }
+                }
+          } // Fine - Comando A
 // =========================
 
+// Se messaggio SMS è di tipo "N"
             if (message[0] == 'N')
                 {
 // Comando SMS "N" Ritorna i numeri autorizzati
@@ -651,10 +691,10 @@ void loop()
 
 // ###################################
                   
-        } // Fine arriva dal numero telefonico autorizzato Master [0]
+        } // Fine - Arriva dal numero telefonico autorizzato Master [0]
 
 
-        // Se messaggio SMS "E" arriva da qualsiasi telefono - COMANDO NON DOCUMENTATO
+        // Se messaggio SMS "E" arriva da QUALSIASI TELEFONO - COMANDO NON DOCUMENTATO
             if (message[0] == 'E')
         {  
 // Delete in EEPROM and phoneAut all phone numbers - COMANDO RISERVATO
@@ -668,51 +708,10 @@ void loop()
                     Serial.println(outmessage);
                     SendMsg();                                   
         } // Fine Messaggio E
-// ===========================================
 
-// Se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
-//if (strcmp(phone, phoneAut[0]) == 0)
-//{ 
-// Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
-    if (message[0] == 'A')
-          {
-// Formato Numero errato ?      
-            if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
-              {
-                sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
-                Serial.println(outmessage);
-                SendMsg();
-              } else
-                {
-// Formato Numero corretto
-                  phoneI = atoi(message + 1);  // es. '1' → 1 perchè si ferma al primo carattere non numerico (+)
-// Trova l'indice
-                  if (phoneI >= 1 && phoneI <= 3)
-// Per sicurezza solo numeri ausiliari A1 A2 A3
-                  {
-                    strncpy(phoneT, message + 2, strlen(message) - 2);
-                    phoneT[strlen(message -2)] = '\0';
-                    strcpy(phoneAut[phoneI], phoneT);
-                    writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
-
-                    sprintf(outmessage, "%s %d %s %s","A", phoneI, "TELEPHONE NUMBER SAVED ", message);
-                    Serial.println(outmessage);
-                    SendMsg();
-                  } else
-                        {
-                          printf(outmessage, "%s %s","INDEX OUTSIDE THE RANGE", message);
-                          Serial.println(outmessage);
-                          SendMsg();
-                        }
-                }
-          } // Messaggio A numero valido
-
-
-
-//} // Proveniente da numero MASTER
-
-
-// Proveniente da numero Autorizzato
+        // ####################################
+        
+// Proveniente da numero Autorizzato (Master o  Ausiliario)
     if (message[0] == 'S')
         {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
@@ -756,7 +755,7 @@ void loop()
                   Serial.println(outmessage);
                   SendMsg();
                 }
-        } // Messaggio S
+        } // Fine - Messaggio S
 
 
 
