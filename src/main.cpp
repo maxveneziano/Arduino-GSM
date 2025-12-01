@@ -386,8 +386,8 @@ void calc()
 
 void CalcNphone()
  {
-  // POTREBBE NON SERVIRE
-  //Loop - Calculates number of auxiliry phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
+  // ==================== NO - PUO ESSERE RIMOSSA ====================
+  //Loop - Calculates number of auxiliary phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
   // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0)
   // di quante stringhe di telefoni ausiliari c'erano.
   // ATTENZIONE ! Nel caso di Auxnphones=0 
@@ -411,10 +411,10 @@ void CalcNphone()
 
 void ListAutPhones()
  {
-  // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
+  // If in phoneout the first char of an entry (phone) is '+' it is considered that a phone is loaded
 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
-  // Because it is called from the CMD S, it is sure that the MASTER number is present 
+  // Because it is called from the CMD N, it is sure that the MASTER number is present 
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
     Auxnphones = 0;
@@ -441,6 +441,9 @@ void ListAutPhones()
         Serial.print (": ");
         Serial.println (phoneAut[i]);
     }
+
+    SendMsg();
+
     Serial.print ("Numero di telefoni ausiliari + Master: ");
     Serial.println(Auxnphones+1);
 }
@@ -486,7 +489,7 @@ void ListAutPhones()
 
 void PhoneInit() {
   // At INIT copy EEPROM (EStr) to phoneAut
-  // ======== NO ======== At RUNTIME copy phoneAut to EStr (EEPROM)
+  // ======== NO - PUO ESSERE RIMOSSA ======== At RUNTIME copy phoneAut to EStr (EEPROM)
 
   // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
   // Otherwise load the predefined number as defined in FLASH (phoneAut).
@@ -613,7 +616,7 @@ void loop()
                                           strncpy(phoneT, message + 1, strlen(message) - 1);
                                           phoneT[strlen(message) - 1] = '\0';
                                           strcpy(phoneAut[0], phoneT);
-                                          writeString(6 + phoneI * 17, phoneT);
+                                          writeString(6, phoneT);
 // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
                                           sprintf(outmessage, "%s %s","M TELEPHONE NUMBER SAVED", message);
                                           Serial.println(outmessage);
