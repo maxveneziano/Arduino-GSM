@@ -678,7 +678,7 @@ void loop()
                     SendMsg();
                   } else
                         {
-                          printf(outmessage, "%s %s","INDEX OUTSIDE THE RANGE", message);
+                          sprintf(outmessage, "%s %s","INDEX OUTSIDE THE RANGE", message);
                           Serial.println(outmessage);
                           SendMsg();
                         }
