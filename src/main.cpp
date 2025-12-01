@@ -580,12 +580,13 @@ void loop()
                                           Serial.println(outmessage);
                                           SendMsg(); 
                                       }
-                            }             
-                    }
+                            } // Fine messaggio "M"           
+                    } // Fine - Proveniente da Master o vuoto
 
 // Se messaggio SMS "D" arriva dal numero telefonico autorizzato Master [0]
     if (strcmp(phone, phoneAut[0]) == 0)
         {
+
           if (message[0] == 'D')
                   {
 // Delete in EEPROM and phoneAut auxiliaries phone numbers except the Authorized
@@ -599,28 +600,79 @@ void loop()
                     sprintf(outmessage, "%s","ALL THE AUXILIARY NUMBERS DELETED");
                     Serial.println(outmessage);
                     SendMsg();
-                  }
-        }
+                  } // Fine comando D
 
-// Se messaggio SMS "E" arriva da qualsiasi telefono - COMANDO NON DOCUMENTATO
-if (message[0] == 'E')
+// =========================
+
+            if (message[0] == 'N')
+                {
+// Comando SMS "N" Ritorna i numeri autorizzati
+// SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0]   
+
+                    Auth=0;
+// Inizializza Auth=0 prima dello scan per la verifica 
+// di una richiesta proveniente da un numero autorizzato
+                    for (int i = 0; i < Auxnphones + 1; i++)
+                        {
+                            if (strcmp(phone, phoneAut[i]) == 0)
+                            {
+                                Auth=1;
+// Il numero richiedente è nella lista dei telefoni (autorizzati)
+                                break;
+                            }
+                        }
+                    if (Auth)
+                        {
+                            calc();	//	Calculates PowerVoltage Vrms - Supply voltage
+                            Serial.print(" Current Voltage: ");
+                            Serial.flush();
+                            Serial.println(PowerVoltage);
+                            Serial.flush();
+                  
+                    int power = (int)(PowerVoltage);
+                    sprintf(outmessage, "%s %d","CURRENT SUPPLY VOLTAGE: ", power);
+
+                    if (gprs.sendSMS(phone, outmessage))
+                            { 
+                                Serial.print("Send SMS Succeed!\r\n");
+		                    }   else
+                                {
+                                    Serial.print("Send SMS failed!\r\n");
+			                    }
+                        }
+                    else
+                        {
+// Notifica tentativo non autorizzato
+                            strcpy(outmessage, "Request from NOT AUTHORIZED number");
+                            Serial.println(outmessage);
+                            SendMsg();
+                        }
+                } // Fine - Messaggio N
+
+// ###################################
+                  
+        } // Fine arriva dal numero telefonico autorizzato Master [0]
+
+
+        // Se messaggio SMS "E" arriva da qualsiasi telefono - COMANDO NON DOCUMENTATO
+            if (message[0] == 'E')
         {  
 // Delete in EEPROM and phoneAut all phone numbers - COMANDO RISERVATO
-            for (int i = 0; i < 3; i++)
-                  {
-                      phoneAut[i][0] = '\0';
-                      writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
-                  }
-            Auxnphones = 0;
-            sprintf(outmessage, "%s","ALL NUMBERS DELETED");
-            Serial.println(outmessage);
-            SendMsg();                                   
-        }
-
+                    for (int i = 0; i < 3; i++)
+                            {
+                                phoneAut[i][0] = '\0';
+                                 writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
+                            }
+                    Auxnphones = 0;
+                    sprintf(outmessage, "%s","ALL NUMBERS DELETED");
+                    Serial.println(outmessage);
+                    SendMsg();                                   
+        } // Fine Messaggio E
 // ===========================================
+
 // Se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
-if (strcmp(phone, phoneAut[0]) == 0)
- { 
+//if (strcmp(phone, phoneAut[0]) == 0)
+//{ 
 // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
     if (message[0] == 'A')
           {
@@ -654,9 +706,13 @@ if (strcmp(phone, phoneAut[0]) == 0)
                         }
                 }
           } // Messaggio A numero valido
-} // Proveniente da numero MASTER
 
 
+
+//} // Proveniente da numero MASTER
+
+
+// Proveniente da numero Autorizzato
     if (message[0] == 'S')
         {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
@@ -702,54 +758,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
                 }
         } // Messaggio S
 
-// =========================
 
-if (message[0] == 'N')
-        {
-            // Comando SMS "N" Ritorna i numeri autorizzati
-            // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
-
-            Auth=0;
-            // Inizializza Auth=0 prima dello scan per la verifica 
-            // di una richiesta proveniente da un numero autorizzato
-            for (int i = 0; i < Auxnphones + 1; i++)
-            {
-                if (strcmp(phone, phoneAut[i]) == 0)
-                {
-                  Auth=1;
-                  // Il numero richiedente è nella lista dei telefoni (autorizzati)
-                  break;
-                }
-            }
-            if (Auth)
-             {
-                  calc();	//	Calculates PowerVoltage Vrms - Supply voltage
-                  Serial.print(" Current Voltage: ");
-                  Serial.flush();
-                  Serial.println(PowerVoltage);
-                  Serial.flush();
-                  
-                  int power = (int)(PowerVoltage);
-                  sprintf(outmessage, "%s %d","CURRENT SUPPLY VOLTAGE: ", power);
-
-                  if (gprs.sendSMS(phone, outmessage))
-                      { 
-                          Serial.print("Send SMS Succeed!\r\n");
-		                  }   else
-                          {
-                              Serial.print("Send SMS failed!\r\n");
-			                    }
-            }
-            else
-                {
-// Notifica tentativo non autorizzato
-                  strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                  Serial.println(outmessage);
-                  SendMsg();
-                }
-        } // Messaggio N
-
-// =======================       
 
     } // Presenza Messaggi
   } // VERIFICA OGNI 10 secondi (intervalcc)
