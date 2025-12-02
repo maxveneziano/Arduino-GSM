@@ -429,6 +429,14 @@ void ListAutPhones()
 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
   // Because it is called from the CMD N, it is sure that the MASTER number is present 
+  /* 
+    Elenca e stampa i telefoni autorizzati.
+
+    Crea un SMS con tutti i numeri.
+
+    Aggiorna Auxnphones.
+
+    Invia l’elenco tramite SMS al numero che ha richiesto l’informazione (il Master). */
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
     Auxnphones = 0;
@@ -440,6 +448,7 @@ void ListAutPhones()
 // Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
             {
                 Auxnphones = i;
+ //               idx=i;
 // Counts valid phones
             } 
         else 
@@ -448,19 +457,20 @@ void ListAutPhones()
 // Empty position
             }
 // sprintf(outmess, "%s %d %s %s %s","Autorized phone n.", i, ": ", (phoneAut[i]), "\n");
-        sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
-        strcat(outmessage, outmess);
+    sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
+    strcat(outmessage, outmess);
 
-        Serial.print ("Autorized phone n.");
-        Serial.print (i);
-        Serial.print (": ");
-        Serial.println (phoneAut[i]);
+    Serial.print ("Autorized phone n.");
+    Serial.print (i);
+    Serial.print (": ");
+    Serial.println (phoneAut[i]);
     }
 
-    SendMsg();
 
     Serial.print ("Numero di telefoni ausiliari + Master: ");
     Serial.println(Auxnphones+1);
+    SendMsg();
+
 }
 
 
@@ -690,25 +700,14 @@ void loop()
 
 // ==============================================
 
-// Se messaggio SMS è di tipo "N"
+// Se messaggio SMS è di tipo "N" e la richiesta proviene dal MASTER
             if (message[0] == 'N')
                 {
 // Comando SMS "N" Ritorna i numeri autorizzati
 // SOLO se il messaggio SMS arriva da un numero autorizzato.(Master [0] o Ausiliario [1-3])  
+// e la richiesta proveniente dal un numero autorizzato MASTER
 
-                    Auth=0;
-// Inizializza Auth=0 prima dello scan per la verifica 
-// di una richiesta proveniente da un numero autorizzato
-                    for (int i = 0; i < Auxnphones + 1; i++)
-                        {
-                            if (strcmp(phone, phoneAut[i]) == 0)
-                            {
-                                Auth=1;
-// Il numero richiedente è nella lista dei telefoni (autorizzati)
-                                break;
-                            }
-                        }
-                    if (Auth)
+                    if (strcmp(phone, phoneAut[0]) == 0)
                         {
                             ListAutPhones();                    
                         }
