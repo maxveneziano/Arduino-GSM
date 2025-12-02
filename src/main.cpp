@@ -22,6 +22,35 @@
   - OK Prevedere SMS di conferma comandi (richiesta eseguita per il n.)
 
 
+     .......................... Scopo del codice
+
+Il programma:
+
+- Monitora la tensione di rete tramite un trasformatore e la libreria EmonLib.
+
+- Notifica via SMS a numeri autorizzati (Master + fino a 3 ausiliari) i seguenti eventi:
+
+- Mancanza di rete (tensione < 180V)
+
+- Ripresa rete (tensione > 200V)
+
+- Gestisce comandi via SMS:
+
+- M+numero → Modifica numero Master
+
+- - A[n]+numero → Aggiunge/Sostituisce numero ausiliario
+
+- D → Cancella numeri ausiliari
+
+- N → Elenca numeri autorizzati
+
+- S → Invia stato tensione
+
+- E → Comando riservato, cancella tutti i numeri
+
+- Salva e legge i numeri autorizzati su EEPROM per persistenza.
+
+
   Comandi SMS
   Numeri GSM 
   Italia    totale cifre 12 senza +
