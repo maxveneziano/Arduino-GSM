@@ -11,7 +11,8 @@
   - OK    Comando SMS (S) per stato Power Supply e SMS a numero richiedente
           + Messaggio SMS per richiedente non autorizzato 
   - OK    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
-  - Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
+  - OK da Master    Prevedere la richiesta SMS (CMD N) per vedere quanti e quali numeri sono impostati
+          + Messaggio SMS per richiedente non autorizzato 
   - NON Ancora (disabilitazione o abilitazione notifica a numero da richiesta SMS)    OK Cancellazione numeri ausiliari
   - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS) OK Cancellazione numeri ausiliari
   - NON Ancora set/reset pin uscita da SMS numero richiedente abilitato
