@@ -120,19 +120,19 @@ Il programma:
  /* M. Veneziano 2020 Voltage calibration Transformer + Partition. Set for each specific transformer */ 
 #define VOLT_CAL 136.0 
 #define MESSAGE_LENGTH 160
-#define BUFFER_LENGTH 50
+#define BUFFER_LENGTH 25
 char message[MESSAGE_LENGTH]; // Message = 160 Char
 char locDateTime[BUFFER_LENGTH];// Local Date and Time = 50 Char
 /* Giorno, Ora e Minuto
 Reset Day (rday) a 0 perchè diverso da 1 e da 31 e quindi 
 consentirebbe il reset fin dalla prima ora giusta del primo giorno */
-int day, rday=0, hh, mm;
+uint8_t day, rday=0, hh, mm;
 //Ora e Minuto di Reset giornaliero
-int ORAr = 03, MINr = 00;
-int size,Auxnphones,phoneI;
+uint8_t ORAr = 03, MINr = 00;
+uint8_t Auxnphones,phoneI;
 //char EStr[20];  // buffer fisso da 20 caratteri
-int Auth;
-char EStr[4][20];
+uint8_t Auth;
+
 
 //          VARIABILI
 //phoneT => phone Temporaneo
@@ -141,9 +141,9 @@ char EStr[4][20];
 //EStr => buffer EEPROM character array
 //Auth => 0= numero non autorizzato 1= numero autorizzato
 
-int messageIndex = 0;
+uint8_t messageIndex = 0;
 float PowerVoltage;
-char phone[16], phoneT[16];
+char phone[16], phoneT[16], EStr[4][16];
 
 char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
@@ -214,7 +214,7 @@ void initgsm()
   
   emon1.voltage(0, VOLT_CAL, 1.7);  // Defines Voltage: input pin, Voltage calibration, phase_shift
   //emon1.current(0, 32);
-  for (int i = 0; i < 5; i++)
+  for (uint8_t i = 0; i < 5; i++)
    { //clean up data
     emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave with a 2000ms Timeout
    }
@@ -245,7 +245,7 @@ void initgsm()
   messageIndex = gprs.isSMSunread();
     delay(2000);
 
-  for (int i = messageIndex; i > 0; i--)
+  for (uint8_t i = messageIndex; i > 0; i--)
     {
         gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
         delay(2000);
@@ -280,7 +280,7 @@ void initgsm()
     delay(2000);
 
   // Legge tutti gli SMS e usa i dati del primo
-  for (int i = messageIndex; i > 0; i--)
+  for (uint8_t i = messageIndex; i > 0; i--)
     {
     gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
     delay(2000);
@@ -313,12 +313,12 @@ void initgsm()
     Serial.flush();
     if (sim900_check_with_cmd (outmessage, "OK", CMD))
       {
-        Serial.println ("A buon Fine");
+        Serial.println (F("A buon Fine"));
         Serial.flush();
       }
       else
         {
-            Serial.println ("Non a buon Fine");
+            Serial.println (F ("Non a buon Fine"));
             Serial.flush();
     // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
         } 
@@ -350,7 +350,7 @@ void initgsm()
   if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
     {
 // Set message mode to ASCII
-      Serial.println(" Set ASCII TEXT mode for SMS....");
+      Serial.println (F (" Set ASCII TEXT mode for SMS...."));
     }
 
    delay(500);  
@@ -362,18 +362,18 @@ void SendMsg()
 {
 if (gprs.sendSMS(phone, outmessage))
                   { 
-                        Serial.print("Send SMS Succeed!\r\n");
+                        Serial.print(F("Send SMS Succeed!\r\n"));
 		              }
                        else
                     {
-                        Serial.print("Send SMS failed!\r\n");
+                        Serial.print(F ("Send SMS failed!\r\n"));
 			              }
 }
 
 
-void writeString(int offs, const char *edata)
+void writeString(uint8_t offs, const char *edata)
   {
-    int i = 0;
+    uint8_t i = 0;
     while (edata[i] != '\0' && i < 20) {
     EEPROM.write(offs + i, edata[i]);
     i++;
@@ -381,9 +381,9 @@ void writeString(int offs, const char *edata)
   EEPROM.write(offs + i, '\0'); // terminatore
   }
 
-void read_String(int offs, char *dest)
+void read_String(uint8_t offs, char *dest)
   {
-    int len = 0;
+    uint8_t len = 0;
     unsigned char k;
 
   do
@@ -406,11 +406,11 @@ bool TimeToReset () {
   hh = (locDateTime[10] - '0') * 10 + (locDateTime[11] - '0');
   mm = (locDateTime[13] - '0') * 10 + (locDateTime[14] - '0');
 
-  Serial.print("ORA, MIN --> ");
+  Serial.print (F("ORA, MIN --> "));
   Serial.print(hh);
-  Serial.print(":");
+  Serial.print(F(":"));
   Serial.print(mm);
-  Serial.println(" <--");
+  Serial.println (F(" <--"));
   if (hh == ORAr && (day != rday)) {
     rday = day;
     return true;
@@ -444,7 +444,7 @@ void CalcNphone()
   phoneAut[3]=A3
   */
   
-  for (int i = 0; i < 4; i++) {
+  for (uint8_t i = 0; i < 4; i++) {
        if (strlen(phoneAut[i]) == 0)
          {
             Auxnphones=i;
@@ -472,7 +472,7 @@ void ListAutPhones()
     Auxnphones = 0;
     outmessage [0] = '\0';
     outmess [0] = '\0';
-    for (int i = 0; i < 4; i++)
+    for (uint8_t i = 0; i < 4; i++)
     {
         if (phoneAut[i][0] == '+')
 // Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
@@ -490,15 +490,15 @@ void ListAutPhones()
     sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
     strcat(outmessage, outmess);
 
-    Serial.print ("Autorized phone n.");
+    Serial.print (F("Autorized phone n."));
     Serial.print (i);
-    Serial.print (": ");
+    Serial.print (F (": "));
     Serial.println (phoneAut[i]);
     }
 
 
-    Serial.print ("Numero di telefoni ausiliari + Master: ");
-    Serial.println(Auxnphones+1);
+    Serial.print (F ("Numero di telefoni ausiliari + Master: "));
+    Serial.println (Auxnphones+1);
     SendMsg();
 
 }
@@ -515,7 +515,7 @@ void ListAutPhones()
   // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
   Auxnphones = 0;
-    for (int i = 0; i < 4; i++)
+    for (uint8_t i = 0; i < 4; i++)
     {
         read_String(6 + i*17, EStr[i]); // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
         if (EStr[i][0] == '+')
@@ -532,13 +532,13 @@ void ListAutPhones()
         break;
 // Empty position
         }
-    Serial.print ("Autorized phone n.");
+    Serial.print (F ("Autorized phone n."));
     Serial.print (i);
-    Serial.print (": ");
+    Serial.print (F (": "));
     Serial.println (phoneAut[i]);
 // Serial.println (EStr[i]);
    } 
-  Serial.print ("Numero di telefoni ausiliari + Master: ");
+  Serial.print (F ("Numero di telefoni ausiliari + Master: "));
   Serial.println(Auxnphones+1);
 }
 
@@ -551,7 +551,7 @@ void PhoneInit() {
   // EStr used to save EEPROM writing (16 char single phone)
 
   // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
-  for (int i = 0; i < 4; i++) {
+  for (uint8_t i = 0; i < 4; i++) {
       read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
 
       if ((EStr[i][0] != '+') && (strlen(phoneAut[i]) == 0)) {
@@ -580,14 +580,14 @@ void PhoneInit() {
     // Now the content in FLASH(phoneAut)=EEPROM=EStr
       }
       
-      Serial.print ("EEPROM autorized phone n.");
+      Serial.print (F("EEPROM autorized phone n."));
       Serial.print (i);
-      Serial.print (": ");
+      Serial.print (F (": "));
       Serial.println (EStr[i]);
       
    } 
 
-  Serial.print ("Numero di telefoni: ");
+  Serial.print (F("Numero di telefoni: "));
   Serial.println(Auxnphones);
 }       
 
@@ -628,15 +628,15 @@ void loop()
           { 
 // At least, there is one UNREAD SMS
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
-                Serial.print("At least, there is one UNREAD SMS");
+                Serial.print (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
     
-                Serial.print("From number: ");
+                Serial.print (F ("From number: "));
                 Serial.println(phone);
-                Serial.print("Datetime: ");
+                Serial.print (F ("Datetime: "));
                 Serial.println(datetime);
-                Serial.print("Received Message: ");
+                Serial.print (F ("Received Message: "));
                 Serial.println(message);
 
 // ============================
@@ -679,7 +679,7 @@ void loop()
                   {
 // Delete in EEPROM and phoneAut auxiliaries phone numbers except the Authorized Master
 // Comando SMS "D" CANCELLA tutti i cellulari eccetto il numero autorizzato Master[0]   
-                    for (int i = 1; i < 4; i++)
+                    for (uint8_t i = 1; i < 4; i++)
                       {
                         phoneAut[i][0] = '\0';
                         writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
@@ -712,7 +712,7 @@ void loop()
 // Per sicurezza solo numeri ausiliari A1 A2 A3
                   {
                     strncpy(phoneT, message + 2, strlen(message) - 2);
-                    phoneT[strlen(message - 2)] = '\0';
+                    phoneT[strlen(message) - 2] = '\0';
                     strcpy(phoneAut[phoneI], phoneT);
                     writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
 
@@ -759,7 +759,7 @@ void loop()
             if (message[0] == 'E')
         {  
 // Delete in EEPROM and phoneAut all phone numbers - COMANDO RISERVATO
-                    for (int i = 0; i < 4; i++)
+                    for (uint8_t i = 0; i < 4; i++)
                             {
                                 phoneAut[i][0] = '\0';
                                  writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
@@ -781,7 +781,7 @@ void loop()
             Auth=0;
             // Inizializza Auth=0 prima dello scan per la verifica 
             // di una richiesta proveniente da un numero autorizzato
-            for (int i = 0; i < Auxnphones + 1; i++)
+            for (uint8_t i = 0; i < Auxnphones + 1; i++)
             {
                 if (strcmp(phone, phoneAut[i]) == 0)
                 {
@@ -793,7 +793,7 @@ void loop()
             if (Auth)
              {
                   calc();	//	Calculates PowerVoltage Vrms - Supply voltage
-                  Serial.print(" Current Voltage: ");
+                  Serial.print (F (" Current Voltage: "));
                   Serial.flush();
                   Serial.println(PowerVoltage);
                   Serial.flush();
@@ -803,10 +803,10 @@ void loop()
 
                   if (gprs.sendSMS(phone, outmessage))
                       { 
-                          Serial.print("Send SMS Succeed!\r\n");
+                          Serial.print (F ("Send SMS Succeed!\r\n"));
 		                  }   else
                           {
-                              Serial.print("Send SMS failed!\r\n");
+                              Serial.print (F ("Send SMS failed!\r\n"));
 			                    }
             }
             else
@@ -832,7 +832,7 @@ void loop()
 // ============ VISUALIZZA STATO SU SERIALE =====================
 
 calc();				//	Calculates PowerVoltage Vrms
-Serial.print(" Current Voltage: ");
+Serial.print (F (" Current Voltage: "));
 Serial.flush();
 Serial.println(PowerVoltage);
 Serial.flush();
@@ -854,14 +854,14 @@ if (PowerVoltage <= 180.0)
               Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
-              for (int i = 0; i < Auxnphones + 1; i++)
+              for (uint8_t i = 0; i < Auxnphones + 1; i++)
                     {
                         if (gprs.sendSMS(phoneAut[i], outmessage))
                           { 
-                              Serial.print("Send SMS Succeed!\r\n");
+                              Serial.print (F ("Send SMS Succeed!\r\n"));
 		                      } else
                               {
-                                  Serial.print("Send SMS failed!\r\n");
+                                  Serial.print (F ("Send SMS failed!\r\n"));
 			                        }
                     }
 		        }
@@ -883,15 +883,15 @@ if (PowerVoltage >= 200.0)
                     Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
-                    for (int i = 0; i < Auxnphones + 1; i++)
+                    for (uint8_t i = 0; i < Auxnphones + 1; i++)
                           {
                               if (gprs.sendSMS(phoneAut[i], outmessage))
                                     { 
-                                      Serial.print("Send SMS Succeed!\r\n");
+                                      Serial.print (F ("Send SMS Succeed!\r\n"));
 		                                }
                                     else
                                       {
-                                        Serial.print("Send SMS failed!\r\n");
+                                        Serial.print (F("Send SMS failed!\r\n"));
 			                                } // close the Else
 
                           } // Close the for 1
@@ -905,13 +905,13 @@ if (currentMillis - previousMillisora > intervalora)
         {
             previousMillisora = currentMillis;
             gprs.getDateTime(locDateTime);
-            Serial.print("Verifica ogni 15 Min del RESET Data e Ora: ");
+            Serial.print (F ("Verifica ogni 15 Min del RESET Data e Ora: "));
             Serial.println(locDateTime);
-            Serial.println("Ora chiama TimeToReset per verificare se è il momento di resettare");
+            Serial.println (F ("Ora chiama TimeToReset per verificare se è il momento di resettare"));
 	
             if (TimeToReset() == true)
                 {
-	                Serial.print (" Devo fare Reset ");
+	                Serial.print (F (" Devo fare Reset "));
                     initgsm();
                 } // close the if 2
       } // close the if 1
