@@ -12,12 +12,13 @@
           + Messaggio SMS per richiedente non autorizzato 
   - OK    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
   - Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
-  - NO   (disabilitazione o abilitazione notifica a numero da richiesta SMS)
-  - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS)
-  - set/reset pin uscita da SMS numero richiedente abilitato
-  - stato pin ingresso su richiesta SMS a numero richiedente abilitato
+  - NON Ancora (disabilitazione o abilitazione notifica a numero da richiesta SMS)    OK Cancellazione numeri ausiliari
+  - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS) OK Cancellazione numeri ausiliari
+  - NON Ancora set/reset pin uscita da SMS numero richiedente abilitato
+  - NON Ancora Stato pin ingresso su richiesta SMS a numero richiedente abilitato
 
-  - Prevedre SMS di conferma comandi (richiesta eseguita per il n.)
+  - Verifica Indice telefoni ausiliari per  evitare sovrapposizioni in input
+  - OK Prevedere SMS di conferma comandi (richiesta eseguita per il n.)
 
 
   Comandi SMS
@@ -41,7 +42,7 @@
   -  Definire il numero Master (M)
   -  Una volta definito il numero master è possibile definire il primo numero ausiliario (A1)
      e poi il secondo numero Ausiliario (A2)
-  -  Successivamente con "D" si possono CANCELLARE tutti i cellulari eccetto il numero Master autorizzato (0)    
+  -  Con "D" il MASTER può CANCELLARE tutti i cellulari eccetto il numero Master autorizzato (0)    
 
   SoftwareSerial library Notes
   With Arduino 1.0 you should be able to use the SoftwareSerial library included with the distribution (instead of NewSoftSerial).
@@ -327,6 +328,19 @@ void initgsm()
 
 //   ============  A L T R E   F U N Z I O N I ======================
 
+void SendMsg()
+{
+if (gprs.sendSMS(phone, outmessage))
+                  { 
+                        Serial.print("Send SMS Succeed!\r\n");
+		              }
+                       else
+                    {
+                        Serial.print("Send SMS failed!\r\n");
+			              }
+}
+
+
 void writeString(int offs, const char *edata)
   {
     int i = 0;
@@ -411,7 +425,7 @@ void CalcNphone()
 
 void ListAutPhones()
  {
-  // If in phoneout the first char of an entry (phone) is '+' it is considered that a phone is loaded
+  // If in phoneAut the first char of an entry (phone) is '+' it is considered that a phone is loaded
 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
   // Because it is called from the CMD N, it is sure that the MASTER number is present 
@@ -433,7 +447,8 @@ void ListAutPhones()
                 break;
 // Empty position
             }
-        sprintf(outmess, "%s %d %s %s %s","Autorized phone n.", i, ": ", (phoneAut[i]), '\n');
+// sprintf(outmess, "%s %d %s %s %s","Autorized phone n.", i, ": ", (phoneAut[i]), "\n");
+        sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
         strcat(outmessage, outmess);
 
         Serial.print ("Autorized phone n.");
@@ -534,18 +549,6 @@ void PhoneInit() {
 
   Serial.print ("Numero di telefoni: ");
   Serial.println(Auxnphones);
-}
-
-void SendMsg()
-{
-if (gprs.sendSMS(phone, outmessage))
-                  { 
-                        Serial.print("Send SMS Succeed!\r\n");
-		              }
-                       else
-                    {
-                        Serial.print("Send SMS failed!\r\n");
-			              }
 }       
 
 //   ============  FUNZIONI    STANDARD ======================
@@ -606,7 +609,7 @@ void loop()
 // Formato Numero errato ?      
                                 if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
                                     {
-                                        sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
+                                        sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
                                         Serial.println(outmessage);
                                         SendMsg();
                                     }
@@ -618,7 +621,7 @@ void loop()
                                           strcpy(phoneAut[0], phoneT);
                                           writeString(6, phoneT);
 // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
-                                          sprintf(outmessage, "%s %s","M TELEPHONE NUMBER SAVED", message);
+                                          sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", message);
                                           Serial.println(outmessage);
                                           SendMsg(); 
                                       }
@@ -642,7 +645,7 @@ void loop()
                         writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
                       }
                     Auxnphones = 0;
-                    sprintf(outmessage, "%s","ALL THE AUXILIARY NUMBERS DELETED");
+                    sprintf(outmessage, "ALL THE AUXILIARY NUMBERS DELETED");
                     Serial.println(outmessage);
                     SendMsg();
                   } // Fine comando D
@@ -657,7 +660,7 @@ void loop()
 // Formato Numero errato ?      
             if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
               {
-                sprintf(outmessage, "%s %s","WRONG TELEPHONE NUMBER FORMAT", message);
+                sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
                 Serial.println(outmessage);
                 SendMsg();
               } else
@@ -678,13 +681,14 @@ void loop()
                     SendMsg();
                   } else
                         {
-                          sprintf(outmessage, "%s %s","INDEX OUTSIDE THE RANGE", message);
+                          sprintf(outmessage, "INDEX OUTSIDE THE RANGE %s", message);
                           Serial.println(outmessage);
                           SendMsg();
                         }
                 }
           } // Fine - Comando A
-// =========================
+
+// ==============================================
 
 // Se messaggio SMS è di tipo "N"
             if (message[0] == 'N')
@@ -706,22 +710,7 @@ void loop()
                         }
                     if (Auth)
                         {
-                            calc();	//	Calculates PowerVoltage Vrms - Supply voltage
-                            Serial.print(" Current Voltage: ");
-                            Serial.flush();
-                            Serial.println(PowerVoltage);
-                            Serial.flush();
-                  
-                    int power = (int)(PowerVoltage);
-                    sprintf(outmessage, "%s %d","CURRENT SUPPLY VOLTAGE: ", power);
-
-                    if (gprs.sendSMS(phone, outmessage))
-                            { 
-                                Serial.print("Send SMS Succeed!\r\n");
-		                    }   else
-                                {
-                                    Serial.print("Send SMS failed!\r\n");
-			                    }
+                            ListAutPhones();                    
                         }
                     else
                         {
@@ -732,7 +721,7 @@ void loop()
                         }
                 } // Fine - Messaggio N
 
-// ###################################
+// ###################################          
                   
         } // Fine - Arriva dal numero telefonico autorizzato Master [0]
 
@@ -747,7 +736,7 @@ void loop()
                                  writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
                             }
                     Auxnphones = 0;
-                    sprintf(outmessage, "%s","ALL NUMBERS DELETED");
+                    sprintf(outmessage, "ALL NUMBERS DELETED");
                     Serial.println(outmessage);
                     SendMsg();                                   
         } // Fine Messaggio E
@@ -781,7 +770,7 @@ void loop()
                   Serial.flush();
                   
                   int power = (int)(PowerVoltage);
-                  sprintf(outmessage, "%s %d","CURRENT SUPPLY VOLTAGE: ", power);
+                  sprintf(outmessage, "CURRENT SUPPLY VOLTAGE: %d", power);
 
                   if (gprs.sendSMS(phone, outmessage))
                       { 
@@ -830,8 +819,10 @@ if (PowerVoltage <= 180.0)
               EEPROM.update(5, 1);  // Aggiorna EEPROM a 1
 			        int power = (int)(PowerVoltage);
               gprs.getDateTime(locDateTime);
-              sprintf(outmessage, "%s %s %d Vac", locDateTime,"MANCANZA RETE, ultima lettura:", power);
-			        Serial.println(outmessage);
+//sprintf(outmessage, "%s %s %d Vac", locDateTime," MANCANZA RETE, ultima lettura:", power);
+              sprintf(outmessage, "%s MANCANZA RETE, ultima lettura: %d Vac", locDateTime, power);
+            
+              Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
               for (int i = 0; i < Auxnphones + 1; i++)
@@ -857,7 +848,9 @@ if (PowerVoltage >= 200.0)
                     EEPROM.update(5, 0); // Aggiorna EEPROM a 0
                     int power = (int)(PowerVoltage);
                     gprs.getDateTime(locDateTime);
-                    sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
+//                  sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
+                    sprintf(outmessage, "%s RIPRESA RETE, ultima lettura: %d Vac", locDateTime, power);
+                    
                     Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
