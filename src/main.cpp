@@ -542,54 +542,6 @@ void ListAutPhones()
   Serial.println(Auxnphones+1);
 }
 
-void PhoneInit() {
-  // At INIT copy EEPROM (EStr) to phoneAut
-  // ======== NO - PUO ESSERE RIMOSSA ======== At RUNTIME copy phoneAut to EStr (EEPROM)
-
-  // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
-  // Otherwise load the predefined number as defined in FLASH (phoneAut).
-  // EStr used to save EEPROM writing (16 char single phone)
-
-  // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
-  for (uint8_t i = 0; i < 4; i++) {
-      read_String(6 + i*17, EStr[i]);  // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
-
-      if ((EStr[i][0] != '+') && (strlen(phoneAut[i]) == 0)) {
-    // Checks a empty position in EEPROM and in RAM. If yes breaks the loop and set Auxnphones to i
-        Auxnphones=i;
-        break;
-      }
-
-    // It works at INIT only, not at RUNTIME.
-      else if ((EStr[i][0] == '+') && (strlen(phoneAut[i]) == 0)) {
-    // Checks a used position in EEPROM but enpty in (RAM).
-         strcpy(phoneAut[i], EStr[i]); 
-    // Copy the string from EStr to phoneAut. Write to phoneAut the number in EStrt.
-
-        // Now the content in RAM(phoneAut)=EEPROM=EStr
-      }
-
-    // It works at RUNTIME only, not at INIT
-      else if( (EStr[i][0] != '+') && (strlen(phoneAut[i]) > 0)) {
-    // An empty position in EEPROM but phone number PRESENT in phoneAut (FLASH)
-        writeString((6+i*17), phoneAut[i]);
-    // Write to EEPROM (Initial Address 6 and String type data [16 char])
-        strcpy(EStr[i], phoneAut[i]);
-    // Copy the string from phoneAut to EStr. Write to EStr the number in phoneAut.
-
-    // Now the content in FLASH(phoneAut)=EEPROM=EStr
-      }
-      
-      Serial.print (F("EEPROM autorized phone n."));
-      Serial.print (i);
-      Serial.print (F (": "));
-      Serial.println (EStr[i]);
-      
-   } 
-
-  Serial.print (F("Numero di telefoni: "));
-  Serial.println(Auxnphones);
-}       
 
 //   ============  FUNZIONI    STANDARD ======================
 
