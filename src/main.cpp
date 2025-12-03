@@ -18,7 +18,7 @@
   - NON Ancora set/reset pin uscita da SMS numero richiedente abilitato
   - NON Ancora Stato pin ingresso su richiesta SMS a numero richiedente abilitato
 
-  - Verifica Indice telefoni ausiliari per  evitare sovrapposizioni in input
+  - OK Verifica Indice telefoni ausiliari per  evitare sovrapposizioni in input (INDEX OVERLAP)
   - OK Prevedere SMS di conferma comandi (richiesta eseguita per il n.)
 
 
@@ -38,7 +38,7 @@ Il programma:
 
 - M+numero → Modifica numero Master
 
-- - A[n]+numero → Aggiunge/Sostituisce numero ausiliario
+- A[n]+numero → Aggiunge/Sostituisce numero ausiliario
 
 - D → Cancella numeri ausiliari
 
@@ -711,14 +711,23 @@ void loop()
                   if (phoneI >= 1 && phoneI <= 3)
 // Per sicurezza solo numeri ausiliari A1 A2 A3
                   {
-                    strncpy(phoneT, message + 2, strlen(message) - 2);
-                    phoneT[strlen(message) - 2] = '\0';
-                    strcpy(phoneAut[phoneI], phoneT);
-                    writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
 
-                    sprintf(outmessage, "%s %d %s %s","A", phoneI, "TELEPHONE NUMBER SAVED ", message);
-                    Serial.println(outmessage);
-                    SendMsg();
+                    if (phoneI <= Auxnphones)
+                            {
+                                strncpy(phoneT, message + 2, strlen(message) - 2);
+                                phoneT[strlen(message) - 2] = '\0';
+                                strcpy(phoneAut[phoneI], phoneT);
+                                writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
+
+                                sprintf(outmessage, "%s %d %s %s","A", phoneI, "TELEPHONE NUMBER SAVED ", message);
+                                Serial.println(outmessage);
+                                SendMsg();
+                            } else
+                              {
+                                    sprintf(outmessage, "WRONG - INDEX OVERLAP %s", message);
+                                    Serial.println(outmessage);
+                                    SendMsg();
+                              }                              
                   } else
                         {
                           sprintf(outmessage, "INDEX OUTSIDE THE RANGE %s", message);
