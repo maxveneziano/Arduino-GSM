@@ -662,7 +662,7 @@ void loop()
 // Trova l'indice
                   if (phoneI >= 1 && phoneI <= 3)
 // Per sicurezza solo numeri ausiliari A1 A2 A3
-                  {
+                    {
 
                     if (phoneI <= Auxnphones)
                             {
