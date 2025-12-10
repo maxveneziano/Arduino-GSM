@@ -402,7 +402,8 @@ bool TimeToReset () {
 
 //    locDateTime - String like "24/05/29,10:30:15+08" "yy/MM/dd,hh:mm:ss+/-zz"
 
-  day = (locDateTime[0] - '0') * 10 + (locDateTime[1] - '0');
+  // day = (locDateTime[0] - '0') * 10 + (locDateTime[1] - '0');
+  day = (locDateTime[7] - '0') * 10 + (locDateTime[8] - '0');
   hh = (locDateTime[10] - '0') * 10 + (locDateTime[11] - '0');
   mm = (locDateTime[13] - '0') * 10 + (locDateTime[14] - '0');
 
