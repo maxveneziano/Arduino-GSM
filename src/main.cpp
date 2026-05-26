@@ -1,7 +1,7 @@
 #include <Arduino.h>
 /* SMS Manager for Power monitoring
 
-  Uses GSM Library GPRS_Shield_Arduino.h v2 (Non Suli)
+  Uses GSM Library GPRS_Shield_Arduino 2024 (Non Suli)
 
   Specifiche:
   - OK    Verifica corretta registrazione
