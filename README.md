@@ -58,8 +58,6 @@ Gestisce comandi via SMS:
 
 \- **S** → Invia stato tensione
 
-\- **E** → Comando riservato, cancella tutti i numeri
-
 \- Salva e legge i numeri autorizzati su EEPROM per persistenza.
 
 **Comandi SMS**
