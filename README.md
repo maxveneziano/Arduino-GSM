@@ -80,8 +80,6 @@ Gestisce comandi via SMS:
 
 &nbsp; **"N"** Elenca tutti i numeri autorizzati - solo per il Master
 
-&nbsp; **"E"** Cancella tutti i numeri incluso il Master - NON DOCUMENTATO. Accetta qualsiasi numero.
-
 &nbsp; EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1)
 
 &nbsp; **1st Power On**
