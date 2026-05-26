@@ -14,7 +14,8 @@
   - OK da Master    Prevedere la richiesta SMS (CMD N) per vedere quanti e quali numeri sono impostati
           + Messaggio SMS per richiedente non autorizzato 
   - NON Ancora (disabilitazione o abilitazione notifica a numero da richiesta SMS)    OK Cancellazione numeri ausiliari
-  - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS) OK Cancellazione numeri ausiliari
+  - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS)
+  - OK Cancellazione numeri ausiliari
   - NON Ancora set/reset pin uscita da SMS numero richiedente abilitato
   - NON Ancora Stato pin ingresso su richiesta SMS a numero richiedente abilitato
 
