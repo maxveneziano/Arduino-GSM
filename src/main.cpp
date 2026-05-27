@@ -401,12 +401,18 @@ void read_String(uint8_t offs, char *dest)
 bool TimeToReset () {
 // Reset Now?
 
+  //  Indice parte da 0
 //    locDateTime - String like "24/05/29,10:30:15+08" "yy/MM/dd,hh:mm:ss+/-zz"
+//                               0123456789
+//                              Day = 6,7
+//                              hh = 9,10
+//                              mm = 12,13
+
 
   // day = (locDateTime[0] - '0') * 10 + (locDateTime[1] - '0');
   day = (locDateTime[6] - '0') * 10 + (locDateTime[7] - '0');
-  hh = (locDateTime[10] - '0') * 10 + (locDateTime[11] - '0');
-  mm = (locDateTime[13] - '0') * 10 + (locDateTime[14] - '0');
+  hh = (locDateTime[9] - '0') * 10 + (locDateTime[10] - '0');
+  mm = (locDateTime[12] - '0') * 10 + (locDateTime[13] - '0');
 
   Serial.print (F("ORA, MIN --> "));
   Serial.print(hh);
