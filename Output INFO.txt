@@ -1,0 +1,50 @@
+Non a buon Fine
+ Data e Ora da rete: 26/05/27,17:00:59+08
+ Set ASCII TEXT mode for SMS....
+Autorized phone n.0: +393334188263
+Numero di telefoni ausiliari + Master: 1
+At least, there is one UNREAD SMSFrom number: CoopVoce
+Datetime: 26/05/27,17:01:11+08
+Received Message: Credito: 5,20 euro di cui 0,00 di bonus. Non ci sono promozioni attive. Scadenza SIM: 27/05/2028. Lista delle migliori offerte su coopvoce.it Scarica l'A
+ Current Voltage: 223.11
+
+rogram started...
+Starting Power On sequence
+ - Init Success - Completed GSM Power On Sequence - Reset
+GSM network initialization done!
+Invio Messaggio INFO
+Send SMS Succeed!
+Legge i messaggi ricevutiFrom number: 
+Datetime: 
+Received Message: 
+AT+CCLK=""
+
+Non a buon Fine
+ Data e Ora da rete: 26/05/27,17:08:48+08
+ Set ASCII TEXT mode for SMS....
+Autorized phone n.0: +393334188263
+Numero di telefoni ausiliari + Master: 1
+
+
+␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀Program started...
+Starting Power On sequence
+ - Init Success - Completed GSM Power On Sequence - Reset
+GSM network initialization done!
+Invio Messaggio INFO
+Send SMS Succeed!
+Legge i messaggi ricevuti
+From number: CoopVoce
+Datetime: 26/05/27,17:25:50+08
+Received Message: pp CoopVoce 
+Google: goo.gl/EuJUP6 
+IOS: goo.gl/Tojw2J
+
+Non a buon Fine
+ Data e Ora da rete: 26/05/27,17:26:00+08
+ Set ASCII TEXT mode for SMS....
+Autorized phone n.0: +393334188263
+Numero di telefoni ausiliari + Master: 1
+At least, there is one UNREAD SMSFrom number: CoopVoce
+Datetime: 26/05/27,17:25:50+08
+Received Message: Credito: 5,20 euro di cui 0,00 di bonus. Non ci sono promozioni attive. Scadenza SIM: 27/05/2028. Lista delle migliori offerte su coopvoce.it Scarica l'A
+ Current Voltage: 220.77

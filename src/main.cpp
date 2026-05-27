@@ -275,7 +275,7 @@ void initgsm()
   // C'è il rischio che si frapponga un SMS di servizio del provider
   // Solo se non passa molto tempo dalla registrazione alla rete
   // (Vedi cancellazione preventiva)
-    Serial.print(F("Legge i messaggi ricevuti"));
+    Serial.println(F("Legge i messaggi ricevuti"));
   // Determines the n. of received SMS Unread
     messageIndex = gprs.isSMSunread();
     delay(2000);
@@ -309,10 +309,11 @@ void initgsm()
     6 maggio 2010,00:01:52 GMT +2 ore
     "10/05/06,00:01:52+08
     */ 
-    sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
+    
     Serial.println (outmessage);
     Serial.flush();
-    if (sim900_check_with_cmd (outmessage, "OK", CMD))
+    delay(5000);
+if (sim900_check_with_cmd (outmessage, "OK", CMD))
       {
         Serial.println (F("A buon Fine"));
         Serial.flush();
@@ -320,7 +321,7 @@ void initgsm()
       else
         {
             Serial.println (F ("Non a buon Fine"));
-            Serial.flush();
+            Serial.flush();sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
     // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
         } 
 
@@ -805,6 +806,21 @@ Serial.print (F (" Current Voltage: "));
 Serial.flush();
 Serial.println(PowerVoltage);
 Serial.flush();
+
+
+//
+  gprs.getDateTime(locDateTime); 
+  day = (locDateTime[6] - '0') * 10 + (locDateTime[7] - '0');
+  hh = (locDateTime[9] - '0') * 10 + (locDateTime[10] - '0');
+  mm = (locDateTime[12] - '0') * 10 + (locDateTime[13] - '0');
+
+  Serial.print (F("ORA, MIN --> "));
+  Serial.print(hh);
+  Serial.print(F(":"));
+  Serial.print(mm);
+  Serial.println (F(" <--"));
+//
+
 	  
 if (PowerVoltage <= 180.0)
 // Magari considerare anche un limite a 200.0 V per la ripresa 
