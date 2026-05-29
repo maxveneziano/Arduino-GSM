@@ -48,3 +48,20 @@ At least, there is one UNREAD SMSFrom number: CoopVoce
 Datetime: 26/05/27,17:25:50+08
 Received Message: Credito: 5,20 euro di cui 0,00 di bonus. Non ci sono promozioni attive. Scadenza SIM: 27/05/2028. Lista delle migliori offerte su coopvoce.it Scarica l'A
  Current Voltage: 220.77
+
+============================================0
+
+--- Terminal on COM5 | 9600 8-N-1
+--- Available filters and text transformations: debug, default, direct, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+Program started...
+Starting Power On sequence
+ - Init Success - Completed GSM Power On Sequence - Reset
+GSM network initialization done!
+Invio Messaggio INFO
+Send SMS Succeed!
+Legge i messaggi ricevuti
+From number: 
+Datetime: 
+Received Message: 

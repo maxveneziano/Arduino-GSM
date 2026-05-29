@@ -276,6 +276,7 @@ void initgsm()
   // Solo se non passa molto tempo dalla registrazione alla rete
   // (Vedi cancellazione preventiva)
     Serial.println(F("Legge i messaggi ricevuti"));
+    delay(5000);
   // Determines the n. of received SMS Unread
     messageIndex = gprs.isSMSunread();
     delay(2000);
