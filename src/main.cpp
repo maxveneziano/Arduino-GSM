@@ -312,7 +312,7 @@ void initgsm()
     
     Serial.println (outmessage);
     Serial.flush();
-    delay(5000);
+    // delay(5000);
 if (sim900_check_with_cmd (outmessage, "OK", CMD))
       {
         Serial.println (F("A buon Fine"));
