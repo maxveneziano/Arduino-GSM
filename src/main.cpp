@@ -22,6 +22,9 @@
   - OK Verifica Indice telefoni ausiliari per  evitare sovrapposizioni in input (INDEX OVERLAP)
   - OK Prevedere SMS di conferma comandi (richiesta eseguita per il n.)
 
+  TODO:
+  Gestire più SMS in ricezione (SCANDIRLI TUTTI) e processarli uno alla volta (FIFO)
+  Magari un ciclo while?
 
      .......................... Scopo del codice
 
@@ -31,7 +34,7 @@ Il programma:
 
 - Notifica via SMS a numeri autorizzati (Master + fino a 3 ausiliari) i seguenti eventi:
 
-- Mancanza di rete (tensione < 180V)
+- Mancanza di rete (tensione < 100V)
 
 - Ripresa rete (tensione > 200V)
 
@@ -113,6 +116,7 @@ Il programma:
 #include "GPRS_Shield_Arduino.h"
 #include "EmonLib.h"
 #include "EEPROM.h"
+
 
 #define PIN_TX    2
 #define PIN_RX    3
@@ -209,9 +213,8 @@ void initgsm()
   //Initialize Modem and emoncms
 
   Serial.begin(9600);
-  //Serial.println("Program started...\nStarting Power On sequence");
-  Serial.print(F("Program started...\nStarting Power On sequence\n"));
 
+  Serial.print(F("Program started...\nStarting Power On sequence\n"));
   
   emon1.voltage(0, VOLT_CAL, 1.7);  // Defines Voltage: input pin, Voltage calibration, phase_shift
   //emon1.current(0, 32);
@@ -239,29 +242,27 @@ void initgsm()
     }
   Serial.print(F("GSM network initialization done!\n"));
 
-  delay(500);
+// ###########################   IMPOSTAZIONI SMS
+  // SELEZIONA MEMORIA SMS SIM CARD
+sim900_check_with_cmd(F("AT+CPMS=\"SM\",\"SM\",\"SM\"\r\n"), "OK", CMD);
+delay(500);
 
-  //              PREVENTIVELY DELETE ALL SMS UNREAD
-  // Determines the n. of received SMS Unread  
-  messageIndex = gprs.isSMSunread();
-    delay(2000);
+ // SELEZIONA MODO TESTO
+sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD);
+delay(500);
 
-  for (uint8_t i = messageIndex; i > 0; i--)
-    {
-        gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
-        delay(2000);
 
-//In order not to full SIM Memory, is better to delete it
-        gprs.deleteSMS(i);
-        delay(2000);
-    } 
-    
+  // ###########################   PREVENTIVELY DELETE ALL SMS UNREAD
+  sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
+  delay(5000);   
+
   // Invia SMS al numero Coop Voce 42 43 688 INFO SIM per credito residuo
   // in modo da ricavare la data e l'ora corrente
   Serial.print(F("Invio Messaggio INFO\n"));
 
+  // Send SMS to defined phone number and text
   if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
-    { // Send SMS to defined phone number and text
+    { 
         Serial.print(F("Send SMS Succeed!\r\n"));
         Serial.flush();
     } 
@@ -271,26 +272,66 @@ void initgsm()
       Serial.flush();
     }
 
-  //                   Legge i messaggi INFO ricevuti
+
+  // ###########################  Legge il messaggio INFO ricevuto
   // C'è il rischio che si frapponga un SMS di servizio del provider
   // Solo se non passa molto tempo dalla registrazione alla rete
   // (Vedi cancellazione preventiva)
-    Serial.println(F("Legge i messaggi ricevuti"));
-    delay(5000);
-  // Determines the n. of received SMS Unread
+    Serial.println(F("Attende la ricezione del messaggio INFO"));
+
+    // Attende di ricevere il messaggio INFO
+    while (messageIndex < 1)
+    {   
+      delay(500);
+      messageIndex = gprs.isSMSunread();            
+      Serial.print(F("No SMS received yet!\n"));
+
+      Serial.print(F("Waiting for INFO SMS - messageIndex: "));
+      Serial.println(messageIndex);
+    }
+
+      delay(500);
+      //Serial.flush();
+
+      Serial.print(F("SMS received - messageIndex: "));
+      Serial.println(messageIndex);
+
+      sim900_flush_serial();
+
+  // Legge il primo SMS di INFO 
+  // #########################################
+  while ((messageIndex = gprs.isSMSunread()) > 0)
+{
+    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime));
+    delay(2000);
+    {
+        Serial.print("SMS indice: ");
+        Serial.println(messageIndex);
+
+        Serial.print("Da: ");
+        Serial.println(phone);
+
+        Serial.print("Testo: ");
+        Serial.println(message);
+    }
+        gprs.deleteSMS(messageIndex);
+}
+
+// ######################  CANCELLA TUTTI GLI SMS
+    //In order to not full SIM Memory, is better to delete all SMS
+
+  Serial.print("CANCELLA TUTTI GLI SMS: ");
+
+  sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
+  delay(5000);
+
     messageIndex = gprs.isSMSunread();
     delay(2000);
 
-  // Legge tutti gli SMS e usa i dati del primo
-  for (uint8_t i = messageIndex; i > 0; i--)
-    {
-    gprs.readSMS(i, message, MESSAGE_LENGTH, phone, datetime);
-    delay(2000);
-    //In order to not full SIM Memory, is better to delete it
-    gprs.deleteSMS(i);
-    delay(2000);
-    } 
+    Serial.print(F("messageIndex - After ALL SMS deletion: "));
+    Serial.println(messageIndex);
 
+Serial.println("RIASSUNTO: ");
     Serial.print("From number: ");
     Serial.println(phone);
     Serial.flush();
@@ -311,18 +352,19 @@ void initgsm()
     "10/05/06,00:01:52+08
     */ 
     
-    Serial.println (outmessage);
-    Serial.flush();
-    // delay(5000);
+    sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
+    
 if (sim900_check_with_cmd (outmessage, "OK", CMD))
       {
         Serial.println (F("A buon Fine"));
+        Serial.println (outmessage);
         Serial.flush();
       }
       else
         {
             Serial.println (F ("Non a buon Fine"));
-            Serial.flush();sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
+            Serial.flush();
+
     // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
         } 
 
@@ -586,10 +628,12 @@ void loop()
       previousMilliscc = currentMillis;     
       // Controlla se ci sono nuovi messaggi SMS
       messageIndex = gprs.isSMSunread();
+      delay (1000);
       if (messageIndex > 0)
           { 
 // At least, there is one UNREAD SMS
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
+                delay (1000);
                 Serial.print (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
@@ -823,7 +867,7 @@ Serial.flush();
 //
 
 	  
-if (PowerVoltage <= 180.0)
+if (PowerVoltage <= 100.0)
 // Magari considerare anche un limite a 200.0 V per la ripresa 
       {
 // =====================   MANCANZA RETE    =====================
@@ -851,7 +895,7 @@ if (PowerVoltage <= 180.0)
 			                        }
                     }
 		        }
-      } // Power Voltage <= 180V
+      } // Power Voltage <= 100V
 
 if (PowerVoltage >= 200.0)
 // Soglia 200.0 V per la ripresa 
