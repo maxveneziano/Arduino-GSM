@@ -840,7 +840,7 @@ void loop()
 
     } // FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
      // Finiti SMS da processare, esce dal ciclo while e continua con il loop principale
-     
+
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
                
@@ -873,7 +873,6 @@ Serial.flush();
 
 	  
 if (PowerVoltage <= 100.0)
-// Magari considerare anche un limite a 200.0 V per la ripresa 
       {
 // =====================   MANCANZA RETE    =====================
 // EEPROM.read(5)  0 Rete presente 1 Rete assente
