@@ -613,26 +613,29 @@ void setup()
 
 void loop()
   {
-    /*
-      Restart the modem using Software Restart command AT+CFUN=1,1
-      or you can hardware restart it.
-      AT+CFUN=1,1
-    */
-    //	  gprs.powerReset(PIN_RESET); //PIN_RESET (7) - Si resetta veramente il Modem GSM?
-    //	  init(); // Re-Inizializza - Si res-inizializzazione veramente il Modem GSM?
-
-
+   
   unsigned long currentMillis = millis();
 
   // VERIFICA OGNI 10 secondi (intervalcc) se ci sono SMS da processare o ci sono state variazioni sulla rete elettrica. Gestisce la richieste via SMS di STATUS
   if (currentMillis - previousMilliscc > intervalcc)
    {
-      previousMilliscc = currentMillis;     
-      // Controlla se ci sono nuovi messaggi SMS
+      previousMilliscc = currentMillis;  
+      
+      // Attende la ricezione di almeno un messaggio
       messageIndex = gprs.isSMSunread();
-      delay (1000);
-      if (messageIndex > 0)
-          { 
+      delay(500); 
+
+    while (messageIndex > 0 && messageIndex != 255) // Considera anche il caso di errore =255
+    {   
+      // Si prepara per il prossimo ciclo di lettura SMS
+      messageIndex = gprs.isSMSunread();
+      delay(500);
+
+      Serial.print(F("SMS received !\n"));
+      Serial.print(F("Received one SMS - messageIndex: "));
+      Serial.println(messageIndex);
+
+
 // At least, there is one UNREAD SMS
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
                 delay (1000);
@@ -647,8 +650,9 @@ void loop()
                 Serial.print (F ("Received Message: "));
                 Serial.println(message);
 
-// ============================
+// ====================================================================================
 // Se messaggio SMS "M" arriva dal numero telefonico autorizzato Master [0] o stringa vuota "" (non definito)
+// ====================================================================================
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
 // Comando SMS "M+393391255597" (13) "M+393334188263" (13) Sostituisce o Imposta cellulare Autorizzato MASTER 
@@ -836,7 +840,10 @@ void loop()
 
 
 
-    } // Presenza Messaggi
+    // } // Presenza Messaggi
+    }
+
+     // Finiti SMS da processare, esce dal ciclo while e continua con il loop principale
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
                
