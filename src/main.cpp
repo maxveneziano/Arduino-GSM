@@ -46,9 +46,9 @@ Il programma:
 
 - D → Cancella numeri ausiliari
 
-- N → Elenca numeri autorizzati
+- N → Elenca numeri autorizzati -  OK
 
-- S → Invia stato tensione
+- S → Invia stato tensione      -  OK
 
 - E → Comando riservato, cancella tutti i numeri
 
@@ -510,15 +510,17 @@ void ListAutPhones()
   // If in phoneAut the first char of an entry (phone) is '+' it is considered that a phone is loaded
 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
-  // Because it is called from the CMD N, it is sure that the MASTER number is present 
+  // Because it is called from the CMD N, it is sure that the MASTER number should be is present 
   /* 
     Elenca e stampa i telefoni autorizzati.
 
-    Crea un SMS con tutti i numeri.
+    Crea un SMS con tutti i numeri utilizzando le variabili globali:
+    - phone
+    - outmessage
 
     Aggiorna Auxnphones.
 
-    Invia l’elenco tramite SMS al numero che ha richiesto l’informazione (il Master). */
+    Invia l’elenco (outmessage) tramite SMS al numero (phone) che ha richiesto l’informazione (solo il Master). */
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
     Auxnphones = 0;
@@ -749,8 +751,7 @@ void loop()
             if (message[0] == 'N')
                 {
 // Comando SMS "N" Ritorna i numeri autorizzati
-// SOLO se il messaggio SMS arriva da un numero autorizzato.(Master [0] o Ausiliario [1-3])  
-// e la richiesta proveniente dal un numero autorizzato MASTER
+// SOLO se il messaggio SMS e la richiesta è proveniente dal un numero autorizzato MASTER[0]
 
                     if (strcmp(phone, phoneAut[0]) == 0)
                         {
