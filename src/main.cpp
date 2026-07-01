@@ -302,7 +302,7 @@ delay(500);
   // #########################################
   while ((messageIndex = gprs.isSMSunread()) > 0)
 {
-    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime));
+    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
     delay(2000);
     {
         Serial.print("SMS indice: ");
@@ -838,12 +838,9 @@ void loop()
                 }
         } // Fine - Messaggio S
 
-
-
-    // } // Presenza Messaggi
-    }
-
+    } // FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
      // Finiti SMS da processare, esce dal ciclo while e continua con il loop principale
+     
   } // VERIFICA OGNI 10 secondi (intervalcc)
 
                
@@ -852,7 +849,7 @@ void loop()
 
 // Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
-// ============ VISUALIZZA STATO SU SERIALE =====================
+// ============ VISUALIZZA STATO SU SERIALE IN MODO CONTINUO=====================
 
 calc();				//	Calculates PowerVoltage Vrms
 Serial.print (F (" Current Voltage: "));
