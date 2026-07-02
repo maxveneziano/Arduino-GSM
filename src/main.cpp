@@ -624,7 +624,8 @@ void loop()
       // Attende la ricezione di almeno un messaggio
       messageIndex = gprs.isSMSunread();
       delay(500); 
-
+      
+// ###################### INIZIO PARSER COMANDI SMS ###########################
     while (messageIndex > 0 && messageIndex != 255) // Considera anche il caso di errore =255
     {   
       // Si prepara per il prossimo ciclo di lettura SMS
