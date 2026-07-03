@@ -280,31 +280,34 @@ delay(500);
     Serial.println(F("Attende la ricezione del messaggio INFO"));
 
     // Attende di ricevere il messaggio INFO
-    while (messageIndex < 1 || messageIndex != 255)
+    while (messageIndex < 1 || messageIndex == 255)
+    // Attenzione che potrebbe "inlopparsi" sul 255
 
     {   
-      delay(500);
-      messageIndex = gprs.isSMSunread();            
+      delay(500);  
+      // Si prepara per il prossimo ciclo
+      messageIndex = gprs.isSMSunread();
+                
       Serial.print(F("No SMS received yet!\n"));
 
-      Serial.print(F("Waiting for INFO SMS - messageIndex: "));
+      Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
       Serial.println(messageIndex);
     }
 
-      delay(500);
+      delay(100);
       //Serial.flush();
 
-      Serial.print(F("SMS received - messageIndex: "));
+      Serial.print(F("SMS received - Current messageIndex: "));
       Serial.println(messageIndex);
 
       sim900_flush_serial();
 
   // Legge il primo SMS di INFO 
   // #########################################
-  while ((messageIndex = gprs.isSMSunread()) > 0)
+  while ((messageIndex = gprs.isSMSunread()) > 0 && messageIndex != 255)
 {
     if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
-    delay(2000);
+    delay(1000);
     {
         Serial.print("SMS indice: ");
         Serial.println(messageIndex);
