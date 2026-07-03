@@ -636,7 +636,6 @@ void loop()
       Serial.print(F("Received one SMS - messageIndex: "));
       Serial.println(messageIndex);
 
-
 // At least, there is one UNREAD SMS then reads the content of the SMS
 // and deletes it from SIM memory to avoid filling it up
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
