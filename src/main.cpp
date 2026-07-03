@@ -280,7 +280,8 @@ delay(500);
     Serial.println(F("Attende la ricezione del messaggio INFO"));
 
     // Attende di ricevere il messaggio INFO
-    while (messageIndex < 1)
+    while (messageIndex < 1 || messageIndex != 255)
+
     {   
       delay(500);
       messageIndex = gprs.isSMSunread();            
