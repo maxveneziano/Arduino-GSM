@@ -637,7 +637,8 @@ void loop()
       Serial.println(messageIndex);
 
 
-// At least, there is one UNREAD SMS
+// At least, there is one UNREAD SMS then reads the content of the SMS
+// and deletes it from SIM memory to avoid filling it up
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
                 delay (1000);
                 Serial.print (F("At least, there is one UNREAD SMS"));
