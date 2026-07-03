@@ -643,7 +643,8 @@ void loop()
                 Serial.print (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
-    
+
+// Write on Serial Monitor the content of the SMS received
                 Serial.print (F ("From number: "));
                 Serial.println(phone);
                 Serial.print (F ("Datetime: "));
