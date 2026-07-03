@@ -644,7 +644,7 @@ void loop()
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
 
-// Write on Serial Monitor the content of the SMS received
+// Write on Serial Monitor the content of received SMS
                 Serial.print (F ("From number: "));
                 Serial.println(phone);
                 Serial.print (F ("Datetime: "));
