@@ -661,7 +661,8 @@ void loop()
 // ====================================================================================
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
-// Comando SMS "M+393391255597" (13) "M+393334188263" (13) Sostituisce o Imposta cellulare Autorizzato MASTER 
+// Comando SMS "M+393391255597" (13) "M+393334188263" (13)
+// Sostituisce o Imposta cellulare Autorizzato MASTER 
                         if (message[0] == 'M')
                             {
 // Formato Numero errato ?      
@@ -686,8 +687,8 @@ void loop()
                             } // Fine messaggio "M"           
                     } // Fine - Proveniente da Master o vuoto
 
-// #################################
-// Arriva da Master[0] ?
+// ################################# COMANDO D DELETE AUXILIARIES
+// Solo se Arriva da Master[0]
 
 // Arriva dal numero telefonico autorizzato Master [0]
     if (strcmp(phone, phoneAut[0]) == 0)
@@ -706,13 +707,13 @@ void loop()
                     sprintf(outmessage, "ALL THE AUXILIARY NUMBERS DELETED");
                     Serial.println(outmessage);
                     SendMsg();
-                  } // Fine comando D
-// ===========================================
+                  } 
+// =========================================== Fine comando D
 
-// Se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
-//if (strcmp(phone, phoneAut[0]) == 0)
-//{ 
-// Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione....               
+// =========================================== Comando A
+// Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione.... 
+// Valido solo se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
+              
     if (message[0] == 'A')
           {
 // Formato Numero errato ?      
@@ -729,7 +730,6 @@ void loop()
                   if (phoneI >= 1 && phoneI <= 3)
 // Per sicurezza solo numeri ausiliari A1 A2 A3
                     {
-
                     if (phoneI <= Auxnphones)
                             {
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
@@ -753,11 +753,12 @@ void loop()
                           SendMsg();
                         }
                 }
-          } // Fine - Comando A
+          }
+// ============================================== Fine - Comando A
 
-// ==============================================
-
-// Se messaggio SMS è di tipo "N" e la richiesta proviene dal MASTER
+// ============================================== Comando N
+// Se messaggio SMS è di tipo "N"
+// Valido solo se e la richiesta proviene dal MASTER
             if (message[0] == 'N')
                 {
 // Comando SMS "N" Ritorna i numeri autorizzati
@@ -774,14 +775,13 @@ void loop()
                             Serial.println(outmessage);
                             SendMsg();
                         }
-                } // Fine - Messaggio N
+                }
+// ################################### Fine - Comando N
+        }
+// ################################### Fine - Arriva dal numero telefonico autorizzato Master [0] 
 
-// ###################################          
-                  
-        } // Fine - Arriva dal numero telefonico autorizzato Master [0]
 
-
-        // Se messaggio SMS "E" arriva da QUALSIASI TELEFONO - COMANDO NON DOCUMENTATO
+// ################## Se messaggio SMS "E" arriva da QUALSIASI TELEFONO - COMANDO NON DOCUMENTATO
             if (message[0] == 'E')
         {  
 // Delete in EEPROM and phoneAut all phone numbers - COMANDO RISERVATO
@@ -794,11 +794,11 @@ void loop()
                     sprintf(outmessage, "ALL NUMBERS DELETED");
                     Serial.println(outmessage);
                     SendMsg();                                   
-        } // Fine Messaggio E
+        }
+// #################################### Fine Comando E
 
-        // ####################################
-
-// Proveniente da numero Autorizzato (Master o  Ausiliario)
+// #################################### Comando S
+// Valido solo se proveniente da numero Autorizzato (Master o  Ausiliario)
     if (message[0] == 'S')
         {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
@@ -842,12 +842,14 @@ void loop()
                   Serial.println(outmessage);
                   SendMsg();
                 }
-        } // Fine - Messaggio S
+        }
+// #################################### Fine Comando S
 
-    } // FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
+    }
+// FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
      // Finiti SMS da processare, esce dal ciclo while e continua con il loop principale
-
-  } // VERIFICA OGNI 10 secondi (intervalcc)
+  }
+// VERIFICA OGNI 10 secondi (intervalcc)
 
                
 // CalcNphone();
