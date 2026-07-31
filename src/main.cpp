@@ -631,6 +631,8 @@ void loop()
       
 // ###################### INIZIO PARSER COMANDI SMS ###########################
     while (messageIndex > 0 && messageIndex != 255) // Considera anche il caso di errore =255
+    // In caso di errore NON esegue il Parser ed esce dal While
+    // Se dovesse dare sempre errore (255)
     {   
       // Si prepara per il prossimo ciclo di lettura SMS
       messageIndex = gprs.isSMSunread();
@@ -845,6 +847,10 @@ void loop()
         }
 // #################################### Fine Comando S
 
+if (messageIndex == 255)
+                      { 
+                          Serial.print (F ("255 Error !\r\n"));
+		                  } 
     }
 // FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
      // Finiti SMS da processare, esce dal ciclo while e continua con il loop principale
