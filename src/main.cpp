@@ -628,11 +628,14 @@ void loop()
       // Attende la ricezione di almeno un messaggio
       messageIndex = gprs.isSMSunread();
       delay(500); 
-      
-// ###################### INIZIO PARSER COMANDI SMS ###########################
+
+// ########################################################################################      
+//                         INIZIO PARSER COMANDI SMS
+// ######################################################################################## 
+
     while (messageIndex > 0 && messageIndex != 255) // Considera anche il caso di errore =255
     // In caso di errore NON esegue il Parser ed esce dal While
-    // Se dovesse dare sempre errore (255)
+    // Fuori dak While indica l'errore sulla serial output
     {   
       // Si prepara per il prossimo ciclo di lettura SMS
       messageIndex = gprs.isSMSunread();
@@ -846,14 +849,14 @@ void loop()
                 }
         }
 // #################################### Fine Comando S
-
-if (messageIndex == 255)
+    }
+// FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
+// Finiti SMS da processare, esce dal ciclo while con MessageIndexanche in caso di errore (255)
+// Poi continua con il loop principale
+     if (messageIndex == 255)
                       { 
                           Serial.print (F ("255 Error !\r\n"));
 		                  } 
-    }
-// FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
-     // Finiti SMS da processare, esce dal ciclo while e continua con il loop principale
   }
 // VERIFICA OGNI 10 secondi (intervalcc)
 
