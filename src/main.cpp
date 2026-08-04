@@ -320,29 +320,21 @@ delay(500);
     // Attende di ricevere il messaggio INFO
     while (messageIndex < 1 || messageIndex == 255)
     // Attenzione che potrebbe "inlopparsi" sul 255
-/*
-         if (messageIndex == 255)
-                      { 
-                          Serial.print (F ("255 Error! MODEM Restart\r\n"));
-                          initGSM();
-		                  }
-                      */ 
-
     {   
       if (messageIndex == 255)
         { 
           Serial.print (F ("255 Error! MODEM Restart\r\n"));
           initGSM();
+        // Si prepara per il prossimo ciclo
+          messageIndex = gprs.isSMSunread();
         }
         else
-      
           {
             delay(500);  
           // Si prepara per il prossimo ciclo
-     
              messageIndex = gprs.isSMSunread();
                 
-            Serial.print(F("No SMS received yet!\n"));
+             Serial.print(F("No SMS received yet!\n"));
 
              Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
              Serial.println(messageIndex);
@@ -907,6 +899,10 @@ void loop()
                       { 
                           Serial.print (F ("255 Error! MODEM Restart\r\n"));
                           initGSM();
+
+                          // Si prepara per il prossimo ciclo di lettura SMS
+                          messageIndex = gprs.isSMSunread();
+                          delay(500);
 		                  } 
   }
 // VERIFICA OGNI 10 secondi (intervalcc)
