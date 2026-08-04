@@ -199,16 +199,51 @@ uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minut
 #define INFOTXT  "SALDO"
 //#define INFOTXT "INFO SIM"
 
-
-
 GPRS gprs(PIN_TX, PIN_RX, BAUDRATE); //RX,TX,BaudRate
 EnergyMonitor emon1;	//Initialize EnergyMonitor ?
 
 
 
 //   ============  F U N Z I O N I ======================
+void initGSM()
+  {
+  // Start GSM Modem Reset
+    while (!gprs.init())
+    {
+    gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
+    delay(1000);
+    }
+  delay(1000);
+ 
+  Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
 
-void initgsm()
+  // Garantisce che il Modem sia registrato sulla rete
+  while (!gprs.isNetworkRegistered())
+    {
+        delay(1000);
+        Serial.print(F("Network has not registered yet!\n"));
+    }
+  Serial.print(F("GSM network initialization done!\n"));
+
+// ###########################   IMPOSTAZIONI SMS
+  // SELEZIONA MEMORIA SMS SIM CARD
+sim900_check_with_cmd(F("AT+CPMS=\"SM\",\"SM\",\"SM\"\r\n"), "OK", CMD);
+delay(500);
+
+//AT+CMGF=1	// Enable ASCII TEXT mode for SMS
+  if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
+    {
+// Set message mode to ASCII
+      Serial.println (F (" Set ASCII TEXT mode for SMS...."));
+    }
+   delay(500);
+
+  // ###########################   PREVENTIVELY DELETE ALL SMS UNREAD
+  sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
+  delay(5000);
+  }
+
+void initapp()
   {
   //Initialize Modem and emoncms
 
@@ -219,8 +254,8 @@ void initgsm()
   emon1.voltage(0, VOLT_CAL, 1.7);  // Defines Voltage: input pin, Voltage calibration, phase_shift
   //emon1.current(0, 32);
   for (uint8_t i = 0; i < 5; i++)
-   { //clean up data
-    emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave with a 2000ms Timeout
+   { //Stabilyze EmonCMS data
+    emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave (200ms) with a 2000ms Timeout
    }
 
   // Start GSM Modem Reset
@@ -247,10 +282,13 @@ void initgsm()
 sim900_check_with_cmd(F("AT+CPMS=\"SM\",\"SM\",\"SM\"\r\n"), "OK", CMD);
 delay(500);
 
- // SELEZIONA MODO TESTO
-sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD);
-delay(500);
-
+//AT+CMGF=1	// Enable ASCII TEXT mode for SMS
+  if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
+    {
+// Set message mode to ASCII
+      Serial.println (F (" Set ASCII TEXT mode for SMS...."));
+    }
+   delay(500);  
 
   // ###########################   PREVENTIVELY DELETE ALL SMS UNREAD
   sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
@@ -282,16 +320,33 @@ delay(500);
     // Attende di ricevere il messaggio INFO
     while (messageIndex < 1 || messageIndex == 255)
     // Attenzione che potrebbe "inlopparsi" sul 255
+/*
+         if (messageIndex == 255)
+                      { 
+                          Serial.print (F ("255 Error! MODEM Restart\r\n"));
+                          initGSM();
+		                  }
+                      */ 
 
     {   
-      delay(500);  
-      // Si prepara per il prossimo ciclo
-      messageIndex = gprs.isSMSunread();
+      if (messageIndex == 255)
+        { 
+          Serial.print (F ("255 Error! MODEM Restart\r\n"));
+          initGSM();
+        }
+        else
+      
+          {
+            delay(500);  
+          // Si prepara per il prossimo ciclo
+     
+             messageIndex = gprs.isSMSunread();
                 
-      Serial.print(F("No SMS received yet!\n"));
+            Serial.print(F("No SMS received yet!\n"));
 
-      Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
-      Serial.println(messageIndex);
+             Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
+             Serial.println(messageIndex);
+           }
     }
 
       delay(100);
@@ -395,14 +450,6 @@ if (sim900_check_with_cmd (outmessage, "OK", CMD))
   Serial.print(" Data e Ora da rete: ");
   Serial.println(locDateTime);
 
-//AT+CMGF=1	// Enable ASCII TEXT mode for SMS
-  if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
-    {
-// Set message mode to ASCII
-      Serial.println (F (" Set ASCII TEXT mode for SMS...."));
-    }
-
-   delay(500);  
 }
 
 //   ============  A L T R E   F U N Z I O N I ======================
@@ -607,7 +654,7 @@ void setup()
   {
 // analogReference(DEFAULT);
     pinMode(PIN_RST, OUTPUT);
-    initgsm();
+    initapp();
 // Inizializza GSM e Valore Tempo iniziale
     EEPROM.update(5, 0);
 // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
@@ -854,9 +901,12 @@ void loop()
 // ####################################  FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
 // Finiti SMS da processare, esce dal ciclo while con MessageIndex anche in caso di errore (255)
 // Poi continua con il loop principale
+
+// Se messageIndex = 255, significa che il modem non risponde più e va resettato
      if (messageIndex == 255)
                       { 
-                          Serial.print (F ("255 Error !\r\n"));
+                          Serial.print (F ("255 Error! MODEM Restart\r\n"));
+                          initGSM();
 		                  } 
   }
 // VERIFICA OGNI 10 secondi (intervalcc)
@@ -964,7 +1014,7 @@ if (currentMillis - previousMillisora > intervalora)
             if (TimeToReset() == true)
                 {
 	                Serial.print (F (" Devo fare Reset "));
-                    initgsm();
+                    initapp();
                 } // close the if 2
       } // close the if 1
 
