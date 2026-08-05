@@ -324,6 +324,7 @@ delay(500);
       if (messageIndex == 255)
         { 
           Serial.print (F ("255 Error! MODEM Restart\r\n"));
+          // RESTART MODEM
           initGSM();
         // Si prepara per il prossimo ciclo
           messageIndex = gprs.isSMSunread();
@@ -898,6 +899,7 @@ void loop()
      if (messageIndex == 255)
                       { 
                           Serial.print (F ("255 Error! MODEM Restart\r\n"));
+                          // RESTART MODEM
                           initGSM();
 
                           // Si prepara per il prossimo ciclo di lettura SMS
