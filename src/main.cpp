@@ -542,7 +542,8 @@ void CalcNauxphone()
  for (uint8_t i = 0; i < 4; i++)
     {
         if (strlen(phoneAut[i]) > 0 && phoneAut[i][0] == '+')
-// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
+// Checks the presence of a Phone number (*) in EEPROM and the "+" character.
+// If found, sets Auxnphones to i. If not, breaks the loop and exit
             {
                 Auxnphones = i;
 // Counts valid phones
