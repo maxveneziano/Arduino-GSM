@@ -524,10 +524,9 @@ void calc()
   //irms[1] = irms[0] * 225.0;
   }
 
-void CalcNphone()
+void CalcNauxphone()
  {
-  // ==================== NO - PUO ESSERE RIMOSSA ====================
-  //Loop - Calculates number of auxiliary phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
+  // Loop - Calculates number of auxiliary phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
   // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0)
   // di quante stringhe di telefoni ausiliari c'erano.
   // ATTENZIONE ! Nel caso di Auxnphones=0 
@@ -540,12 +539,19 @@ void CalcNphone()
   phoneAut[3]=A3
   */
   
-  for (uint8_t i = 0; i < 4; i++) {
-       if (strlen(phoneAut[i]) == 0)
-         {
-            Auxnphones=i;
-            break;
-        }
+ for (uint8_t i = 0; i < 4; i++)
+    {
+        if (strlen(phoneAut[i]) > 0 && phoneAut[i][0] == '+')
+// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
+            {
+                Auxnphones = i;
+// Counts valid phones
+            } 
+        else 
+            {
+                break;
+// Empty position
+            }
       }
   }
 
@@ -572,7 +578,7 @@ void ListAutPhones()
     outmess [0] = '\0';
     for (uint8_t i = 0; i < 4; i++)
     {
-        if (phoneAut[i][0] == '+')
+        if (strlen(phoneAut[i]) > 0 && phoneAut[i][0] == '+')
 // Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
             {
                 Auxnphones = i;
@@ -782,6 +788,8 @@ void loop()
                                 strcpy(phoneAut[phoneI], phoneT);
                                 writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
 
+                                CalcNauxphone(); // Aggiorna il numero di telefoni ausiliari
+
                                 sprintf(outmessage, "%s %d %s %s","A", phoneI, "TELEPHONE NUMBER SAVED ", message);
                                 Serial.println(outmessage);
                                 SendMsg();
@@ -865,15 +873,14 @@ void loop()
             if (Auth)
              {
                   calc();	//	Calculates PowerVoltage Vrms - Supply voltage
-                  Serial.print (F (" Current Voltage: "));
-                  Serial.flush();
-                  Serial.println(PowerVoltage);
-                  Serial.flush();
                   
+                  // Prepares for the SMS and writes on Serial Monitor
                   int power = (int)(PowerVoltage);
-                  sprintf(outmessage, "CURRENT SUPPLY VOLTAGE: %d", power);
+                  gprs.getDateTime(locDateTime);
+                  sprintf(outmessage, "%s Current Voltage: %d Vac", locDateTime, power);
+                  Serial.println(outmessage);    // Writes on Serial Monitor the current voltage and the date/time       
 
-                  if (gprs.sendSMS(phone, outmessage))
+                  if (gprs.sendSMS(phone, outmessage)) // Sends the SMS to the requesting number and check the result
                       { 
                           Serial.print (F ("Send SMS Succeed!\r\n"));
 		                  }   else
