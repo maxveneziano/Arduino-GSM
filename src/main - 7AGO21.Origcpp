@@ -742,32 +742,24 @@ void loop()
                     } // ================ FINE - Proveniente da MASTER o vuoto
 
 // ################################# COMANDO D DELETE AUXILIARIES
-// Comando SMS "D" cancella tutti i numeri eccetto il MASTER
-// SOLO se il messaggio SMS di richiesta è proveniente dal MASTER[0]
-//Se messaggio SMS è di tipo "D"
-            if (message[0] == 'D')
-                {
-                    if (strcmp(phone, phoneAut[0]) == 0)
-                        {
+// Solo se proveniente dal numero telefonico autorizzato MASTER[0]
+    if (strcmp(phone, phoneAut[0]) == 0)
+        {
+// Se messaggio SMS è di tipo "D"
+          if (message[0] == 'D')
+                  {
+// ################################ COMMAND D
 //Delete in EEPROM and phoneAut auxiliaries phone numbers except the Authorized MASTER[0]
-                          for (uint8_t i = 1; i < 4; i++)
-                            {
-                              phoneAut[i][0] = '\0';
-                              writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
-                            }
-                      Auxnphones = 0;
-                      sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
-                      Serial.println(outmessage);
-                      SendMsg();                    
-                        }
-                        else
-                        {
-// Notifica tentativo non autorizzato
-                            strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                            Serial.println(outmessage);
-                            SendMsg();
-                        }
-                }
+                    for (uint8_t i = 1; i < 4; i++)
+                      {
+                        phoneAut[i][0] = '\0';
+                        writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
+                      }
+                    Auxnphones = 0;
+                    sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
+                    Serial.println(outmessage);
+                    SendMsg();
+                  } 
 // ######################################### Fine comando D
 
 // ########################################### Comando A
@@ -840,7 +832,10 @@ void loop()
                         }
                 }
 // ################################### Fine - Comando N
-        
+        }
+// ################################### Fine - Arriva dal numero telefonico autorizzato Master [0] 
+
+
 // ################## Se messaggio SMS "E" arriva da QUALSIASI TELEFONO - COMANDO NON DOCUMENTATO
             if (message[0] == 'E')
         {  
