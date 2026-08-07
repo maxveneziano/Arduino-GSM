@@ -1,0 +1,98 @@
+flowchart TD
+
+START([POWER ON / RESET]) --> SETUP
+
+subgraph SETUP[SETUP]
+A1[Configura PIN RESET GSM]
+A2[Avvia Serial]
+A3[Inizializza EmonLib]
+A4[Avvia modem GSM]
+A5{GSM inizializzato?}
+
+A5 -- NO --> RESETGSM[Reset Modem]
+RESETGSM --> A5
+
+A5 -- SI --> A6{Registrato rete GSM?}
+
+A6 -- NO --> WAIT[Attesa registrazione]
+WAIT --> A6
+
+A6 -- SI --> A7[Configura SMS Mode]
+A7 --> A8[Cancella SMS presenti]
+A8 --> A9[Richiede INFO SIM per data/ora]
+A9 --> A10[Imposta RTC GSM]
+A10 --> A11[Legge EEPROM telefoni]
+A11 --> ENDSETUP
+
+end
+
+
+ENDSETUP --> LOOP
+
+
+subgraph LOOP[LOOP PRINCIPALE]
+
+L1[Legge millis]
+
+L1 --> L2{Ogni 10 secondi?}
+
+L2 -- SI --> SMSCHECK
+
+L2 -- NO --> VOLTAGE
+
+
+subgraph SMSCHECK[Gestione SMS]
+
+S1[Controlla SMS ricevuti]
+
+S1 --> S2{SMS presente?}
+
+S2 -- NO --> VOLTAGE
+
+S2 -- SI --> S3[Leggi SMS]
+S3 --> S4[Cancella SMS dalla SIM]
+
+S4 --> S5{Comando SMS}
+
+S5 --> M[Comando M\nCambia Master]
+
+S5 --> A[Comando A1-A3\nGestione ausiliari]
+
+S5 --> D[Comando D\nCancella ausiliari]
+
+S5 --> N[Comando N\nLista numeri]
+
+S5 --> E[Comando E\nCancella tutti]
+
+S5 --> S[Comando S\nStato rete]
+
+M --> SAVE[Salva EEPROM]
+A --> SAVE
+D --> SAVE
+E --> SAVE
+
+N --> CHECKMASTER{Master autorizzato?}
+CHECKMASTER --> LIST[Invia lista telefoni]
+
+S --> CHECKAUTH{Numero autorizzato?}
+CHECKAUTH --> STATUS[Invia tensione attuale]
+CHECKAUTH --> DENY[SMS non autorizzato]
+
+SAVE --> NEXTSMS
+LIST --> NEXTSMS
+STATUS --> NEXTSMS
+DENY --> NEXTSMS
+
+NEXTSMS --> S2
+
+end
+
+
+VOLTAGE[Misura tensione rete\nEmonLib]
+
+VOLTAGE --> POWERFAIL
+
+end
+
+
+LOOP --> LOOP

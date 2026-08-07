@@ -1,0 +1,34 @@
+                 POWER ON
+                    |
+                    v
+              INITAPP()
+                    |
+        +-----------+------------+
+        |                        |
+    GSM INIT                 EEPROM READ
+        |
+        v
+    LOOP PRINCIPALE
+        |
+        +----------------+
+        |                |
+     SMS CHECK       MISURA RETE
+        |                |
+        v                v
+  COMANDI SMS       POWER EVENT
+        |                |
+        |                |
+  M,A,D,N,E,S       OFF / ON
+        |                |
+        v                v
+ EEPROM UPDATE     SMS NOTIFICA
+        |
+        v
+     RITORNO LOOP
+
+        |
+        v
+ ogni 15 minuti
+        |
+        v
+  RESET GSM giornaliero

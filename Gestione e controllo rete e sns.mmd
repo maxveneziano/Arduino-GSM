@@ -1,0 +1,37 @@
+flowchart TD
+
+START[Misura Vrms] --> CHECKLOW
+
+
+CHECKLOW{Tensione <=100V?}
+
+CHECKLOW -- SI --> EEPROM1{EEPROM stato rete = 0?}
+
+EEPROM1 -- SI --> OFFSTATE[Salva stato rete = 1]
+
+OFFSTATE --> SMSOFF[Genera SMS\nMANCANZA RETE]
+
+SMSOFF --> SENDOFF[Invia SMS\nMaster + Aux]
+
+EEPROM1 -- NO --> END
+
+
+CHECKLOW -- NO --> CHECKHIGH
+
+
+CHECKHIGH{Tensione >=200V?}
+
+
+CHECKHIGH -- SI --> EEPROM2{EEPROM stato rete = 1?}
+
+EEPROM2 -- SI --> ONSTATE[Salva stato rete = 0]
+
+ONSTATE --> SMSRESTORE[Genera SMS\nRIPRESA RETE]
+
+SMSRESTORE --> SENDON[Invia SMS\nMaster + Aux]
+
+
+EEPROM2 -- NO --> END
+
+
+CHECKHIGH -- NO --> END

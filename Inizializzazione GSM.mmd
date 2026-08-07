@@ -1,0 +1,47 @@
+flowchart TD
+
+SMS[SMS ricevuto]
+
+SMS --> READ[Leggi numero mittente]
+READ --> AUTHMASTER{Mittente = Master?}
+
+
+AUTHMASTER -->|SI| CMD
+
+AUTHMASTER -->|NO| ONLYPUBLIC
+
+
+CMD{Tipo comando}
+
+
+CMD --> M[M]
+CMD --> A[A1/A2/A3]
+CMD --> D[D]
+CMD --> N[N]
+CMD --> S[S]
+
+
+M --> CHECKNUM[Controllo formato numero]
+CHECKNUM --> SAVEM[Scrivi EEPROM Master]
+
+
+A --> INDEX[Leggi indice A1-A3]
+INDEX --> CHECKINDEX{Indice valido?}
+
+CHECKINDEX -- SI --> SAVEA[Salva EEPROM]
+CHECKINDEX -- NO --> ERRORINDEX
+
+
+D --> DELAUX[Cancella Aux1-Aux3]
+
+N --> LISTNUM[Lista numeri autorizzati]
+
+S --> STATE[Controllo autorizzazione]
+STATE --> SENDSTATE[Invia tensione]
+
+
+ONLYPUBLIC --> ECHK{Comando E?}
+
+ECHK -->|SI| DELETEALL[Cancella tutti i numeri]
+
+ECHK -->|NO| IGNORE[Ignora]
