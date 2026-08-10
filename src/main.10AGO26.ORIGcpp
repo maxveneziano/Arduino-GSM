@@ -771,10 +771,12 @@ void loop()
 // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione.... 
 // Valido solo se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
               
- if (message[0] == 'A')
-{
-    if (strcmp(phone, phoneAut[0]) == 0)
-    {      
+    
+
+
+
+if (message[0] == 'A')
+          {
 // Formato Numero errato ?      
             if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
               {
@@ -784,14 +786,12 @@ void loop()
               } else
                 {
 // Formato Numero corretto
-                  phoneI = atoi(message + 1);  // es. '2' → 2 perchè si ferma al primo carattere non numerico (+)
+                  phoneI = atoi(message + 1);  // es. '1' → 1 perchè si ferma al primo carattere non numerico (+)
 // Trova l'indice
                   if (phoneI >= 1 && phoneI <= 3)
-// Per sicurezza solo nel caso phoneI sia compreso tra 1 e 3 (A1 A2 A3)
+// Per sicurezza solo numeri ausiliari A1 A2 A3
                     {
-                    if ((phoneI <= Auxnphones) || (phoneI == 1 && Auxnphones == 0))
-                    // Se l'indice è già presente o è il prossimo da sostituire-
-                    // Se è il primo inserimento di A1 (Auxnphones)=0
+                    if (phoneI <= Auxnphones)
                             {
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
                                 phoneT[strlen(message) - 2] = '\0';
@@ -816,15 +816,7 @@ void loop()
                           SendMsg();
                         }
                 }
-          
-    }
-    else
-    {
-        strcpy(outmessage, "Request from NOT AUTHORIZED number");
-        Serial.println(outmessage);
-        SendMsg();
-    }
-}
+          }
 // ########################################### Fine - Comando A
 
 // ########################################### Comando N
@@ -931,7 +923,11 @@ void loop()
   }
 // VERIFICA OGNI 10 secondi (intervalcc)
 
+               
+// CalcNphone();
+// Calcola/Aggiorna n. telefoni ausiliari (Auxnphones)
 
+// Prevedere la richiesta SMS per vedere quanti e quali numeri sono impostati
 
 // ============ VISUALIZZA STATO SU SERIALE IN MODO CONTINUO =====================
 
@@ -1014,8 +1010,7 @@ if (PowerVoltage >= 200.0)
 
                           } // Close the for 1
                 } // Close the EEPROM if (Rete presente)
-      } // Close Theshold 200V Present
-    
+      } // Close the soglia 200V Presente
 
 /* RESET GIORNALIERO 
 Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
