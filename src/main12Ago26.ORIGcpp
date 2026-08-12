@@ -338,7 +338,7 @@ delay(500);
         }
         else
           {
-          //delay(500);  
+            delay(500);  
           // Si prepara per il prossimo ciclo
              messageIndex = gprs.isSMSunread();
                 
@@ -385,7 +385,7 @@ delay(500);
   delay(5000);
 
     messageIndex = gprs.isSMSunread();
-    // delay(2000);
+    delay(2000);
 
     Serial.print(F("messageIndex - After ALL SMS deletion: "));
     Serial.println(messageIndex);
@@ -689,7 +689,7 @@ void loop()
       
       // Attende la ricezione di almeno un messaggio
       messageIndex = gprs.isSMSunread();
-      // delay(500); 
+      delay(500); 
 
 // ########################################################################################      
 //                         INIZIO PARSER COMANDI SMS
@@ -699,6 +699,10 @@ void loop()
     // In caso di errore NON esegue il Parser ed esce dal While
     // Fuori dal While indica l'errore sulla serial output
     {   
+      // Si prepara per il prossimo ciclo di lettura SMS
+      messageIndex = gprs.isSMSunread();
+      delay(500);
+
       Serial.print(F("SMS received !\n"));
       Serial.print(F("Received one SMS - messageIndex: "));
       Serial.println(messageIndex);
@@ -710,9 +714,6 @@ void loop()
                 Serial.print (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
-                // Si prepara per il prossimo ciclo di lettura SMS
-                messageIndex = gprs.isSMSunread();
-                //delay(500);
 
 // Write on Serial Monitor the content of received SMS.
                 Serial.print (F ("From number: "));
@@ -944,7 +945,7 @@ void loop()
 
                           // Si prepara per il prossimo ciclo di lettura SMS
                           messageIndex = gprs.isSMSunread();
-                          //delay(500);
+                          delay(500);
 		                  } 
   }
 // VERIFICA OGNI 10 secondi (intervalcc)
