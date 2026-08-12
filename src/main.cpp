@@ -684,7 +684,9 @@ void loop()
    
   unsigned long currentMillis = millis();
 
-  // VERIFICA OGNI 10 secondi (intervalcc) se ci sono SMS da processare o ci sono state variazioni sulla rete elettrica. Gestisce la richieste via SMS di STATUS
+  // VERIFICA OGNI 10 secondi (intervalcc) se ci sono SMS da processare
+  // o ci sono state variazioni sulla rete elettrica.
+  // Gestisce la richieste via SMS
   if (currentMillis - previousMilliscc > intervalcc)
    {
       previousMilliscc = currentMillis;  
@@ -949,7 +951,7 @@ void loop()
                           //delay(500);
 		                  } 
   }
-// VERIFICA OGNI 10 secondi (intervalcc)
+// FINE VERIFICA OGNI 10 secondi (intervalcc)
 
 
 
