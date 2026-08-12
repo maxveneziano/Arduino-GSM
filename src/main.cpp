@@ -667,11 +667,13 @@ void ListAutPhones()
 
 void setup()
   {
+  // Poichè viene eseguito al Power Up (prima alimentazione o disalimentazione rete o batteria),
+  // si suppone che sia presente la rete.
 // analogReference(DEFAULT);
     pinMode(PIN_RST, OUTPUT);
     initapp();
-// Inizializza GSM e Valore Tempo iniziale
-    EEPROM.update(5, 0);
+// Inizializza GSM e Valore Tempo iniziale- Per evitare valori non determinati
+   EEPROM.update(5, 0);
 // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
     RestorePhones();
 // At Power Up copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
