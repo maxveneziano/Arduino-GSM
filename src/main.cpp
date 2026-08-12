@@ -963,8 +963,6 @@ Serial.flush();
 Serial.println(PowerVoltage);
 Serial.flush();
 
-
-//
   gprs.getDateTime(locDateTime); 
   day = (locDateTime[6] - '0') * 10 + (locDateTime[7] - '0');
   hh = (locDateTime[9] - '0') * 10 + (locDateTime[10] - '0');
@@ -975,8 +973,6 @@ Serial.flush();
   Serial.print(F(":"));
   Serial.print(mm);
   Serial.println (F(" <--"));
-//
-
 	  
 if (PowerVoltage <= 100.0)
       {
