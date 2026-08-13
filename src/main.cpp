@@ -69,6 +69,14 @@ Il programma:
   "N" Elenca tutti i numeri autorizzati - solo per il Master
   "E" Cancella tutti i numeri incluso il Master - NON DOCUMENTATO. Accetta qualsiasi numero.
 
+Struttura EEPROM
+writeString((6+i*16), "");
+                                  I  F     Profondità  
+0	6+0 6		Inizio MASTER     06-21     16  (14 cifre+"+"+\0)=16 caratteri
+1	6+16 22	    Inizio A1	      22-37     16
+2	6+32 38 	Inizio A2	      38-53     16
+3	6+49 54 	Inizio A3	      54-71     16
+
   EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1)
 
   1st Power On
@@ -147,7 +155,6 @@ uint8_t Auth;
 uint8_t messageIndex = 0;
 float PowerVoltage;
 char phone[16], phoneT[16];
-//char phone[16], phoneT[16], EStr[4][16];
 
 char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
@@ -179,19 +186,12 @@ char phoneAut[][16] = {
     "",
     ""
 };
-// In questo modo ogni cella ha spazio per una stringa di max 15 caratteri (più il terminatore \0).
+// In questo modo ogni cella ha spazio per una stringa di max 15 caratteri più il terminatore \0 =16
+// (14 cifre+"+"+\0)=16
 
 // phoneAut[0] authorized master number - Can authorize up to 4 phone numbers - "" used as terminator
 
-/*
-writeString((6+i*17), "");
-                                  profondità  
-0	6+0 6		  Inizio MASTER   06-22     16
-1	6+17 23	  Inizio A1	      23-39     16
-2	6+34 40 	Inizio A2	      40-56     16
-3	6+51 57 	Inizio A3	      57-73     16
 
-*/
 
 char outmessage[160];
 char outmess[50];
@@ -357,23 +357,30 @@ delay(500);
 
       sim900_flush_serial();
 
-  // Legge il primo SMS di INFO 
-  // #########################################
+  // Legge in continuazione SMS finchè mom rimangono più messaggi non letti (messageIndex=0)
+  // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
+  // Riconoscendo il 255 dovrebbe rianiliazizzare il modem perchè
+  // si tratta di un probabile errore di comunicazione con il modem
+  // ###########################################################################
+  
   while ((messageIndex = gprs.isSMSunread()) > 0 && messageIndex != 255)
 {
     if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
-    delay(1000);
     {
-        Serial.print("SMS indice: ");
+        delay(1000);
+
+        Serial.print(F("SMS indice: "));
         Serial.println(messageIndex);
 
-        Serial.print("Da: ");
+        Serial.print(F("Da: "));
         Serial.println(phone);
 
-        Serial.print("Testo: ");
+        Serial.print(F("Testo: "));
         Serial.println(message);
-    }
+
         gprs.deleteSMS(messageIndex);
+    }
+ 
 }
 
 // ######################  CANCELLA TUTTI GLI SMS
@@ -470,8 +477,8 @@ if (gprs.sendSMS(phone, outmessage))
 void writeString(uint8_t offs, const char *edata)
   {
     uint8_t i = 0;
-    //while (edata[i] != '\0' && i < 20)
-    while (edata[i] != '\0' && i < 17)
+    
+    while (edata[i] != '\0' && i < 16)
     
     {
     EEPROM.write(offs + i, edata[i]);
@@ -491,8 +498,8 @@ void read_String(uint8_t offs, char *dest)
         dest[len] = k;
         len++;
     }
-  //while (k != '\0' && len < 20); // Ridurre il 20 perchè non necessario
-  while (k != '\0' && len < 17); // Ridurre a 17
+
+  while (k != '\0' && len < 16); // Ridurre a 16
 
   dest[len - 1] = '\0'; // assicurati che termini con \0
   }
@@ -617,33 +624,29 @@ void ListAutPhones()
 
 }
 
-
   void RestorePhones()
  {
-  // At INIT (Power ON) copy EEPROM and EStr to phoneAut
+  // At INIT (Power ON) copy EEPROM to phoneAut
 
   // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
   // Otherwise load the predefined number as defined in RAM (phoneAut).
-  // EStr used to save EEPROM writing (16 char single phone)
 
-  // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to EStr 
+  // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to phoneAut 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
   Auxnphones = 0;
     for (uint8_t i = 0; i < 4; i++)
     {
-        read_String(6 + i*17, phoneT); // nuova funzione che legge la EEPROM e riempie phoneAut - elemento "i"
-        // read_String(6 + i*17, EStr[i]); // nuova funzione che legge la EEPROM e riempie un buffer char[] - elemento "i"
+        read_String(6 + i*16, phoneT); // nuova funzione che legge la EEPROM e riempie phoneAut - elemento "i"
         
         // if (phoneAut[i][0] == '+')
           if (phoneT[0] == '+')
-        //if (EStr[i][0] == '+')
+
 // Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
         {
             strcpy(phoneAut[i], phoneT);
-            //strcpy(phoneAut[i], EStr[i]);
+
             Auxnphones = i;
-// NO - Copy the string from EStr to phoneAut
-// Now the content in RAM(phoneAut)=EEPROM=EStr
+
 // Now the content in RAM(phoneAut)=EEPROM
 // Counts valid phones
         } 
@@ -656,7 +659,7 @@ void ListAutPhones()
     Serial.print (i);
     Serial.print (F (": "));
     Serial.println (phoneAut[i]);
-// Serial.println (EStr[i]);
+
    } 
   Serial.print (F ("Numero di telefoni ausiliari + Master: "));
   Serial.println(Auxnphones+1);
@@ -770,7 +773,7 @@ void loop()
                           for (uint8_t i = 1; i < 4; i++)
                             {
                               phoneAut[i][0] = '\0';
-                              writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
+                              writeString((6+i*16), "");  //Initial Address 6 and String type data [16 char])                      
                             }
                       Auxnphones = 0;
                       sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
@@ -817,7 +820,7 @@ void loop()
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
                                 phoneT[strlen(message) - 2] = '\0';
                                 strcpy(phoneAut[phoneI], phoneT);
-                                writeString(6 + phoneI * 17, phoneT); // salva in EEPROM
+                                writeString(6 + phoneI * 16, phoneT); // salva in EEPROM
 
                                 CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (Auxnphones)
 
@@ -879,7 +882,7 @@ void loop()
                     for (uint8_t i = 0; i < 4; i++)
                             {
                                 phoneAut[i][0] = '\0';
-                                writeString((6+i*17), "");  //Initial Address 6 and String type data [16 char])                      
+                                writeString((6+i*16), "");  //Initial Address 6 and String type data [16 char])                      
                             }
                     Auxnphones = 0;
                     sprintf(outmessage, "ALL NUMBERS DELETED");
