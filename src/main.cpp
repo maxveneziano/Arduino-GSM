@@ -129,6 +129,7 @@ writeString((6+i*16), "");
 #define PIN_TX    2
 #define PIN_RX    3
 #define PIN_RST   7
+#define PIN_LED  13
 #define BAUDRATE  9600
  /* M. Veneziano 2020 Voltage calibration Transformer + Partition. Set for each specific transformer */ 
 #define VOLT_CAL 136.0 
@@ -231,24 +232,51 @@ bool gprsInitwTO()
     return true;
 }
 
+bool waitNetwork(unsigned long timeout)
+{
+    unsigned long start = millis();
+
+    while (!gprs.isNetworkRegistered())
+    {
+        if (millis() - start >= timeout)
+        {
+            Serial.println(F("NETWORK TIMEOUT"));
+            return false;
+        }
+
+        delay(1000);
+    }
+
+    return true;
+}
+
 void initGSM()
   {
   // Start GSM Modem Reset
-    while (!gprs.init())
-    {
-    gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
-    delay(1000);
-    }
-  delay(1000);
+
+  if (!gprsInitwTO())
+{
+    Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
+    errorStop();
+}
+delay(1000);
  
   Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
 
   // Garantisce che il Modem sia registrato sulla rete
-  while (!gprs.isNetworkRegistered())
+   if (!waitNetwork(60000))
     {
-        delay(1000);
-        Serial.print(F("Network has not registered yet!\n"));
+        Serial.println(F("Rete GSM non disponibile"));
+        errorStop();
     }
+
+    Serial.println(F("GSM network initialization done!"));
+  
+  //while (!gprs.isNetworkRegistered())
+    //{
+        //delay(1000);
+        //Serial.print(F("Network has not registered yet!\n"));
+    //}
   Serial.print(F("GSM network initialization done!\n"));
 
 // ###########################   IMPOSTAZIONI SMS
@@ -268,6 +296,20 @@ delay(500);
   sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
   delay(5000);
   }
+
+  void errorStop()
+{
+    pinMode(PIN_LED, OUTPUT);
+
+    while (true)
+    {
+        digitalWrite(PIN_LED, HIGH);
+        delay(100);
+
+        digitalWrite(PIN_LED, LOW);
+        delay(100);
+    }
+}
 
 void initapp()
   {
@@ -295,7 +337,7 @@ void initapp()
   if (!gprsInitwTO())
 {
     Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
-    return;
+    errorStop();
 }
 delay(1000);
  
@@ -303,11 +345,17 @@ delay(1000);
   iniTime = millis(); // Valore Tempo iniziale
   
 // Garantisce che il Modem sia registrato sulla rete
-  while (!gprs.isNetworkRegistered())
-    {
-        delay(1000);
-        Serial.print(F("Network has not registered yet!\n"));
-    }
+if (!waitNetwork(60000))
+{
+    Serial.println(F("Rete GSM non disponibile"));
+    errorStop(); // Blocca l'esecuzione e notifica un led ad esempio lampeggiante
+}
+
+  //while (!gprs.isNetworkRegistered())
+    //{
+        //delay(1000);
+        //Serial.print(F("Network has not registered yet!\n"));
+    //}
   Serial.print(F("GSM network initialization done!\n"));
 
 // ###########################   IMPOSTAZIONI SMS
@@ -498,7 +546,6 @@ if (gprs.sendSMS(phone, outmessage))
                         Serial.print(F ("Send SMS failed!\r\n"));
 			              }
 }
-
 
 void writeString(uint8_t offs, const char *edata)
   {
