@@ -210,6 +210,13 @@ uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minut
 GPRS gprs(PIN_TX, PIN_RX, BAUDRATE); //RX,TX,BaudRate
 EnergyMonitor emon1;	//Initialize EnergyMonitor ?
 
+// PROTOTIPI
+void errorStop();
+bool gprsInitwTO();
+bool waitNetwork(unsigned long timeout);
+void initGSM();
+void initapp();
+
 
 
 //   ============  F U N Z I O N I ======================
