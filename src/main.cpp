@@ -212,6 +212,25 @@ EnergyMonitor emon1;	//Initialize EnergyMonitor ?
 
 
 //   ============  F U N Z I O N I ======================
+bool gprsInitwTO()
+{
+    unsigned long start = millis();
+
+    while (!gprs.init())
+    {
+        if (millis() - start > 30000UL)
+        {
+            Serial.println(F("GSM INIT TIMEOUT"));
+            return false;
+        }
+
+        gprs.powerUpDown(PIN_RST);
+        delay(1000);
+    }
+
+    return true;
+}
+
 void initGSM()
   {
   // Start GSM Modem Reset
@@ -266,12 +285,19 @@ void initapp()
    }
 
   // Start GSM Modem Reset
-    while (!gprs.init())
-    {
-    gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
-    delay(1000);
-    }
-  delay(1000);
+    //while (!gprs.init())
+    //{
+    //gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
+    //delay(1000);
+    //}
+  //delay(1000);
+
+  if (!gprsInitwTO())
+{
+    Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
+    return;
+}
+delay(1000);
  
   Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
   iniTime = millis(); // Valore Tempo iniziale
@@ -332,7 +358,7 @@ delay(500);
         { 
           Serial.print (F ("255 Error! MODEM Restart\r\n"));
           // RESTART MODEM
-          initGSM();
+          initGSM(); // Al rientro da initGSM() mancherebbe comunque la richiesta di INFO
         // Si prepara per il prossimo ciclo
           messageIndex = gprs.isSMSunread();
         }
@@ -357,9 +383,9 @@ delay(500);
 
       sim900_flush_serial();
 
-  // Legge in continuazione SMS finchè mom rimangono più messaggi non letti (messageIndex=0)
+  // Legge in continuazione SMS finchè non rimangono più messaggi non letti (messageIndex=0)
   // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
-  // Riconoscendo il 255 dovrebbe rianiliazizzare il modem perchè
+  // Riconoscendo il 255 dovrebbe reiniliazzare il modem perchè
   // si tratta di un probabile errore di comunicazione con il modem
   // ###########################################################################
   
@@ -672,7 +698,6 @@ void setup()
   {
   // Poichè viene eseguito al Power Up (prima alimentazione o disalimentazione rete o batteria),
   // si suppone che sia presente la rete.
-// analogReference(DEFAULT);
     pinMode(PIN_RST, OUTPUT);
     initapp();
 // Inizializza GSM e Valore Tempo iniziale- Per evitare valori non determinati
