@@ -211,22 +211,23 @@ GPRS gprs(PIN_TX, PIN_RX, BAUDRATE); //RX,TX,BaudRate
 EnergyMonitor emon1;	//Initialize EnergyMonitor ?
 
 // PROTOTIPI
-void errorStop();
+/*void errorStop();
 bool gprsInitwTO();
 bool waitNetwork(unsigned long timeout);
-void initGSM();
-void initapp();
+// void initGSM();
+void initapp();*/
 
 
 
 //   ============  F U N Z I O N I ======================
-bool gprsInitwTO()
+//  Init GPRS/GSMGPRS Modem with Timeout (30 sec) - Return true if success, false if timeout
+bool gprsInitwTO(unsigned long timeoutGSM)
 {
-    unsigned long start = millis();
+    unsigned long startTO = millis();
 
     while (!gprs.init())
     {
-        if (millis() - start > 30000UL)
+        if (millis() - startTO >= timeoutGSM)
         {
             Serial.println(F("GSM INIT TIMEOUT"));
             return false;
@@ -239,29 +240,31 @@ bool gprsInitwTO()
     return true;
 }
 
-bool waitNetwork(unsigned long timeout)
+bool waitNetwork(unsigned long timeoutNW)
 {
-    unsigned long start = millis();
+    unsigned long startTO = millis();
 
     while (!gprs.isNetworkRegistered())
     {
-        if (millis() - start >= timeout)
+        if (millis() - startTO >= timeoutNW)
         {
             Serial.println(F("NETWORK TIMEOUT"));
             return false;
         }
 
         delay(1000);
+        // Aspetta un secondo e riverifica il collegamento alla rete GSM
     }
 
     return true;
 }
 
+/*
 void initGSM()
   {
   // Start GSM Modem Reset
 
-  if (!gprsInitwTO())
+  if (!gprsInitwTO(30000)) // 30 sec timeout
 {
     Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
     errorStop();
@@ -303,6 +306,7 @@ delay(500);
   sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
   delay(5000);
   }
+  */
 
   void errorStop()
 {
@@ -333,40 +337,29 @@ void initapp()
     emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave (200ms) with a 2000ms Timeout
    }
 
-  // Start GSM Modem Reset
-    //while (!gprs.init())
-    //{
-    //gprs.powerUpDown(PIN_RST); //PIN_RESET (7) - RESET Modem
-    //delay(1000);
-    //}
-  //delay(1000);
-
-  if (!gprsInitwTO())
+  if (!gprsInitwTO(30000)) // 30 sec timeout
 {
     Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
     errorStop();
+    // Blocca l'esecuzione e notifica con un led ad esempio lampeggiante
 }
-delay(1000);
+// delay(1000); Da rimuovere ?
  
   Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
   iniTime = millis(); // Valore Tempo iniziale
   
-// Garantisce che il Modem sia registrato sulla rete
+// Garantisce che il Modem sia registrato sulla rete entro 60 sec
 if (!waitNetwork(60000))
 {
     Serial.println(F("Rete GSM non disponibile"));
-    errorStop(); // Blocca l'esecuzione e notifica un led ad esempio lampeggiante
+    errorStop();
+    // Blocca l'esecuzione e notifica con un led ad esempio lampeggiante
 }
-
-  //while (!gprs.isNetworkRegistered())
-    //{
-        //delay(1000);
-        //Serial.print(F("Network has not registered yet!\n"));
-    //}
   Serial.print(F("GSM network initialization done!\n"));
 
 // ###########################   IMPOSTAZIONI SMS
-  // SELEZIONA MEMORIA SMS SIM CARD
+
+// SELEZIONA MEMORIA SMS SIM CARD
 sim900_check_with_cmd(F("AT+CPMS=\"SM\",\"SM\",\"SM\"\r\n"), "OK", CMD);
 delay(500);
 
@@ -399,7 +392,7 @@ delay(500);
     }
 
 
-  // ###########################  Legge il messaggio INFO ricevuto
+  // #################  Legge il messaggio INFO ricevuto ################
   // C'è il rischio che si frapponga un SMS di servizio del provider
   // Solo se non passa molto tempo dalla registrazione alla rete
   // (Vedi cancellazione preventiva)
@@ -407,17 +400,14 @@ delay(500);
 
     // Attende di ricevere il messaggio INFO
     while (messageIndex < 1 || messageIndex == 255)
-    // Attenzione che potrebbe "inlopparsi" sul 255
     {   
       if (messageIndex == 255)
         { 
-          Serial.print (F ("255 Error! MODEM Restart\r\n"));
-          // RESTART MODEM
-          initGSM(); // Al rientro da initGSM() mancherebbe comunque la richiesta di INFO
-        // Si prepara per il prossimo ciclo
-          messageIndex = gprs.isSMSunread();
+          Serial.print (F ("Waiting INFO Message 255 code Error!\r\n"));
+          errorStop();
         }
         else
+
           {
           //delay(500);  
           // Si prepara per il prossimo ciclo
@@ -429,8 +419,8 @@ delay(500);
              Serial.println(messageIndex);
            }
     }
-
-      delay(100);
+// Messaggio Ricevuto - messageIndex >= 1
+      // delay(100); Da cancellare?
       //Serial.flush();
 
       Serial.print(F("SMS received - Current messageIndex: "));
@@ -440,14 +430,21 @@ delay(500);
 
   // Legge in continuazione SMS finchè non rimangono più messaggi non letti (messageIndex=0)
   // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
-  // Riconoscendo il 255 dovrebbe reiniliazzare il modem perchè
-  // si tratta di un probabile errore di comunicazione con il modem
+  // Riconoscendo il codice 255 si blocca facendo lampeggiare il led in quanto si tratta di
+  // un probabile errore di comunicazione con il modem, modem non inizializzato
+  // o non collegato alla rete
   // ###########################################################################
   
-  while ((messageIndex = gprs.isSMSunread()) > 0 && messageIndex != 255)
-{
-    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
+  while ((messageIndex = gprs.isSMSunread()))
     {
+
+    if (messageIndex == 255)
+        { 
+          Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
+          errorStop();
+        }
+    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
+        {
         delay(1000);
 
         Serial.print(F("SMS indice: "));
@@ -460,7 +457,7 @@ delay(500);
         Serial.println(message);
 
         gprs.deleteSMS(messageIndex);
-    }
+        }
  
 }
 
@@ -781,7 +778,8 @@ void loop()
 //                         INIZIO PARSER COMANDI SMS
 // ######################################################################################## 
 
-    while (messageIndex > 0 && messageIndex != 255) // Considera anche il caso di errore =255
+    while (messageIndex > 0 && messageIndex != 255)
+    // Considera anche il caso di errore =255
     // In caso di errore NON esegue il Parser ed esce dal While
     // Fuori dal While indica l'errore sulla serial output
     {   
@@ -1024,13 +1022,9 @@ void loop()
 // Se messageIndex = 255, significa che il modem non risponde più e va resettato
      if (messageIndex == 255)
                       { 
-                          Serial.print (F ("255 Error! MODEM Restart\r\n"));
-                          // RESTART MODEM
-                          initGSM();
-
-                          // Si prepara per il prossimo ciclo di lettura SMS
-                          messageIndex = gprs.isSMSunread();
-                          //delay(500);
+                          Serial.print (F ("PARSER code 255 Error!\r\n"));
+                          errorStop();
+                          // Blocca l'esecuzione e notifica con un led ad esempio lampeggiante
 		                  } 
   }
 // FINE VERIFICA OGNI 10 secondi (intervalcc)
