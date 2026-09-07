@@ -24,7 +24,7 @@
 
   TODO:
   Gestire più SMS in ricezione (SCANDIRLI TUTTI) e processarli uno alla volta (FIFO)
-  Magari un ciclo while? Fatto
+  Magari un ciclo while? FATTO
 
      .......................... Scopo del codice
 
@@ -71,11 +71,11 @@ Il programma:
 
 Struttura EEPROM
 writeString((6+i*16), "");
-                                  I  F     Profondità  
+                            I- F      Profondità  
 0	6+0 6		Inizio MASTER     06-21     16  (14 cifre+"+"+\0)=16 caratteri
-1	6+16 22	    Inizio A1	      22-37     16
+1	6+16 22	  Inizio A1	      22-37     16
 2	6+32 38 	Inizio A2	      38-53     16
-3	6+49 54 	Inizio A3	      54-71     16
+3	6+49 54 	Inizio A3	      54-69     16
 
   EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1)
 
@@ -239,6 +239,7 @@ bool gprsInitwTO(unsigned long timeoutGSM)
 
     return true;
 }
+//  Wait for Network registration with Timeout (30 sec) - Return true if success, false if timeout
 
 bool waitNetwork(unsigned long timeoutNW)
 {
@@ -308,6 +309,7 @@ delay(500);
   }
   */
 
+//  Error Stop - Blink LED
   void errorStop()
 {
     pinMode(PIN_LED, OUTPUT);
