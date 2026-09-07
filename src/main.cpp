@@ -156,7 +156,7 @@ uint8_t Auth;
 uint8_t messageIndex = 0;
 float PowerVoltage;
 char phone[16], phoneT[16];
-bool PwrActv=1
+bool PwrActv=true //Default assume rete presente all'avvio
 
 
 
@@ -766,8 +766,12 @@ void setup()
     pinMode(PIN_RST, OUTPUT);
     initapp();
 // Inizializza GSM e Valore Tempo iniziale- Per evitare valori non determinati
-   EEPROM.update(5, 0);
+
+// EEPROM.update(5, 0);
 // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
+
+    PwrActv=true; // Assume rete presente all'avvio
+
     RestorePhones();
 // At Power Up copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
   }
@@ -1074,9 +1078,9 @@ if (PowerVoltage <= 100.0)
             {
               EEPROM.update(5, 1); Aggiorna EEPROM a 1 */
 
-        if (PwrActv=1) // significa che la rete era presente e quindi invia SMS di notifica
+        if (PwrActv=true) // significa che la rete era presente e quindi invia SMS di notifica
 			        {
-              PwrActv=0; // Resetta la variabile di stato rete presente  
+              PwrActv=false; // Resetta la variabile di stato rete presente  
               int power = (int)(PowerVoltage);
               gprs.getDateTime(locDateTime);
 //sprintf(outmessage, "%s %s %d Vac", locDateTime," MANCANZA RETE, ultima lettura:", power);
@@ -1108,9 +1112,9 @@ if (PowerVoltage >= 200.0)
                 {
                     EEPROM.update(5, 0); // Aggiorna EEPROM a 0 */
 
-                if (PwrActv=0) // significa che la rete era presente e quindi invia SMS
+                if (PwrActv=false) // significa che la rete era presente e quindi invia SMS
                 {
-                    PwrActv=1; // Resetta la variabile di stato rete presente  
+                    PwrActv=true; // Resetta la variabile di stato rete presente  
                     int power = (int)(PowerVoltage);
                     gprs.getDateTime(locDateTime);
 //                  sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
