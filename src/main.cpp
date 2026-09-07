@@ -156,6 +156,18 @@ uint8_t Auth;
 uint8_t messageIndex = 0;
 float PowerVoltage;
 char phone[16], phoneT[16];
+bool PwrActv=1
+
+
+
+
+
+
+
+
+
+
+;
 
 char datetime[24];
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
@@ -1055,12 +1067,17 @@ Serial.flush();
 if (PowerVoltage <= 100.0)
       {
 // =====================   MANCANZA RETE    =====================
+
 // EEPROM.read(5)  0 Rete presente 1 Rete assente
 // Identifica transizione da 0 Rete Presente a 1 Rete Assente
-        if (EEPROM.read(5) == 0)
+/*       if (EEPROM.read(5) == 0)
             {
-              EEPROM.update(5, 1);  // Aggiorna EEPROM a 1
-			        int power = (int)(PowerVoltage);
+              EEPROM.update(5, 1); Aggiorna EEPROM a 1 */
+
+        if (PwrActv=1) // significa che la rete era presente e quindi invia SMS di notifica
+			        {
+              PwrActv=0; // Resetta la variabile di stato rete presente  
+              int power = (int)(PowerVoltage);
               gprs.getDateTime(locDateTime);
 //sprintf(outmessage, "%s %s %d Vac", locDateTime," MANCANZA RETE, ultima lettura:", power);
               sprintf(outmessage, "%s MANCANZA RETE, ultima lettura: %d Vac", locDateTime, power);
@@ -1085,10 +1102,15 @@ if (PowerVoltage >= 200.0)
 // Soglia 200.0 V per la ripresa 
       {
     //                  RETE PRESENTE
-    // EEPROM.read(5)  0 Rete presente 1 Rete assente
+
+    /* EEPROM.read(5)  0 Rete presente 1 Rete assente
         if (EEPROM.read(5) == 1)
                 {
-                    EEPROM.update(5, 0); // Aggiorna EEPROM a 0
+                    EEPROM.update(5, 0); // Aggiorna EEPROM a 0 */
+
+                if (PwrActv=0) // significa che la rete era presente e quindi invia SMS
+                {
+                    PwrActv=1; // Resetta la variabile di stato rete presente  
                     int power = (int)(PowerVoltage);
                     gprs.getDateTime(locDateTime);
 //                  sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
@@ -1109,7 +1131,7 @@ if (PowerVoltage >= 200.0)
 			                                } // close the Else
 
                           } // Close the for 1
-                } // Close the EEPROM if (Rete presente)
+                } // Close the (EEPROM) Status Flag if (Rete presente)
       } // Close Theshold 200V Present
     
 
