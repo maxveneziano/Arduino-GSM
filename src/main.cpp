@@ -10,7 +10,7 @@
   - OK    invio SMS riattivazione energia fino a 3 numeri
   - OK    Comando SMS (S) per stato Power Supply e SMS a numero richiedente
           + Messaggio SMS per richiedente non autorizzato 
-  - OK    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
+  - (NON Implementato)    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
   - OK da Master    Prevedere la richiesta SMS (CMD N) per vedere quanti e quali numeri sono impostati
           + Messaggio SMS per richiedente non autorizzato 
   - NON Ancora (disabilitazione o abilitazione notifica a numero da richiesta SMS)    OK Cancellazione numeri ausiliari
@@ -72,12 +72,12 @@ Il programma:
 Struttura EEPROM
 writeString((6+i*16), "");
                             I- F      Profondità  
-0	6+0 6		Inizio MASTER     06-21     16  (14 cifre+"+"+\0)=16 caratteri
+0	6+0   6		Inizio MASTER   06-21     16  (14 cifre+"+"+\0)=16 caratteri
 1	6+16 22	  Inizio A1	      22-37     16
 2	6+32 38 	Inizio A2	      38-53     16
-3	6+49 54 	Inizio A3	      54-69     16
+3	6+48 54 	Inizio A3	      54-69     16
 
-  EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1)
+  EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1) - NON PIU' UTILIZZATO
 
   1st Power On
   -  inizialmente la EEPROM non ha numeri (tutti "") 
@@ -156,7 +156,7 @@ uint8_t Auth;
 uint8_t messageIndex = 0;
 float PowerVoltage;
 char phone[16], phoneT[16];
-bool PwrActv=true //Default assume rete presente all'avvio
+bool PwrActv=true; //Default assume rete presente all'avvio
 
 
 
@@ -770,7 +770,7 @@ void setup()
 // EEPROM.update(5, 0);
 // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
 
-    PwrActv=true; // Assume rete presente all'avvio
+    PwrActv=true; // Assume rete presente al primo avvio
 
     RestorePhones();
 // At Power Up copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
