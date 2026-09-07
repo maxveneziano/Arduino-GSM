@@ -782,6 +782,7 @@ void loop()
     // Considera anche il caso di errore =255
     // In caso di errore NON esegue il Parser ed esce dal While
     // Fuori dal While indica l'errore sulla serial output
+    // e blocca l'esecuzione lampeggiando il led
     {   
       Serial.print(F("SMS received !\n"));
       Serial.print(F("Received one SMS - messageIndex: "));
@@ -836,7 +837,7 @@ void loop()
                                           SendMsg(); 
                                       }
                             } // Fine messaggio "M"           
-                    } // ================ FINE Proveniente da MASTER o vuoto
+                    } // FINE messaggop proveniente da MASTER o vuoto
 
 // ################################# COMANDO D DELETE AUXILIARIES
 // Comando SMS "D" cancella tutti i numeri eccetto il MASTER
@@ -1014,8 +1015,7 @@ void loop()
                 }
         }
 // #################################### Fine Comando S
-    }
-// ####################################  FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
+    } // ####################################  FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
 // Finiti SMS da processare, esce dal ciclo while con MessageIndex anche in caso di errore (255)
 // Poi continua con il loop principale
 
