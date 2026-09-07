@@ -194,7 +194,7 @@ char datetime[24];
 //C
 
 char phoneAut[][16] = {
-    "+393334188263",
+    "+393334188263", // Da rimuovere se passato a terzi
     "",
     "",
     ""
@@ -737,7 +737,6 @@ void ListAutPhones()
             strcpy(phoneAut[i], phoneT);
 
             Auxnphones = i;
-
 // Now the content in RAM(phoneAut)=EEPROM
 // Counts valid phones
         } 
@@ -764,8 +763,9 @@ void setup()
   // Poichè viene eseguito al Power Up (prima alimentazione o disalimentazione rete o batteria),
   // si suppone che sia presente la rete.
     pinMode(PIN_RST, OUTPUT);
-    initapp();
+    
 // Inizializza GSM e Valore Tempo iniziale- Per evitare valori non determinati
+    initapp();
 
 // EEPROM.update(5, 0);
 // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
@@ -907,7 +907,7 @@ void loop()
                   if (phoneI >= 1 && phoneI <= 3)
 // Per sicurezza solo nel caso phoneI sia compreso tra 1 e 3 (A1 A2 A3)
                     {
-                      CalcAuxnphones(); // Calcola il numero attualedi telefoni ausiliari (Auxnphones)
+                      CalcAuxnphones(); // Calcola il numero attuale di telefoni ausiliari (Auxnphones)
                       
                       if ((phoneI <= Auxnphones) || (phoneI == 1 && Auxnphones == 0))
                       // Se l'indice è già presente o è il prossimo da sostituire
