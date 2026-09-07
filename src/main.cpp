@@ -1078,9 +1078,9 @@ if (PowerVoltage <= 100.0)
             {
               EEPROM.update(5, 1); Aggiorna EEPROM a 1 */
 
-        if (PwrActv=true) // significa che la rete era presente e quindi invia SMS di notifica
+        if (PwrActv == true) // significa che la rete era presente e quindi invia SMS di notifica
 			        {
-              PwrActv=false; // Resetta la variabile di stato rete presente  
+              PwrActv = false; // Resetta la variabile di stato rete presente  
               int power = (int)(PowerVoltage);
               gprs.getDateTime(locDateTime);
 //sprintf(outmessage, "%s %s %d Vac", locDateTime," MANCANZA RETE, ultima lettura:", power);
@@ -1112,9 +1112,9 @@ if (PowerVoltage >= 200.0)
                 {
                     EEPROM.update(5, 0); // Aggiorna EEPROM a 0 */
 
-                if (PwrActv=false) // significa che la rete era presente e quindi invia SMS
+                if (PwrActv == false) // significa che la rete era presente e quindi invia SMS
                 {
-                    PwrActv=true; // Resetta la variabile di stato rete presente  
+                    PwrActv = true; // Resetta la variabile di stato rete presente  
                     int power = (int)(PowerVoltage);
                     gprs.getDateTime(locDateTime);
 //                  sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
