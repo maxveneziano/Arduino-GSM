@@ -635,8 +635,10 @@ void calc()
 
 void CalcAuxnphones()
  {
-  // Loop - Calculates number of auxiliary phones (Auxnphones) basandosi sulla lunghezza della stringa. 0 significa stringa vuota
-  // con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0)
+  // Loop - Calculates number of auxiliary phones (Auxnphones)
+  // Remember that in phoneAut if the first char of an entry (phone) is '+'
+  // it is considered that a phone is loaded
+  // Con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0)
   // di quante stringhe di telefoni ausiliari c'erano.
   // ATTENZIONE ! Nel caso di Auxnphones=0 
   // vale anche in presenza/assenza del numero Master
@@ -650,8 +652,8 @@ void CalcAuxnphones()
   
  for (uint8_t i = 0; i < 4; i++)
     {
-        if (strlen(phoneAut[i]) > 0 && phoneAut[i][0] == '+')
-// Checks the presence of a Phone number (*) in EEPROM and the "+" character.
+        if (phoneAut[i][0] == '+')
+// Checks the presence of a Phone number in phoneAut. The "+" character.
 // If found, sets Auxnphones to i. If not, breaks the loop and exit
             {
                 Auxnphones = i;
@@ -659,15 +661,16 @@ void CalcAuxnphones()
             } 
         else 
             {
+              // No valid phone found: stop scanning.
                 break;
-// Empty position
             }
       }
   }
 
 void ListAutPhones()
  {
-  // If in phoneAut the first char of an entry (phone) is '+' it is considered that a phone is loaded
+  // Remember that in phoneAut if the first char of an entry (phone) is '+'
+  // it is considered that a phone is loaded
 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
   // Because it is called from the CMD N, it is sure that the MASTER number should be is present 
@@ -685,11 +688,11 @@ void ListAutPhones()
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
     Auxnphones = 0;
     outmessage [0] = '\0';
-    outmess [0] = '\0';
+    // outmess [0] = '\0';
     for (uint8_t i = 0; i < 4; i++)
     {
-        if (strlen(phoneAut[i]) > 0 && phoneAut[i][0] == '+')
-// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
+        if (phoneAut[i][0] == '+')
+// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop with Auxnphones set i
             {
                 Auxnphones = i;
 // Counts valid phones
@@ -699,19 +702,21 @@ void ListAutPhones()
                 break;
 // Empty position
             }
-    sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
-    strcat(outmessage, outmess);
 
-    Serial.print (F("Autorized phone n."));
-    Serial.print (i);
-    Serial.print (F (": "));
-    Serial.println (phoneAut[i]);
+  //sprintf(outmessage, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
+  sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
+  strcat(outmessage, outmess);
+
+  // Scrive su Serial
+  Serial.print (F("Autorized phone n."));
+  Serial.print (i);
+  Serial.print (F (": "));
+  Serial.println (phoneAut[i]);
     }
 
-
-    Serial.print (F ("Numero di telefoni ausiliari + Master: "));
-    Serial.println (Auxnphones+1);
-    SendMsg();
+Serial.print (F ("Numero di telefoni ausiliari + Master: "));
+Serial.println (Auxnphones+1);
+SendMsg();
 
 }
 
@@ -723,28 +728,30 @@ void ListAutPhones()
   // Otherwise load the predefined number as defined in RAM (phoneAut).
 
   // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to phoneAut 
-  // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
-  Auxnphones = 0;
+  // Remember that auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
+    Auxnphones = 0;
     for (uint8_t i = 0; i < 4; i++)
     {
-        read_String(6 + i*16, phoneT); // nuova funzione che legge la EEPROM e riempie phoneAut - elemento "i"
+        read_String(6 + i*16, phoneT);
+        // nuova funzione che legge la EEPROM e copia in phoneT (phoneAut) - elemento "i"
         
+        // Checks the presence of a Phone number (*) in EEPROM.
         // if (phoneAut[i][0] == '+')
           if (phoneT[0] == '+')
 
-// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop and set Auxnphones to i
         {
+            // If number is present, breaks the loop and set Auxnphones to i
             strcpy(phoneAut[i], phoneT);
-
             Auxnphones = i;
-// Now the content in RAM(phoneAut)=EEPROM
-// Counts valid phones
         } 
         else 
         {
+        // If no number present, breaks the loop
         break;
-// Empty position
+        // Empty position
         }
+    // Now the content in RAM (phoneAut) = EEPROM
+    // Counts valid phones
     Serial.print (F ("Autorized phone n."));
     Serial.print (i);
     Serial.print (F (": "));
@@ -844,24 +851,26 @@ void loop()
                                     }
                                 else
                                       {
-// Formato Numero corretto   
+// Formato Numero corretto
+// Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
                                           strncpy(phoneT, message + 1, strlen(message) - 1);
                                           phoneT[strlen(message) - 1] = '\0';
                                           strcpy(phoneAut[0], phoneT);
                                           writeString(6, phoneT);
-// Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
+
                                           sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", message);
                                           Serial.println(outmessage);
                                           SendMsg(); 
                                       }
                             } // Fine messaggio "M"           
-                    } // FINE messaggop proveniente da MASTER o vuoto
+                    } // FINE messaggo proveniente da MASTER o vuoto
 
 // ################################# COMANDO D DELETE AUXILIARIES
 // Comando SMS "D" cancella tutti i numeri eccetto il MASTER
 // SOLO se il messaggio SMS di richiesta è proveniente dal MASTER[0]
 //Se messaggio SMS è di tipo "D"
             if (message[0] == 'D')
+            //if (strcmp(message, "D") == 0)
                 {
                     if (strcmp(phone, phoneAut[0]) == 0) // Proveniente da telefono registrato MASTER
                         {
@@ -869,10 +878,12 @@ void loop()
                           for (uint8_t i = 1; i < 4; i++)
                             {
                               phoneAut[i][0] = '\0';
+                              // EEPROM.update((6+i*16), "");
                               writeString((6+i*16), "");  //Initial Address 6 and String type data [16 char])                      
                             }
-                      Auxnphones = 0;
-                      sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
+                          Auxnphones = 0;
+                      // sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
+                      strcpy(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
                       Serial.println(outmessage);
                       SendMsg();                    
                         }
@@ -889,7 +900,7 @@ void loop()
 // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione.... 
 // Valido solo se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
               
- if (message[0] == 'A')
+if (message[0] == 'A')
 {
     if (strcmp(phone, phoneAut[0]) == 0)
     {      
@@ -916,11 +927,11 @@ void loop()
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
                                 phoneT[strlen(message) - 2] = '\0';
                                 strcpy(phoneAut[phoneI], phoneT);
-                                writeString(6 + phoneI * 16, phoneT); // salva in EEPROM
+                                writeString(6 + phoneI * 16, phoneT); // salva in FLASH ed EEPROM
 
                                 CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (Auxnphones)
 
-                                sprintf(outmessage, "%s %d %s %s","A", phoneI, "TELEPHONE NUMBER SAVED ", message);
+                                sprintf(outmessage, "%s %d %s %s","A", phoneI, " TELEPHONE NUMBER SAVED ", message);
                                 Serial.println(outmessage);
                                 SendMsg();
                             } else
@@ -948,10 +959,11 @@ void loop()
 // ########################################### Fine - Comando A
 
 // ########################################### Comando N
-// Valido solo se e la richiesta proviene dal MASTER
+// Valido solo se la richiesta proviene dal MASTER
 
 //Se messaggio SMS è di tipo "N"
             if (message[0] == 'N')
+            // if (strcmp(message, "N") == 0 )
                 {
 // Comando SMS "N" Ritorna i numeri autorizzati
 // SOLO se il messaggio SMS e la richiesta è proveniente dal numero autorizzato MASTER[0]
@@ -973,6 +985,7 @@ void loop()
 // ########################################### Comando E     
 // ################## Se messaggio SMS "E" arriva da QUALSIASI TELEFONO - COMANDO NON DOCUMENTATO
             if (message[0] == 'E')
+            //if (strcmp(message, "D") == 0)
         {  
 // Delete in EEPROM and phoneAut all phone numbers - COMANDO RISERVATO
                     for (uint8_t i = 0; i < 4; i++)
@@ -990,6 +1003,7 @@ void loop()
 // #################################### Comando S
 // Valido solo se proveniente da numero Autorizzato (Master o  Ausiliario)
     if (message[0] == 'S')
+    // if (strcmp(message, "D") == 0)
         {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
             // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
