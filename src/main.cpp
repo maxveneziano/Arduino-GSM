@@ -6,20 +6,21 @@
   Specifiche:
   - OK    Verifica corretta registrazione
   - OK    Reinizializzazione ogni 24 ore (ogni giorno) ad ora prestabilita
-  - OK    invio SMS mancanza energia fino a 3 numeri
-  - OK    invio SMS riattivazione energia fino a 3 numeri
+  - OK    invio SMS mancanza energia fino a 4 numeri
+  - OK    invio SMS riattivazione energia fino a 4 numeri
   - OK    Comando SMS (S) per stato Power Supply e SMS a numero richiedente
           + Messaggio SMS per richiedente non autorizzato 
   - (NON Implementato)    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
   - OK da Master    Prevedere la richiesta SMS (CMD N) per vedere quanti e quali numeri sono impostati
           + Messaggio SMS per richiedente non autorizzato 
-  - NON Ancora (disabilitazione o abilitazione notifica a numero da richiesta SMS)    OK Cancellazione numeri ausiliari
   - (disabilitazione o abilitazione notifica a TUTTI i numeri da richiesta SMS)
   - OK Cancellazione numeri ausiliari
+
   - NON Ancora set/reset pin uscita da SMS numero richiedente abilitato
   - NON Ancora Stato pin ingresso su richiesta SMS a numero richiedente abilitato
+  - NON Ancora Inserimento PIN su comandi da qualsiasi telefono (Magari gestione in EEPROM)
 
-  - OK Verifica Indice telefoni ausiliari per  evitare sovrapposizioni in input (INDEX OVERLAP)
+  - OK Verifica Indice telefoni ausiliari per evitare sovrapposizioni in input (INDEX OVERLAP)
   - OK Prevedere SMS di conferma comandi (richiesta eseguita per il n.)
 
   TODO:
@@ -919,7 +920,7 @@ if (message[0] == 'A')
                     {
                       CalcAuxnphones(); // Calcola il numero attuale di telefoni ausiliari (Auxnphones)
                       
-                      if ((phoneI <= Auxnphones) || (phoneI == 1 && Auxnphones == 0))
+                      if (phoneI <= Auxnphones+1)
                       // Se l'indice è già presente o è il prossimo da sostituire
                       // Se è il primo inserimento di A1 (Auxnphones)=0
                             {
