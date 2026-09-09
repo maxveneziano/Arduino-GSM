@@ -931,7 +931,7 @@ if (message[0] == 'A')
 
                                 CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (Auxnphones)
 
-                                sprintf(outmessage, "%s %d %s %s","A", phoneI, " TELEPHONE NUMBER SAVED ", message);
+                                sprintf(outmessage, "%s%d %s %s","A", phoneI, " TELEPHONE NUMBER SAVED ", message);
                                 Serial.println(outmessage);
                                 SendMsg();
                             } else
