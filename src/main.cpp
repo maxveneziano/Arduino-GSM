@@ -902,7 +902,7 @@ void loop()
               
 if (message[0] == 'A')
 {
-    if (strcmp(phone, phoneAut[0]) == 0)
+    if (strcmp(phone, phoneAut[0]) == 0) // Solo se numero Master
     {      
 // Formato Numero errato ?      
             if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
@@ -926,8 +926,8 @@ if (message[0] == 'A')
                             {
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
                                 phoneT[strlen(message) - 2] = '\0';
-                                strcpy(phoneAut[phoneI], phoneT);
-                                writeString(6 + phoneI * 16, phoneT); // salva in FLASH ed EEPROM
+                                strcpy(phoneAut[phoneI], phoneT); // Salva in FLASH
+                                writeString(6 + phoneI * 16, phoneT); // Salva EEPROM
 
                                 CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (Auxnphones)
 
@@ -987,7 +987,7 @@ if (message[0] == 'A')
             if (message[0] == 'E')
             //if (strcmp(message, "D") == 0)
         {  
-// Delete in EEPROM and phoneAut all phone numbers - COMANDO RISERVATO
+// Delete in EEPROM and phoneAut (FLAH) all phone numbers - COMANDO RISERVATO
                     for (uint8_t i = 0; i < 4; i++)
                             {
                                 phoneAut[i][0] = '\0';
@@ -1047,6 +1047,7 @@ if (message[0] == 'A')
                 }
         }
 // #################################### Fine Comando S
+
     } // ####################################  FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
 // Finiti SMS da processare, esce dal ciclo while con MessageIndex anche in caso di errore (255)
 // Poi continua con il loop principale
