@@ -54,14 +54,13 @@ Il programma:
 
 - Salva e legge i numeri autorizzati su EEPROM per persistenza.
 
-
-  Comandi SMS
-  Numeri GSM 
+Numeri GSM 
   Italia    totale cifre 12 senza +
   Germania  totale cifre 13 senza +
   Svezia    totale cifre 11 senza +
   Finlandia totale cifre 10 senza +
 
+Comandi SMS
   "M+393391255597" Sostituisci cellulare autorizzato Master con un altro
   "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare in posizione....
   "D" CANCELLA tutti i cellulari ausiliari (non il Master)
