@@ -70,12 +70,20 @@ Comandi SMS
   "E" Cancella tutti i numeri incluso il Master - NON DOCUMENTATO. Accetta qualsiasi numero.
 
 Struttura EEPROM
-writeString((6+i*16), "");
-                            I- F      Profondità  
-0	6+0   6		Inizio MASTER   06-21     16  (14 cifre+"+"+\0)=16 caratteri
-1	6+16 22	  Inizio A1	      22-37     16
-2	6+32 38 	Inizio A2	      38-53     16
-3	6+48 54 	Inizio A3	      54-69     16
+pin (5 Char)                    I -F    Profondità
+          6      Inizio PIN     06-11   6 (5 cifre+\0)=6 caratteri
+EPINPIN=6
+
+n. telefono:
+writeString((11+i*16), "");
+writeString((EPTELIN+i*EPTELPRO), "");
+
+con EPTELIN=11 ed EPTELPRO=16:
+        I              I- F      Profondità
+0	11+0 11		Inizio MASTER     11-26     16  (14 cifre+"+"+\0)=16 caratteri
+1	11+16 27	Inizio A1	      27-42     16
+2	11+32 43 	Inizio A2	      43-58     16
+3	11+48 59 	Inizio A3	      59-74     16
 
   EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1) - NON PIU' UTILIZZATO
 
@@ -135,6 +143,9 @@ writeString((6+i*16), "");
 #define VOLT_CAL 136.0 
 #define MESSAGE_LENGTH 160
 #define BUFFER_LENGTH 25
+#define EPINPIN 6
+#define EPTELIN 10
+#define EPTELPRO 16
 char message[MESSAGE_LENGTH]; // Message = 160 Char
 char locDateTime[BUFFER_LENGTH];// Local Date and Time = 50 Char
 /* Giorno, Ora e Minuto
@@ -155,7 +166,7 @@ uint8_t Auth;
 
 uint8_t messageIndex = 0;
 float PowerVoltage;
-char phone[16], phoneT[16];
+char phone[16], phoneT[16];char pinR[06]; char eprpin [06] = "123A5";
 bool PwrActv=true; //Default assume rete presente all'avvio
 
 
@@ -732,8 +743,9 @@ SendMsg();
     Auxnphones = 0;
     for (uint8_t i = 0; i < 4; i++)
     {
-        read_String(6 + i*16, phoneT);
-        // nuova funzione che legge la EEPROM e copia in phoneT (phoneAut) - elemento "i"
+        //read_String(6 + i*16, phoneT);
+        read_String(EPTELIN + i*EPTELPRO, phoneT);
+        // Nuova funzione che legge la EEPROM e copia in phoneT (phoneAut) - elemento "i"
         
         // Checks the presence of a Phone number (*) in EEPROM.
         // if (phoneAut[i][0] == '+')
@@ -781,6 +793,9 @@ void setup()
 
     RestorePhones();
 // At Power Up copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
+
+    writeString(EPINPIN, eprpin);
+    // Scrive il PIN di default in EEPROM
   }
 
 void loop()
@@ -835,32 +850,71 @@ void loop()
 // ############################## COMANDO M - Sostituisce o Imposta cellulare Autorizzato MASTER
 // ====================================================================================
 // Se messaggio SMS arriva dal numero telefonico autorizzato MASTER [0]
-// o stringa vuota "" (nessun telefono registrato)
+// o stringa vuota "" (Factory - nessun telefono ancora registrato)
 // ====================================================================================
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
 // Comando SMS "M+393391255597" (13) "M+393334188263" (13)
                         if (message[0] == 'M')
                             {
-// Lunghezza Numero errato ? 10 > N > 13   compreso tra 10 e 13   
-                                if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
+// Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19   
+                                if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
                                     {
-                                        sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
+                                        sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
                                         Serial.println(outmessage);
                                         SendMsg();
                                     }
-                                else
+                                else // Formato Numero e PIN corretto
                                       {
-// Formato Numero corretto
-// Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
-                                          strncpy(phoneT, message + 1, strlen(message) - 1);
-                                          phoneT[strlen(message) - 1] = '\0';
-                                          strcpy(phoneAut[0], phoneT);
-                                          writeString(6, phoneT);
+                                        // Restituisce il n.telefonico comprensivo di "+" e "/0")
+                                        int i = 0;
+                                        while (message[i + 1] != ' ' && message[i + 1] != '\0')
+                                            {
+                                                phoneT[i] = message[i + 1];
+                                                i++;
+                                            }
+                                        phoneT[i] = '\0';
 
-                                          sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", message);
-                                          Serial.println(outmessage);
-                                          SendMsg(); 
+                                        // Estrae il PIN Restituisce il PIN comprensivo "/0")
+                                        int j = 0;
+                                        while (message[i + 1 + j] != '\0')
+                                            {
+                                                pinR[j] = message[i + 1 + j];
+                                                j++;
+                                            }
+                                        pinR[j] = '\0';
+                                        
+                                        if (strlen(pinR) != 5)
+                                            {
+                                                sprintf(outmessage, "WRONG PIN FORMAT %s", message);
+                                                Serial.println(outmessage);
+                                                SendMsg();
+                                            }
+                                            else
+                                            {
+                                            // Formato Numero e PIN corretto
+                                            // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
+                                            
+                                            // strncpy(phoneT, message + 1, strlen(message) - 1);
+                                            // phoneT[strlen(message) - 1] = '\0';
+                                        
+                                            if (strcmp(eprpin, pinR) != 0)
+                                                {
+                                                 sprintf(outmessage, "WRONG PIN %s", message);
+                                                 Serial.println(outmessage);
+                                                 SendMsg();
+                                                }
+                                                else
+                                                    {
+                                                    strcpy(phoneAut[0], phoneT);
+                                                    writeString(EPTELIN, phoneT);
+
+                                                    sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
+                                                    Serial.println(outmessage);
+                                                    SendMsg();
+                                                    } 
+                                            }                                                        
+
                                       }
                             } // Fine messaggio "M"           
                     } // FINE messaggo proveniente da MASTER o vuoto
@@ -878,8 +932,9 @@ void loop()
                           for (uint8_t i = 1; i < 4; i++)
                             {
                               phoneAut[i][0] = '\0';
-                              // EEPROM.update((6+i*16), "");
-                              writeString((6+i*16), "");  //Initial Address 6 and String type data [16 char])                      
+                              writeString((EPTELIN+i*EPTELPRO), "");
+                              // Initial Address 6 and String type data [16 char])
+                              // writeString((6+i*16), "");                        
                             }
                           Auxnphones = 0;
                       // sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
@@ -927,7 +982,8 @@ if (message[0] == 'A')
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
                                 phoneT[strlen(message) - 2] = '\0';
                                 strcpy(phoneAut[phoneI], phoneT); // Salva in FLASH
-                                writeString(6 + phoneI * 16, phoneT); // Salva EEPROM
+                                // writeString(6 + phoneI * 16, phoneT);
+                                writeString(EPTELIN + phoneI * EPTELPRO, phoneT);                               // Salva EEPROM
 
                                 CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (Auxnphones)
 
@@ -987,11 +1043,13 @@ if (message[0] == 'A')
             if (message[0] == 'E')
             //if (strcmp(message, "D") == 0)
         {  
-// Delete in EEPROM and phoneAut (FLAH) all phone numbers - COMANDO RISERVATO
+// Delete in EEPROM and phoneAut (FLASH) all phone numbers - COMANDO RISERVATO
                     for (uint8_t i = 0; i < 4; i++)
                             {
                                 phoneAut[i][0] = '\0';
-                                writeString((6+i*16), "");  //Initial Address 6 and String type data [16 char])                      
+                                // writeString((6+i*16), "");
+                                //Initial Address 6 and String type data [16 char])
+                                 writeString((EPTELIN+i*EPTELPRO), "");                      
                             }
                     Auxnphones = 0;
                     sprintf(outmessage, "ALL NUMBERS DELETED");
