@@ -166,8 +166,8 @@ uint8_t Auth;
 
 uint8_t messageIndex = 0;
 float PowerVoltage;
-char phone[16], phoneT[16];char pinR[06]; char eprpin [06] = "123A5";
-bool PwrActv=true; //Default assume rete presente all'avvio
+char phone[16], phoneT[16];char pinR[06];char pinO[06];char pinN[06]; char eprpin [06] = "123A5";
+bool PwrActv=true; //Default assume rete elettrica presente all'avvio
 
 
 
@@ -784,7 +784,7 @@ void setup()
   // si suppone che sia presente la rete.
     pinMode(PIN_RST, OUTPUT);
     
-// Inizializza GSM e Valore Tempo iniziale- Per evitare valori non determinati
+// Inizializza GSM e Valore Tempo iniziale - Per evitare valori non determinati
     initapp();
 
 // EEPROM.update(5, 0);
@@ -795,7 +795,7 @@ void setup()
     RestorePhones();
 // At Power Up copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
 
-    writeString(EPINPIN, eprpin);
+    // writeString(EPINPIN, eprpin);
     // Scrive il PIN di default in EEPROM
   }
 
@@ -851,7 +851,7 @@ void loop()
 // ############################## COMANDO M - Sostituisce o Imposta cellulare Autorizzato MASTER
 // ====================================================================================
 // Se messaggio SMS arriva dal numero telefonico autorizzato MASTER [0]
-// o stringa vuota "" (Factory - nessun telefono ancora registrato - richiede PIN)
+// o stringa vuota "" (Factory - nessun telefono ancora registrato -> richiede PIN)
 // ====================================================================================
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
@@ -921,7 +921,7 @@ void loop()
                                 } // End Numero M Vuoto
                                  else if (strcmp(phone, phoneAut[0]) == 0)
                                       {
-// Lunghezza Numero errato ? 10 > N > 13   compreso tra 10 e 13   
+                                  // Lunghezza Numero errato ? 10 > N > 13   compreso tra 10 e 13   
                                         if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
                                           {
                                             sprintf(outmessage, "WRONG M NUMBER FORMAT %s", message);
@@ -1032,7 +1032,6 @@ if (message[0] == 'A')
                           SendMsg();
                         }
                 }
-          
     }
     else
     {
@@ -1042,6 +1041,60 @@ if (message[0] == 'A')
     }
 }
 // ########################################### Fine - Comando A
+
+// ########################################### Comando P
+// Comando SMS "P 12345 54321" SOSTITUISCI PIN (PIN OLD, PIN NEW)
+// Valido solo se messaggio SMS "P 12345 54321" arriva dal numero telefonico autorizzato Master [0]
+              
+if (message[0] == 'P')
+{  
+    if (strcmp(phone, phoneAut[0]) == 0)
+    { // Solo se arriva dal numero telefonico autorizzato Master [0]
+      // Formato PIN errato ?      
+      if (strlen(message) != 13)
+        {
+          // Formato PIN errato
+          sprintf(outmessage, "WRONG PINs FORMAT %s", message);
+          Serial.println(outmessage);
+          SendMsg();
+        } else
+          {
+            strncpy(pinO, message + 2, 5);
+            pinO[5] = '\0';
+
+            strncpy(pinN, message + 8, 5);
+            pinN[5] = '\0';
+
+            if (strcmp(pinO, eprpin) == 0)
+            {
+            // Formato PIN corretto
+            //strncpy(pinN, message + 1, strlen(message) - 1);
+            //pinN[strlen(message) - 1] = '\0';
+            strcpy(eprpin, pinN); // Salva in RAM
+            writeString(EPINPIN, eprpin); // Salva in EEPROM
+
+            sprintf(outmessage, "PIN %s SAVED", pinN);
+            Serial.println(outmessage);
+            SendMsg();
+            } 
+            else
+              {
+                sprintf(outmessage, "WRONG OLD PIN %s", message);
+                Serial.println(outmessage);
+                SendMsg();
+              }
+            }
+
+    }
+    else
+    {
+        strcpy(outmessage, "Request from NOT AUTHORIZED number");
+        Serial.println(outmessage);
+        SendMsg();
+    } 
+}
+// ########################################### Fine - Comando P
+
 
 // ########################################### Comando N
 // Valido solo se la richiesta proviene dal MASTER
