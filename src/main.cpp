@@ -763,6 +763,7 @@ SendMsg();
         // Empty position
         }
     // Now the content in RAM (phoneAut) = EEPROM
+    // Except for the first time when EEPROM is empty and phoneAut has a predefined number
     // Counts valid phones
     Serial.print (F ("Autorized phone n."));
     Serial.print (i);
@@ -850,15 +851,17 @@ void loop()
 // ############################## COMANDO M - Sostituisce o Imposta cellulare Autorizzato MASTER
 // ====================================================================================
 // Se messaggio SMS arriva dal numero telefonico autorizzato MASTER [0]
-// o stringa vuota "" (Factory - nessun telefono ancora registrato)
+// o stringa vuota "" (Factory - nessun telefono ancora registrato - richiede PIN)
 // ====================================================================================
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
 // Comando SMS "M+393391255597" (13) "M+393334188263" (13)
                         if (message[0] == 'M')
                             {
+                              if (strlen(phoneAut[0]) == 0)
+                                {
 // Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19   
-                                if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
+                                  if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
                                     {
                                         sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
                                         Serial.println(outmessage);
@@ -877,9 +880,9 @@ void loop()
 
                                         // Estrae il PIN Restituisce il PIN comprensivo "/0")
                                         int j = 0;
-                                        while (message[i + 1 + j] != '\0')
+                                        while (message[i + 2 + j] != '\0')
                                             {
-                                                pinR[j] = message[i + 1 + j];
+                                                pinR[j] = message[i + 2 + j];
                                                 j++;
                                             }
                                         pinR[j] = '\0';
@@ -912,10 +915,36 @@ void loop()
                                                     sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
                                                     Serial.println(outmessage);
                                                     SendMsg();
-                                                    } 
-                                            }                                                        
+                                                    }
+                                              } //Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
+                                            } // End Formato Numero e PIN corretto
+                                } // End Numero M Vuoto
+                                 else if (strcmp(phone, phoneAut[0]) == 0)
+                                      {
+// Lunghezza Numero errato ? 10 > N > 13   compreso tra 10 e 13   
+                                        if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
+                                          {
+                                            sprintf(outmessage, "WRONG M NUMBER FORMAT %s", message);
+                                            Serial.println(outmessage);
+                                            SendMsg();
+                                          }
+                                  
+                                        else 
+                                            {  // Formato Numero M corretto
+                                              // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
+                                            
+                                              strncpy(phoneT, message + 1, strlen(message) - 1);
+                                              phoneT[strlen(message) - 1] = '\0';
+                                        
+                                            
+                                              strcpy(phoneAut[0], phoneT);
+                                              writeString(EPTELIN, phoneT);
 
-                                      }
+                                              sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
+                                              Serial.println(outmessage);
+                                              SendMsg();
+                                            }        
+                                } // End Numero M UGUALE a EEPROM     
                             } // Fine messaggio "M"           
                     } // FINE messaggo proveniente da MASTER o vuoto
 
