@@ -66,6 +66,19 @@ Numeri GSM
   Svezia    totale cifre 11 senza +
   Finlandia totale cifre 10 senza +
 
+Paese    Caratteri massimi dell'esempio	char necessario
+Italia	  13	14
+Germania	14	15
+Svezia	  12	13
+Finlandia	13	14
+
+Paese	      Prefisso	Esempio internazionale	Cifre numeriche*	Caratteri con +
+🇮🇹 Italia	    +39	    +393391255597	                12	            13
+🇩🇪 Germania	  +49	    +4915123456789	              13	            14
+🇸🇪 Svezia	    +46	    +46701234567	                11	            12
+🇫🇮 Finlandia	+358	  +358451234567	                12	             13
+  
+
 Comandi SMS
   "M+393391255597" Sostituisci cellulare autorizzato Master con un altro
   "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare in posizione....
@@ -881,14 +894,14 @@ void loop()
 // ====================================================================================
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
-// Comando SMS "M+393391255597" (13) "M+393334188263" (13)
+// Comando SMS "M+393391255597" (12) "M+393334188263" (12)
                         if (message[0] == 'M')
                             { 
                               if (strlen(phoneAut[0]) == 0)
                               // Telefono Master vuoto -> richiede comando con PIN
                                  {
-                              // Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19   
-                                  if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
+                              // Lunghezza Numero errato ? 17 > N > 19   compreso tra 17 e 19  
+                                  if ((strlen(message) -2) < 17 || (strlen(message) - 2) > 19)
                                     {
                                         sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
                                         Serial.println(outmessage);
@@ -946,8 +959,8 @@ void loop()
                                 } // End Numero M Vuoto
                                  else if (strcmp(phone, phoneAut[0]) == 0)
                                       {
-                                  // Lunghezza Numero errato ? 10 > N > 13   compreso tra 10 e 13   
-                                        if ((strlen(message) -2) < 10 || (strlen(message) - 2) > 13)
+                                  // Lunghezza Numero errato ? 11 > N > 13   compreso tra 11 e 13   
+                                        if ((strlen(message) - 2) < 11 || (strlen(message) - 2) > 13)
                                           {
                                             sprintf(outmessage, "WRONG M NUMBER FORMAT %s", message);
                                             Serial.println(outmessage);
@@ -1146,21 +1159,80 @@ if (message[0] == 'P')
 // ########################################### Comando F    
 // ##################
 // ################## Se messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: M+393391255597 12345
-            if (message[0] == 'F')
-        {  
-// Delete in EEPROM and phoneAut (FLASH) all phone numbers - COMANDO RISERVATO
-                    for (uint8_t i = 0; i < 4; i++)
-                            {
-                                phoneAut[i][0] = '\0';
-                                // OLD write_String((6+i*16), "");
-                                // OLD Initial Address 6 and String type data [16 char])
-                                 write_String((EPTELIN+i*EPTELPRO), "");                      
-                            }
-                    Auxnphones = 0;
-                    sprintf(outmessage, "ALL NUMBERS DELETED");
-                    Serial.println(outmessage);
-                    SendMsg();                                   
-        }
+
+if (strcmp(phone, phoneAut[0]) == 0)
+                    {
+// Comando SMS "F393391255597" (13) "F393334188263" (13) + PIN (5) - "F393391255597 12345"
+                        if (message[0] == 'F')
+                            { 
+                              // Lunghezza Numero errato ? 17 > N > 19   compreso tra 16 e 19   
+                                  if ((strlen(message) -1) < 17 || (strlen(message) - 1) > 19)
+                                    {
+                                        sprintf(outmessage, "WRONG F NUMBER OR PIN FORMAT %s", message);
+                                        Serial.println(outmessage);
+                                        SendMsg();
+                                    }
+                                   else // Formato (Numero e PIN) corretto
+                                      {
+                                        // Restituisce il n.telefonico comprensivo di "+" e "/0")
+                                        int i = 0;
+                                        while (message[i + 1] != ' ' && message[i + 1] != '\0')
+                                            {
+                                                phoneT[i] = message[i + 1];
+                                                i++;
+                                            }
+                                        phoneT[i] = '\0';
+
+                                        // Estrae il PIN Restituisce il PIN comprensivo "/0")
+                                        int j = 0;
+                                        while (message[i + 2 + j] != '\0')
+                                            {
+                                                pinRead[j] = message[i + 2 + j];
+                                                j++;
+                                            }
+                                        pinRead[j] = '\0';
+                                        
+                                        if (strlen(pinRead) != 5)
+                                            {
+                                                sprintf(outmessage, "WRONG PIN FORMAT %s", message);
+                                                Serial.println(outmessage);
+                                                SendMsg();
+                                            }
+                                            else
+                                            {
+                                            // Formato (PIN) corretto
+                                                                                                                                
+                                            // Controllo correttezza PIN
+                                            if (strcmp(eprpin, pinRead) != 0)
+                                                {
+                                                 sprintf(outmessage, "WRONG PIN %s", message);
+                                                 Serial.println(outmessage);
+                                                 SendMsg();
+                                                }
+                                                else
+                                                {
+                                                  // PIN corretto
+
+                                                  // Delete in EEPROM and phoneAut (FLASH) all phone numbers - Set PIN to Factory 123A5
+                                                  for (uint8_t i = 0; i < 4; i++)
+                                                    {
+                                                      phoneAut[i][0] = '\0';
+                                                    // OLD write_String((6+i*16), "");
+                                                    // OLD Initial Address 6 and String type data [16 char])
+                                                      write_String((EPTELIN+i*EPTELPRO), "");                      
+                                                    }
+                                                  write_String(EPINPIN, pinDfl);  
+                                                  Auxnphones = 0;
+                                                  sprintf(outmessage, "ALL NUMBERS DELETED & PIN SET TO FACTORY");
+                                                  Serial.println(outmessage);
+                                                  SendMsg();
+                                                }                          
+                                                  
+                                              } // End Formato (PIN) corretto
+                                            } // End Formato (Numero e PIN) corretto                       
+                              } // FINE verifica telefono MASTER
+                                                            } // FINE messaggo proveniente da MASTER o vuoto
+
 // #################################### Fine Comando E
 
 // #################################### Comando S
