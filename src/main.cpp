@@ -54,9 +54,9 @@ Il programma:
 
 - E → Comando con PIN riservato, cancella tutti i numeri
 
-- P Cambia PIN /richiede precedente
+- P Cambia PIN / richiede precedente
 
-- F Factory reset - Solo Master
+- F Factory reset - Solo Master con PIN - cancella tutti i numeri (sostituisce E )
 
 - Salva e legge i numeri autorizzati su EEPROM per persistenza.
 
@@ -876,22 +876,25 @@ void loop()
 // ====================================================================================
 // Se messaggio SMS arriva dal numero telefonico autorizzato MASTER [0]
 // o stringa vuota "" (Factory - nessun telefono ancora registrato -> richiede il PIN)
+// Telefono Master già inserito                         Regime -  Comando: M+393391255597
+// Telefono Master non ancora inserito (EEPROM vuota) - Inizio -  Comando: M+393391255597 12345
 // ====================================================================================
                 if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
                     {
 // Comando SMS "M+393391255597" (13) "M+393334188263" (13)
                         if (message[0] == 'M')
-                            {
+                            { 
                               if (strlen(phoneAut[0]) == 0)
-                                {
-// Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19   
+                              // Telefono Master vuoto -> richiede comando con PIN
+                                 {
+                              // Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19   
                                   if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
                                     {
                                         sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
                                         Serial.println(outmessage);
                                         SendMsg();
                                     }
-                                else // Formato Numero e PIN corretto
+                                else // Formato (Numero e PIN) corretto
                                       {
                                         // Restituisce il n.telefonico comprensivo di "+" e "/0")
                                         int i = 0;
@@ -919,12 +922,9 @@ void loop()
                                             }
                                             else
                                             {
-                                            // Formato Numero e PIN corretto
+                                            // Formato (PIN) corretto
                                             // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
-                                            
-                                            // strncpy(phoneT, message + 1, strlen(message) - 1);
-                                            // phoneT[strlen(message) - 1] = '\0';
-                                        
+                                                                                    
                                             if (strcmp(eprpin, pinRead) != 0)
                                                 {
                                                  sprintf(outmessage, "WRONG PIN %s", message);
@@ -932,6 +932,7 @@ void loop()
                                                  SendMsg();
                                                 }
                                                 else
+                                                  // PIN corretto
                                                     {
                                                     strcpy(phoneAut[0], phoneT);
                                                     write_String(EPTELIN, phoneT);
@@ -941,7 +942,7 @@ void loop()
                                                     SendMsg();
                                                     }
                                               } //Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
-                                            } // End Formato Numero e PIN corretto
+                                            } // End Formato (Numero e PIN) corretto
                                 } // End Numero M Vuoto
                                  else if (strcmp(phone, phoneAut[0]) == 0)
                                       {
@@ -952,9 +953,9 @@ void loop()
                                             Serial.println(outmessage);
                                             SendMsg();
                                           }
-                                  
-                                        else 
-                                            {  // Formato Numero M corretto
+                                          else 
+                                            {
+                                              // Formato Numero M corretto
                                               // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
                                             
                                               strncpy(phoneT, message + 1, strlen(message) - 1);
@@ -1142,17 +1143,17 @@ if (message[0] == 'P')
                 }
 // ################################### Fine - Comando N
 
-// ########################################### Comando E     
-// ################## Se messaggio SMS "E" arriva da QUALSIASI TELEFONO - COMANDO NON DOCUMENTATO
-            if (message[0] == 'E')
-            //if (strcmp(message, "D") == 0)
+// ########################################### Comando F    
+// ##################
+// ################## Se messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: M+393391255597 12345
+            if (message[0] == 'F')
         {  
 // Delete in EEPROM and phoneAut (FLASH) all phone numbers - COMANDO RISERVATO
                     for (uint8_t i = 0; i < 4; i++)
                             {
                                 phoneAut[i][0] = '\0';
-                                // write_String((6+i*16), "");
-                                //Initial Address 6 and String type data [16 char])
+                                // OLD write_String((6+i*16), "");
+                                // OLD Initial Address 6 and String type data [16 char])
                                  write_String((EPTELIN+i*EPTELPRO), "");                      
                             }
                     Auxnphones = 0;
