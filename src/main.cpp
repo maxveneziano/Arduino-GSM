@@ -66,12 +66,6 @@ Numeri GSM
   Svezia    totale cifre 11 senza +
   Finlandia totale cifre 10 senza +
 
-Paese    Caratteri massimi dell'esempio	char necessario
-Italia	  13	14
-Germania	14	15
-Svezia	  12	13
-Finlandia	13	14
-
 Paese	      Prefisso	Esempio internazionale	Cifre numeriche*	Caratteri con +
 🇮🇹 Italia	    +39	    +393391255597	                12	            13
 🇩🇪 Germania	  +49	    +4915123456789	              13	            14
@@ -95,20 +89,20 @@ Comandi SMS
 - F Factory reset - Solo Master
 
 Struttura EEPROM
-pin (5 Char)                    I -F    Profondità
+PIN (5 Char)                    I -F    Profondità
           6      Inizio PIN     06-11   6 (5 cifre+\0)=6 caratteri
-EPINPIN=6
+EPINPIN=6 EPPINPRO=6
 
 n. telefono:
-write_String((11+i*16), "");
+write_String((12+i*16), "");
 write_String((EPTELIN+i*EPTELPRO), "");
 
-con EPTELIN=11 ed EPTELPRO=16:
-        I              I- F      Profondità
-0	11+0 11		Inizio MASTER     11-26     16  (14 cifre+"+"+\0)=16 caratteri
-1	11+16 27	Inizio A1	      27-42     16
-2	11+32 43 	Inizio A2	      43-58     16
-3	11+48 59 	Inizio A3	      59-74     16
+con EPTELIN=12 ed EPTELPRO=16:
+        I         I- F      Profondità
+0	12+0 12		Inizio MASTER   12-27     16  (14 cifre+"+"+"\0")=16 caratteri
+1	12+16 28	Inizio A1	      28-43     16
+2	12+32 44 	Inizio A2	      44-59     16
+3	12+48 60 	Inizio A3	      60-75     16
 
   EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1) - NON PIU' UTILIZZATO
 
@@ -169,7 +163,8 @@ con EPTELIN=11 ed EPTELPRO=16:
 #define MESSAGE_LENGTH 160
 #define BUFFER_LENGTH 25
 #define EPINPIN 6
-#define EPTELIN 10
+#define EPPINPRO 6
+#define EPTELIN 12
 #define EPTELPRO 16
 char message[MESSAGE_LENGTH]; // Message = 160 Char
 char locDateTime[BUFFER_LENGTH];// Local Date and Time = 50 Char
@@ -194,11 +189,16 @@ uint8_t Auth;
 
 uint8_t messageIndex = 0;
 float PowerVoltage;
-char phone[16], phoneT[16]; char pinRead[06];char pinOld[06];char pinNew[06]; char pinDfl [06] = "123A5"; char eprpin [06]; 
+char phone [16];
+char phoneT [16];
+char pinRead [6];
+char pinOld [6];
+char pinNew [6];
+char pinDfl [6] = "123A5";
+char eprpin [6]; 
 bool PwrActv=true; //Default assume rete elettrica presente all'avvio
-
-
 char datetime[24];
+
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
 //char *phoneAut[] = {"+393460607220","+393383418818", "",""};
 //char *phoneAut[] = {"+393460607220","", "",""};
@@ -607,7 +607,7 @@ void write_String(uint8_t offs, const char *edata)
   EEPROM.write(offs + i, '\0'); // terminatore
   }
 
-void read_String(uint8_t offs, char *dest)
+void read_StringTel(uint8_t offs, char *dest)
   {
     uint8_t len = 0;
     unsigned char k;
@@ -619,7 +619,24 @@ void read_String(uint8_t offs, char *dest)
         len++;
     }
 
-  while (k != '\0' && len < 16); // Ridurre a 16
+  while (k != '\0' && len < EPTELPRO); // Ridurre a 16 (EPTELPRO=16)
+
+  dest[len - 1] = '\0'; // assicurati che termini con \0
+  }
+
+  void read_StringPin(uint8_t offs, char *dest)
+  {
+    uint8_t len = 0;
+    unsigned char k;
+
+  do
+    {
+        k = EEPROM.read(offs + len);
+        dest[len] = k;
+        len++;
+    }
+
+  while (k != '\0' && len < EPPINPRO); // Ridurre a 6 (EPPINPRO=6)
 
   dest[len - 1] = '\0'; // assicurati che termini con \0
   }
@@ -761,8 +778,8 @@ SendMsg();
     Auxnphones = 0;
     for (uint8_t i = 0; i < 4; i++)
     {
-        //read_String(6 + i*16, phoneT);
-        read_String(EPTELIN + i*EPTELPRO, phoneT);
+        //OLD read_StringTel(6 + i*16, phoneT);
+        read_StringTel(EPTELIN + i*EPTELPRO, phoneT);
         // Nuova funzione che legge la EEPROM e copia in phoneT (phoneAut) - elemento "i"
         
         // Checks the presence of a Phone number (*) in EEPROM.
@@ -815,8 +832,9 @@ void setup()
 
 pinDfl [05] = '\0'; // Aggiunge Terminatore stringa
 
-read_String(EPINPIN, eprpin);
+read_StringPin(EPINPIN, eprpin);
 // At Power Up legge il PIN in EEPROM
+
 
 if (strlen(eprpin) != 5)
 // Se EEPROM non contiene un PIN di 5 caratteri (Sporca)
@@ -827,6 +845,7 @@ if (strlen(eprpin) != 5)
       Serial.print(F("!= 5 eprpin " ));
       Serial.println(eprpin);
       Serial.println (strlen(eprpin));
+      strcpy(eprpin, pinDfl);      // scrive in eprpin il PIN di default "123A5"
     }
 
       Serial.print(F("Executing Setup "));
@@ -920,19 +939,20 @@ void loop()
 
                                         // Estrae il PIN Restituisce il PIN comprensivo "/0")
                                         int j = 0;
-                                        while (message[i + 2 + j] != '\0')
+                                        while (message[i + 2 + j] != '\0' && j < 5)
                                             {
                                                 pinRead[j] = message[i + 2 + j];
                                                 j++;
                                             }
                                         pinRead[j] = '\0';
-                                        
-                                        if (strlen(pinRead) != 5)
-                                            {
-                                                sprintf(outmessage, "WRONG PIN FORMAT %s", message);
-                                                Serial.println(outmessage);
-                                                SendMsg();
-                                            }
+
+                              // PIN valido solo se ha esattamente 5 caratteri E il messaggio finisce qui
+                                        if (j != 5 || message[i + 2 + j] != '\0')
+                                        {
+                                            sprintf(outmessage, "WRONG PIN FORMAT %s", message);
+                                            Serial.println(outmessage);
+                                            SendMsg();
+                                        }
                                             else
                                             {
                                             // Formato (PIN) corretto
@@ -1026,8 +1046,9 @@ if (message[0] == 'A')
 {
     if (strcmp(phone, phoneAut[0]) == 0) // Solo se numero Master
     {      
-// Formato Numero errato ?      
-            if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
+// Formato Numero errato ?
+// Lunghezza Numero errato  11 > N > 13   compreso tra 11 e 13       
+            if ((strlen(message) -3) < 11 || (strlen(message) - 3) > 13)
               {
                 sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
                 Serial.println(outmessage);
@@ -1137,7 +1158,6 @@ if (message[0] == 'P')
 
 //Se messaggio SMS è di tipo "N"
             if (message[0] == 'N')
-            // if (strcmp(message, "N") == 0 )
                 {
 // Comando SMS "N" Ritorna i numeri autorizzati
 // SOLO se il messaggio SMS e la richiesta è proveniente dal numero autorizzato MASTER[0]
@@ -1158,51 +1178,35 @@ if (message[0] == 'P')
 
 // ########################################### Comando F    
 // ##################
-// ################## Se messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: M+393391255597 12345
+// ################## Se messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: 12345
 
-if (strcmp(phone, phoneAut[0]) == 0)
-                    {
-// Comando SMS "F393391255597" (13) "F393334188263" (13) + PIN (5) - "F393391255597 12345"
+// Comando SMS "F12345" (6)
                         if (message[0] == 'F')
                             { 
-                              // Lunghezza Numero errato ? 17 > N > 19   compreso tra 16 e 19   
-                                  if ((strlen(message) -1) < 17 || (strlen(message) - 1) > 19)
+                              if (strcmp(phone, phoneAut[0]) == 0)
+                                {                              
+                              // Lunghezza Comando errato ? 5 
+                                  if ((strlen(message) -1) != 5)
                                     {
-                                        sprintf(outmessage, "WRONG F NUMBER OR PIN FORMAT %s", message);
+                                        sprintf(outmessage, "WRONG PIN FORMAT %s", message);
                                         Serial.println(outmessage);
                                         SendMsg();
                                     }
-                                   else // Formato (Numero e PIN) corretto
+                                   else // Formato PIN corretto
                                       {
-                                        // Restituisce il n.telefonico comprensivo di "+" e "/0")
+                                        // Estrae il PIN Restituisce il PIN comprensivo con "/0")
                                         int i = 0;
-                                        while (message[i + 1] != ' ' && message[i + 1] != '\0')
+                                        // while (message[i + 1 + j] != '\0')
+                                        while (message[i + 1] != '\0' && i < 5)
                                             {
-                                                phoneT[i] = message[i + 1];
+                                                pinRead[i] = message[i + 1];
                                                 i++;
                                             }
-                                        phoneT[i] = '\0';
-
-                                        // Estrae il PIN Restituisce il PIN comprensivo "/0")
-                                        int j = 0;
-                                        while (message[i + 2 + j] != '\0')
-                                            {
-                                                pinRead[j] = message[i + 2 + j];
-                                                j++;
-                                            }
-                                        pinRead[j] = '\0';
-                                        
-                                        if (strlen(pinRead) != 5)
-                                            {
-                                                sprintf(outmessage, "WRONG PIN FORMAT %s", message);
-                                                Serial.println(outmessage);
-                                                SendMsg();
-                                            }
-                                            else
-                                            {
+                                        pinRead[i] = '\0';
+                                          
                                             // Formato (PIN) corretto
                                                                                                                                 
-                                            // Controllo correttezza PIN
+                                            // Controllo equivalenza PIN
                                             if (strcmp(eprpin, pinRead) != 0)
                                                 {
                                                  sprintf(outmessage, "WRONG PIN %s", message);
@@ -1221,19 +1225,26 @@ if (strcmp(phone, phoneAut[0]) == 0)
                                                     // OLD Initial Address 6 and String type data [16 char])
                                                       write_String((EPTELIN+i*EPTELPRO), "");                      
                                                     }
-                                                  write_String(EPINPIN, pinDfl);  
+                                                  write_String(EPINPIN, pinDfl);
+                                                  strcpy(eprpin, pinDfl);      // scrive in eprpin il PIN di default "123A5" 
                                                   Auxnphones = 0;
                                                   sprintf(outmessage, "ALL NUMBERS DELETED & PIN SET TO FACTORY");
                                                   Serial.println(outmessage);
                                                   SendMsg();
-                                                }                          
+                                                }                        
                                                   
-                                              } // End Formato (PIN) corretto
-                                            } // End Formato (Numero e PIN) corretto                       
-                              } // FINE verifica telefono MASTER
-                                                            } // FINE messaggo proveniente da MASTER o vuoto
+                                              } // End Formato PIN corretto 
+                            } // FINE messaggo proveniente da MASTER
+                            else
+                              {
+                                strcpy(outmessage, "Request from NOT AUTHORIZED number");
+                                Serial.println(outmessage);
+                                SendMsg();
+                              }
 
-// #################################### Fine Comando E
+                          } //  FINE comando F
+
+// #################################### Fine Comando F
 
 // #################################### Comando S
 // Valido solo se proveniente da numero Autorizzato (Master o  Ausiliario)
