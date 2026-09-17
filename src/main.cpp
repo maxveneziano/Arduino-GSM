@@ -639,7 +639,7 @@ void write_StringPin(uint8_t offs, const char *edata)
 }
 
 
-
+/*
 void read_StringTel(uint8_t offs, char *dest)
   {
     uint8_t len = 0;
@@ -656,7 +656,24 @@ void read_StringTel(uint8_t offs, char *dest)
 
   dest[len - 1] = '\0'; // assicurati che termini con \0
   }
+*/
 
+void read_StringTel(uint8_t offs, char *dest)
+{
+    uint8_t i;
+
+    for (i = 0; i < EPTELPRO - 1; i++)
+    {
+        dest[i] = EEPROM.read(offs + i);
+
+        if (dest[i] == '\0')
+            break;
+    }
+
+    dest[i] = '\0';
+}
+
+/*
   void read_StringPin(uint8_t offs, char *dest)
   {
     uint8_t len = 0;
@@ -673,6 +690,23 @@ void read_StringTel(uint8_t offs, char *dest)
 
   dest[len - 1] = '\0'; // assicurati che termini con \0
   }
+  */
+
+void read_StringPin(uint8_t offs, char *dest)
+{
+    uint8_t i;
+
+    for (i = 0; i < EPPINPRO - 1; i++)
+    {
+        dest[i] = EEPROM.read(offs + i);
+
+        if (dest[i] == '\0')
+            break;
+    }
+
+    dest[i] = '\0';
+}
+
 
 bool TimeToReset () {
 // Reset Now?
