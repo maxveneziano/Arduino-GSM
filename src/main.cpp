@@ -93,9 +93,10 @@ PIN (5 Char)                    I -F    Profondità
           6      Inizio PIN     06-11   6 (5 cifre+\0)=6 caratteri
 EPINPIN=6 EPPINPRO=6
 
+OLD
 n. telefono:
 write_String((12+i*16), "");
-write_String((EPTELIN+i*EPTELPRO), "");
+write_StringTel((EPTELIN+i*EPTELPRO), "");
 
 con EPTELIN=12 ed EPTELPRO=16:
         I         I- F      Profondità
@@ -596,6 +597,7 @@ if (gprs.sendSMS(phone, outmessage))
 			              }
 }
 
+/*
 void write_String(uint8_t offs, const char *edata)
   {
     uint8_t i = 0;
@@ -608,6 +610,35 @@ void write_String(uint8_t offs, const char *edata)
     }
   EEPROM.write(offs + i, '\0'); // terminatore
   }
+  */
+
+void write_StringTel(uint8_t offs, const char *edata)
+{
+    uint8_t i = 0;
+
+    while (edata[i] != '\0' && i < EPTELPRO - 1)
+    {
+        EEPROM.update(offs + i, edata[i]);
+        i++;
+    }
+
+    EEPROM.update(offs + i, '\0'); // Aggiunge terminatore
+}
+
+void write_StringPin(uint8_t offs, const char *edata)
+{
+    uint8_t i = 0;
+
+    while (edata[i] != '\0' && i < EPPINPRO - 1)
+    {
+        EEPROM.update(offs + i, edata[i]);
+        i++;
+    }
+
+    EEPROM.update(offs + i, '\0'); // Aggiunge terminatore
+}
+
+
 
 void read_StringTel(uint8_t offs, char *dest)
   {
@@ -842,7 +873,7 @@ if (strlen(eprpin) != 5)
 // Se EEPROM non contiene un PIN di 5 caratteri (Sporca)
     {
       // Se EEPROM sporca o vuota, scrive il PIN di default "123A5"
-      write_String(EPINPIN, pinDfl);
+      write_StringPin(EPINPIN, pinDfl);
       Serial.print(F("Executing Setup "));
       Serial.print(F("!= 5 eprpin " ));
       Serial.println(eprpin);
@@ -970,7 +1001,7 @@ void loop()
                                                   // PIN corretto
                                                     {
                                                     strcpy(phoneAut[0], phoneT);
-                                                    write_String(EPTELIN, phoneT);
+                                                    write_StringTel(EPTELIN, phoneT);
 
                                                     sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
                                                     Serial.println(outmessage);
@@ -998,7 +1029,7 @@ void loop()
                                         
                                             
                                               strcpy(phoneAut[0], phoneT);
-                                              write_String(EPTELIN, phoneT);
+                                              write_StringTel(EPTELIN, phoneT);
 
                                               sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
                                               Serial.println(outmessage);
@@ -1021,9 +1052,9 @@ void loop()
                           for (uint8_t i = 1; i < 4; i++)
                             {
                               phoneAut[i][0] = '\0';
-                              write_String((EPTELIN+i*EPTELPRO), "");
-                              // Initial Address 6 and String type data [16 char])
-                              // write_String((6+i*16), "");                        
+                              write_StringTel((EPTELIN+i*EPTELPRO), "");
+                              // OLD Initial Address 6 and String type data [16 char])
+                              // OLD write_String((6+i*16), "");                        
                             }
                           lastPhoneIndex = 0;
                       // sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
@@ -1072,8 +1103,8 @@ if (message[0] == 'A')
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
                                 phoneT[strlen(message) - 2] = '\0';
                                 strcpy(phoneAut[phoneI], phoneT); // Salva in FLASH
-                                // write_String(6 + phoneI * 16, phoneT);
-                                write_String(EPTELIN + phoneI * EPTELPRO, phoneT);                               // Salva EEPROM
+                                // OLD write_String(6 + phoneI * 16, phoneT);
+                                write_StringTel(EPTELIN + phoneI * EPTELPRO, phoneT);                               // Salva EEPROM
 
                                 CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (lastPhoneIndex)
 
@@ -1130,7 +1161,7 @@ if (message[0] == 'P')
             {
             // Formato PIN corretto
             strcpy(eprpin, pinNew); // Salva in RAM
-            write_String(EPINPIN, eprpin); // Salva in EEPROM
+            write_StringPin(EPINPIN, eprpin); // Salva in EEPROM
 
             sprintf(outmessage, "PIN %s SAVED", pinNew);
             Serial.println(outmessage);
@@ -1225,9 +1256,9 @@ if (message[0] == 'P')
                                                       phoneAut[i][0] = '\0';
                                                     // OLD write_String((6+i*16), "");
                                                     // OLD Initial Address 6 and String type data [16 char])
-                                                      write_String((EPTELIN+i*EPTELPRO), "");                      
+                                                      write_StringTel((EPTELIN+i*EPTELPRO), "");                      
                                                     }
-                                                  write_String(EPINPIN, pinDfl);
+                                                  write_StringPin(EPINPIN, pinDfl);
                                                   strcpy(eprpin, pinDfl);      // scrive in eprpin il PIN di default "123A5" 
                                                   lastPhoneIndex = 0;
                                                   sprintf(outmessage, "ALL NUMBERS DELETED & PIN SET TO FACTORY");
