@@ -983,11 +983,9 @@ void loop()
 // Comando SMS "M+393391255597" (12) "M+393334188263" (12)
                         if (message[0] == 'M')
                           {
-                             //if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
-                             //  {
-                              if (strlen(phoneAut[0]) == 0)
+                            if (strlen(phoneAut[0]) == 0)
                               // Telefono Master vuoto -> richiede comando con PIN
-                                 {
+                            {
                               // Lunghezza Numero errato ? 17 > N > 19   compreso tra 17 e 19  
                                   if ((strlen(message) -2) < 17 || (strlen(message) - 2) > 19)
                                     {
