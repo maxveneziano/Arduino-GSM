@@ -763,7 +763,8 @@ void CalcAuxnphones()
   phoneAut[2]=A2
   phoneAut[3]=A3
   */
-  
+ lastPhoneIndex = 0; // Inizializza preventivamente a 0
+
  for (uint8_t i = 0; i < 4; i++)
     {
         if (phoneAut[i][0] == '+')
@@ -1206,7 +1207,7 @@ if (message[0] == 'P')
             strcpy(eprpin, pinNew); // Salva in RAM
             write_StringPin(EPINPIN, eprpin); // Salva in EEPROM
 
-            sprintf(outmessage, "PIN %s SAVED", pinNew);
+            sprintf(outmessage, "PIN SAVED");
             Serial.println(outmessage);
             SendMsg();
             } 
