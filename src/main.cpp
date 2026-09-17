@@ -64,13 +64,13 @@ Numeri GSM
   Italia    totale cifre 12 senza +
   Germania  totale cifre 13 senza +
   Svezia    totale cifre 11 senza +
-  Finlandia totale cifre 10 senza +
+  Finlandia totale cifre 12 senza +
 
 Paese	      Prefisso	Esempio internazionale	Cifre numeriche*	Caratteri con +
 🇮🇹 Italia	    +39	    +393391255597	                12	            13
-🇩🇪 Germania	  +49	    +4915123456789	              13	            14
+🇩🇪 Germania	+49	    +4915123456789	                13	            14
 🇸🇪 Svezia	    +46	    +46701234567	                11	            12
-🇫🇮 Finlandia	+358	  +358451234567	                12	             13
+🇫🇮 Finlandia	+358	+358451234567	                12	            13
   
 
 Comandi SMS
@@ -708,6 +708,7 @@ void read_StringPin(uint8_t offs, char *dest)
 }
 
 
+
 bool TimeToReset () {
 // Reset Now?
 
@@ -978,11 +979,12 @@ void loop()
 // Telefono Master già inserito                         Regime -  Comando: M+393391255597
 // Telefono Master non ancora inserito (EEPROM vuota) - Inizio -  Comando: M+393391255597 12345
 // ====================================================================================
-                if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
-                    {
+                
 // Comando SMS "M+393391255597" (12) "M+393334188263" (12)
                         if (message[0] == 'M')
-                            { 
+                          {
+                             //if (strcmp(phone, phoneAut[0]) == 0 || strlen(phoneAut[0]) == 0)
+                             //  {
                               if (strlen(phoneAut[0]) == 0)
                               // Telefono Master vuoto -> richiede comando con PIN
                                  {
@@ -1044,7 +1046,8 @@ void loop()
                                               } //Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
                                             } // End Formato (Numero e PIN) corretto
                                 } // End Numero M Vuoto
-                                 else if (strcmp(phone, phoneAut[0]) == 0)
+                                
+                                else if (strcmp(phone, phoneAut[0]) == 0)
                                       {
                                   // Lunghezza Numero errato ? 11 > N > 13   compreso tra 11 e 13   
                                         if ((strlen(message) - 2) < 11 || (strlen(message) - 2) > 13)
@@ -1053,7 +1056,7 @@ void loop()
                                             Serial.println(outmessage);
                                             SendMsg();
                                           }
-                                          else 
+                                        else 
                                             {
                                               // Formato Numero M corretto
                                               // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
@@ -1068,10 +1071,18 @@ void loop()
                                               sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
                                               Serial.println(outmessage);
                                               SendMsg();
-                                            }        
-                                } // End Numero M UGUALE a EEPROM     
-                            } // Fine messaggio "M"           
-                    } // FINE messaggo proveniente da MASTER o vuoto
+                                            }
+                                            } // FINE Numero MASTER in EEPROM
+                                            
+                                     else
+                                      {
+                                      // Notifica tentativo non autorizzato
+                                      strcpy(outmessage, "Request from NOT AUTHORIZED number");
+                                      Serial.println(outmessage);
+                                      SendMsg();
+                                      } 
+                                
+                            } // FINE messaggio "M"
 
 // ################################# COMANDO D DELETE AUXILIARIES
 // Comando SMS "D" cancella tutti i numeri eccetto il MASTER
