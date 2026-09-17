@@ -18,14 +18,14 @@
 
   - NON Ancora set/reset pin uscita da SMS numero richiedente abilitato
   - NON Ancora Stato pin ingresso su richiesta SMS a numero richiedente abilitato
-  - NON Ancora Inserimento PIN su comandi da qualsiasi telefono per definizione Master(Magari gestione in EEPROM)
-  - NON Ancora F - Ripristino a condizioni di fabbrica con PIN (solo Master)
+  - OK Inserimento PIN su comando M (per definizione Master da vuoto) o factory reset da comando M
+  - OK  F - Ripristino a condizioni di fabbrica con PIN (solo Master)
 
-  - OK Verifica Indice telefoni ausiliari per evitare sovrapposizioni in input (INDEX OVERLAP)
-  - OK Prevedere SMS di conferma comandi (richiesta eseguita per il n.)
+  - OK Verifica Indice telefoni ausiliari per evitare sovrapposizioni in input (INDEX OVERLAP) - FATTO
+  - OK Prevedere SMS di conferma comandi (richiesta eseguita per il n.) - FATTO
 
   TODO:
-  Gestire più SMS in ricezione (SCANDIRLI TUTTI) e processarli uno alla volta (FIFO)
+  Gestire più SMS in ricezione (SCANDIRLI TUTTI) e processarli uno alla volta (FIFO) - FATTO
   Magari un ciclo while? FATTO
 
      .......................... Scopo del codice
