@@ -174,13 +174,15 @@ consente il reset fin dalla prima ora giusta del primo giorno */
 uint8_t day, rday=0, hh, mm;
 //Ora e Minuto di Reset giornaliero
 uint8_t ORAr = 03, MINr = 00;
-uint8_t Auxnphones,phoneI;
+// uint8_t Auxnphones,phoneI;
+uint8_t phoneI,lastPhoneIndex;
 uint8_t Auth;
 
 
 //          VARIABILI
 //phoneT => phone Temporaneo
 //Auxnphones => numero di phones ausiliari
+//lastPhoneIndex => indice dell'ultimo telefono occupato.
 //phoneI => Index phone (escluso Autorizzato (0))
 //Auth => 0= numero non autorizzato 1= numero autorizzato
 
@@ -681,12 +683,12 @@ void calc()
 
 void CalcAuxnphones()
  {
-  // Loop - Calculates number of auxiliary phones (Auxnphones)
+  // Loop - Calculates number of auxiliary phones (lastPhoneIndex)
   // Remember that in phoneAut if the first char of an entry (phone) is '+'
   // it is considered that a phone is loaded
   // Con "break" esce dal loop con "i" che ha contato l'indice (che parte da 0)
   // di quante stringhe di telefoni ausiliari c'erano.
-  // ATTENZIONE ! Nel caso di Auxnphones=0 
+  // ATTENZIONE ! Nel caso di lastPhoneIndex=0 
   // vale anche in presenza/assenza del numero Master
   // Quindi in realtà indica il numero dei telefoni An ausiliari
   /*
@@ -700,9 +702,9 @@ void CalcAuxnphones()
     {
         if (phoneAut[i][0] == '+')
 // Checks the presence of a Phone number in phoneAut. The "+" character.
-// If found, sets Auxnphones to i. If not, breaks the loop and exit
+// If found, sets lastPhoneIndex to i. If not, breaks the loop and exit
             {
-                Auxnphones = i;
+                lastPhoneIndex = i;
 // Counts valid phones
             } 
         else 
@@ -727,20 +729,20 @@ void ListAutPhones()
     - phone
     - outmessage
 
-    Aggiorna Auxnphones.
+    Aggiorna lastPhoneIndex.
 
     Invia l’elenco (outmessage) tramite SMS al numero (phone) che ha richiesto l’informazione (solo il Master). */
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
-    Auxnphones = 0;
+    lastPhoneIndex = 0;
     outmessage [0] = '\0';
     // outmess [0] = '\0';
     for (uint8_t i = 0; i < 4; i++)
     {
         if (phoneAut[i][0] == '+')
-// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop with Auxnphones set i
+// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop with lastPhoneIndex set i
             {
-                Auxnphones = i;
+                lastPhoneIndex = i;
 // Counts valid phones
             } 
         else 
@@ -761,7 +763,7 @@ void ListAutPhones()
     }
 
 Serial.print (F ("Numero di telefoni ausiliari + Master: "));
-Serial.println (Auxnphones+1);
+Serial.println (lastPhoneIndex+1);
 SendMsg();
 
 }
@@ -775,7 +777,7 @@ SendMsg();
 
   // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to phoneAut 
   // Remember that auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
-    Auxnphones = 0;
+    lastPhoneIndex = 0;
     for (uint8_t i = 0; i < 4; i++)
     {
         //OLD read_StringTel(6 + i*16, phoneT);
@@ -787,9 +789,9 @@ SendMsg();
           if (phoneT[0] == '+')
 
         {
-            // If number is present, breaks the loop and set Auxnphones to i
+            // If number is present, breaks the loop and set lastPhoneIndex to i
             strcpy(phoneAut[i], phoneT);
-            Auxnphones = i;
+            lastPhoneIndex = i;
         } 
         else 
         {
@@ -807,7 +809,7 @@ SendMsg();
 
    } 
   Serial.print (F ("Numero di telefoni ausiliari + Master: "));
-  Serial.println(Auxnphones+1);
+  Serial.println(lastPhoneIndex+1);
 }
 
 
@@ -828,7 +830,7 @@ void setup()
     PwrActv=true; // Assume rete presente al primo avvio
 
     RestorePhones();
-// At Power Up copia Lista telefoni da EEPROM su phoneAut e n. telefoni (Auxnphones)
+// At Power Up copia Lista telefoni da EEPROM su phoneAut e n. telefoni (lastPhoneIndex)
 
 pinDfl [05] = '\0'; // Aggiunge Terminatore stringa
 
@@ -1023,7 +1025,7 @@ void loop()
                               // Initial Address 6 and String type data [16 char])
                               // write_String((6+i*16), "");                        
                             }
-                          Auxnphones = 0;
+                          lastPhoneIndex = 0;
                       // sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
                       strcpy(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
                       Serial.println(outmessage);
@@ -1061,11 +1063,11 @@ if (message[0] == 'A')
                   if (phoneI >= 1 && phoneI <= 3)
 // Per sicurezza solo nel caso phoneI sia compreso tra 1 e 3 (A1 A2 A3)
                     {
-                      CalcAuxnphones(); // Calcola il numero attuale di telefoni ausiliari (Auxnphones)
+                      CalcAuxnphones(); // Calcola il numero attuale di telefoni ausiliari (lastPhoneIndex)
                       
-                      if (phoneI <= Auxnphones+1)
+                      if (phoneI <= lastPhoneIndex+1)
                       // Se l'indice è già presente o è il prossimo da sostituire
-                      // Se è il primo inserimento di A1 (Auxnphones)=0
+                      // Se è il primo inserimento di A1 (lastPhoneIndex)=0
                             {
                                 strncpy(phoneT, message + 2, strlen(message) - 2);
                                 phoneT[strlen(message) - 2] = '\0';
@@ -1073,7 +1075,7 @@ if (message[0] == 'A')
                                 // write_String(6 + phoneI * 16, phoneT);
                                 write_String(EPTELIN + phoneI * EPTELPRO, phoneT);                               // Salva EEPROM
 
-                                CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (Auxnphones)
+                                CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (lastPhoneIndex)
 
                                 sprintf(outmessage, "%s%d %s %s","A", phoneI, " TELEPHONE NUMBER SAVED ", message);
                                 Serial.println(outmessage);
@@ -1227,7 +1229,7 @@ if (message[0] == 'P')
                                                     }
                                                   write_String(EPINPIN, pinDfl);
                                                   strcpy(eprpin, pinDfl);      // scrive in eprpin il PIN di default "123A5" 
-                                                  Auxnphones = 0;
+                                                  lastPhoneIndex = 0;
                                                   sprintf(outmessage, "ALL NUMBERS DELETED & PIN SET TO FACTORY");
                                                   Serial.println(outmessage);
                                                   SendMsg();
@@ -1257,7 +1259,7 @@ if (message[0] == 'P')
             Auth=0;
             // Inizializza Auth=0 prima dello scan per la verifica 
             // di una richiesta proveniente da un numero autorizzato
-            for (uint8_t i = 0; i < Auxnphones + 1; i++)
+            for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
             {
                 if (strcmp(phone, phoneAut[i]) == 0)
                 {
@@ -1350,7 +1352,7 @@ if (PowerVoltage <= 100.0)
               Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
-              for (uint8_t i = 0; i < Auxnphones + 1; i++)
+              for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
                     {
                         if (gprs.sendSMS(phoneAut[i], outmessage))
                           { 
@@ -1384,7 +1386,7 @@ if (PowerVoltage >= 200.0)
                     Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
-                    for (uint8_t i = 0; i < Auxnphones + 1; i++)
+                    for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
                           {
                               if (gprs.sendSMS(phoneAut[i], outmessage))
                                     { 
