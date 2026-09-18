@@ -60,17 +60,18 @@ Il programma:
 
 - Salva e legge i numeri autorizzati su EEPROM per persistenza.
 
-Numeri GSM 
-  Italia    totale cifre 12 senza +
-  Germania  totale cifre 13 senza +
-  Svezia    totale cifre 11 senza +
-  Finlandia totale cifre 12 senza +
+Numeri GSM
 
 Paese	      Prefisso	Esempio internazionale	Cifre numeriche*	Caratteri con +
 🇮🇹 Italia	    +39	    +393391255597	                12	            13
 🇩🇪 Germania	+49	    +4915123456789	                13	            14
 🇸🇪 Svezia	    +46	    +46701234567	                11	            12
-🇫🇮 Finlandia	+358	+358451234567	                12	            13
+🇫🇮 Finlandia	+358	+358451234567	                  12	            13
+🇮🇸 Islanda		+354	+354 611 1234			              10           		11
+🇳🇴 Norvegia		+47	+47 912 34 567			             10            		11
+🇩🇰 Danimarca	+45	+45 20 12 34 56			              10           		11
+🇱🇮 Liechtenstein	+423	+423 661 12 34        			10            		11
+
   
 
 Comandi SMS
@@ -987,8 +988,8 @@ void loop()
                             if (strlen(phoneAut[0]) == 0)
                               // Telefono Master vuoto -> richiede comando con PIN
                             {
-                              // Lunghezza Numero errato ? 17 > N > 19   compreso tra 17 e 19  
-                                  if ((strlen(message) -2) < 17 || (strlen(message) - 2) > 19)
+                              // Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19  
+                                  if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
                                     {
                                         sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
                                         Serial.println(outmessage);
@@ -1048,8 +1049,8 @@ void loop()
                                 
                                 else if (strcmp(phone, phoneAut[0]) == 0)
                                       {
-                                  // Lunghezza Numero errato ? 11 > N > 13   compreso tra 11 e 13   
-                                        if ((strlen(message) - 2) < 11 || (strlen(message) - 2) > 13)
+                                  // Lunghezza Numero errato ? 10 > N > 13   compreso tra 10 e 13   
+                                        if ((strlen(message) - 2) < 10 || (strlen(message) - 2) > 13)
                                           {
                                             sprintf(outmessage, "WRONG M NUMBER FORMAT %s", message);
                                             Serial.println(outmessage);
@@ -1124,8 +1125,8 @@ if (message[0] == 'A')
     if (strcmp(phone, phoneAut[0]) == 0) // Solo se numero Master
     {      
 // Formato Numero errato ?
-// Lunghezza Numero errato  11 > N > 13   compreso tra 11 e 13       
-            if ((strlen(message) -3) < 11 || (strlen(message) - 3) > 13)
+// Lunghezza Numero errato  10 > N > 13   compreso tra 10 e 13       
+            if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
               {
                 sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
                 Serial.println(outmessage);
