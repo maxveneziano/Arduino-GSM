@@ -253,6 +253,7 @@ bool GPRS::readSMS(int messageIndex, char* message, int length, char* phone, cha
     sim900_read_buffer(gprsBuffer, sizeof(gprsBuffer));
 
     if (NULL != (s = strstr(gprsBuffer, "+CMGR:"))) {
+
         // Extract phone number string
         p = strstr(s, ",");
         p2 = p + 2; //We are in the first phone number character

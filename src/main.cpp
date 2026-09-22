@@ -249,6 +249,7 @@ uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minut
 
 //COOP INFO SMS (Credito residuo)
 #define INFO_NUMBER "4243688"
+//#define INFO_NUMBER "3334188263"
 #define INFOTXT  "SALDO"
 //#define INFOTXT "INFO SIM"
 
@@ -388,7 +389,7 @@ void initapp()
 {
     Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
     errorStop();
-    // Blocca l'esecuzione e notifica con un led ad esempio lampeggiante
+    // Blocca l'esecuzione e notifica con un led lampeggiante
 }
 // delay(1000); Da rimuovere ?
  
@@ -474,6 +475,11 @@ delay(500);
       Serial.println(messageIndex);
 
       sim900_flush_serial();
+      //delay(5000);
+
+      messageIndex = gprs.isSMSunread();
+      Serial.print(F("Current messageIndex: "));
+      Serial.println(messageIndex);
 
   // Legge in continuazione SMS finchè non rimangono più messaggi non letti (messageIndex=0)
   // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
@@ -482,6 +488,9 @@ delay(500);
   // o non collegato alla rete
   // ###########################################################################
   
+messageIndex = gprs.isSMSunread();
+  
+
   while ((messageIndex = gprs.isSMSunread()))
     {
 
@@ -1039,7 +1048,7 @@ void loop()
                                                     strcpy(phoneAut[0], phoneT);
                                                     write_StringTel(EPTELIN, phoneT);
 
-                                                    sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
+                                                    sprintf(outmessage, "M TELEPHONE NUMBER + PIN SAVED %s", phoneT);
                                                     Serial.println(outmessage);
                                                     SendMsg();
                                                     }
