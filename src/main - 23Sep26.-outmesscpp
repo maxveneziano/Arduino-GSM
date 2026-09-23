@@ -170,7 +170,7 @@ con EPTELIN=12 ed EPTELPRO=16:
 #define EPTELPRO 16
 char message[MESSAGE_LENGTH]; // Message = 160 Char
 char outmessage[MESSAGE_LENGTH];
-char outmess[30];
+//char outmess[30];
 char locDateTime[BUFFER_LENGTH];// Local Date and Time = 25 Char
 /* Giorno, Ora e Minuto
 Reset Day (rday) a 0 perchè diverso da 1 e da 31 e quindi 
@@ -668,30 +668,28 @@ void ListAutPhones()
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
     lastPhoneIndex = 0;
     outmessage [0] = '\0';
-    // outmess [0] = '\0';
     for (uint8_t i = 0; i < 4; i++)
     {
         if (phoneAut[i][0] == '+')
 // Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop with lastPhoneIndex set i
             {
                 lastPhoneIndex = i;
-// Counts valid phones
+                uint8_t len = strlen(outmessage);
+                snprintf_P(outmessage + len, sizeof(outmessage) - len, PSTR("%d:%s\n"),i, phoneAut[i]);
+
+              // Scrive su Serial
+                Serial.print (F("Autorized phone n."));
+                Serial.print (i);
+                Serial.print (F (": "));
+                Serial.println (phoneAut[i]);
+
+                // Counts valid phones
             } 
         else 
             {
                 break;
 // Empty position
-            }
-
-  //sprintf(outmessage, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
-  sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
-  strcat(outmessage, outmess);
-
-  // Scrive su Serial
-  Serial.print (F("Autorized phone n."));
-  Serial.print (i);
-  Serial.print (F (": "));
-  Serial.println (phoneAut[i]);
+            }  
     }
 
 Serial.print (F ("Numero di telefoni ausiliari + Master: "));
@@ -699,6 +697,7 @@ Serial.println (lastPhoneIndex+1);
 SendMsg();
 
 }
+
 
   void RestorePhones()
  {

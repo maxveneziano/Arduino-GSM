@@ -163,7 +163,7 @@ con EPTELIN=12 ed EPTELPRO=16:
  /* M. Veneziano 2020 Voltage calibration Transformer + Partition. Set for each specific transformer */ 
 #define VOLT_CAL 136.0 
 #define MESSAGE_LENGTH 160
-#define BUFFER_LENGTH 24
+#define BUFFER_LENGTH 25
 #define EPINPIN 6
 #define EPPINPRO 6
 #define EPTELIN 12
@@ -203,7 +203,7 @@ char pinNew [6];
 char pinDfl [6] = "123A5";
 char eprpin [6]; 
 bool PwrActv=true; //Default assume rete elettrica presente all'avvio
-char datetime[BUFFER_LENGTH];
+char datetime[24];
 
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
 //char *phoneAut[] = {"+393460607220","+393383418818", "",""};
@@ -240,7 +240,7 @@ char phoneAut[][16] = {
 // phoneAut[0] authorized master number - Can authorize up to 4 phone numbers - "" used as terminator
 
 
-// uint32_t iniTime;	// Valore Tempo iniziale
+uint32_t iniTime;	// Valore Tempo iniziale
 uint32_t previousMilliscc = 0, previousMillisora = 0;
 uint32_t intervalcc = 10000; //intervallo per il controllo del valore di tensione attuale - 10 sec
 uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minuti - 3600000 1 ora
@@ -336,7 +336,7 @@ void initapp()
 // delay(1000); Da rimuovere ?
  
   Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
-  // iniTime = millis(); // Valore Tempo iniziale
+  iniTime = millis(); // Valore Tempo iniziale
   
 // Garantisce che il Modem sia registrato sulla rete entro 60 sec
 if (!waitNetwork(60000))
@@ -700,6 +700,8 @@ SendMsg();
 
 }
 
+
+
   void RestorePhones()
  {
   // At INIT (Power ON) copy EEPROM to phoneAut
@@ -854,7 +856,7 @@ void loop()
                             {
                               // Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19  
                                   if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
-                                    { 
+                                    {
                                         sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
                                         Serial.println(outmessage);
                                         SendMsg();
