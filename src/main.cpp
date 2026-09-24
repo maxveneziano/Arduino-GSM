@@ -991,6 +991,7 @@ if (message[0] == 'M')
                     }
                     else
                     {
+                        // PIN corretto
                         // Il numero telefonico è compreso tra message[1] e lo spazio
                         size_t phoneLen = pin - (message + 1);
 
@@ -1213,6 +1214,7 @@ if (message[0] == 'A')
         // Formato Numero errato ?
         // Lunghezza Numero errato 10 > N > 13
         if ((strlen(message) - 3) < 10 || (strlen(message) - 3) > 13)
+        // Non tiene conto del "+"
         {
             sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
             Serial.println(outmessage);
@@ -1221,6 +1223,7 @@ if (message[0] == 'A')
         else
         {
             // Formato Numero corretto
+            // Estrae l'indice dell'ausiliario richiesto da modificare
             phoneI = atoi(message + 1);  // es. "A2+393..." -> 2
 
             // Trova l'indice
@@ -1238,15 +1241,12 @@ if (message[0] == 'A')
                     // strcpy(phoneAut[phoneI], phoneT);
 
                     // Adesso copia direttamente in phoneAut
-                    strncpy(phoneAut[phoneI], message + 2, EPTELPRO - 1);
-                    phoneAut[phoneI][EPTELPRO - 1] = '\0';
+                    strncpy(phoneAut[phoneI], message + 2, strlen(message) - 2);
+                    phoneAut[phoneI][strlen(message) - 2] = '\0';
 
                     // Salva EEPROM
                     write_String(
-                        EPTELIN + phoneI * EPTELPRO,
-                        phoneAut[phoneI],
-                        EPTELPRO
-                    );
+                        EPTELIN + phoneI * EPTELPRO, phoneAut[phoneI], EPTELPRO);
 
                     CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari
 
