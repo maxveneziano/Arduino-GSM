@@ -256,6 +256,16 @@ GPRS gprs(PIN_TX, PIN_RX, BAUDRATE); //RX,TX,BaudRate
 EnergyMonitor emon1;	//Initialize EnergyMonitor ?
 
 //   ============  F U N Z I O N I ======================
+extern int __heap_start, *__brkval;
+
+int freeMemory()
+{
+    int v;
+    return (char *)&v -
+           (__brkval == 0
+                ? (char *)&__heap_start
+                : (char *)__brkval);
+}
 //  Init GPRS/GSMGPRS Modem with Timeout (30 sec) - Return true if success, false if timeout
 bool gprsInitwTO(unsigned long timeoutGSM)
 {
@@ -803,6 +813,9 @@ void setup()
     
 // Inizializza GSM e Valore Tempo iniziale - Per evitare valori non determinati
     initapp();
+
+    Serial.print(F("RAM libera dopo initapp(): "));
+    Serial.println(freeMemory());
 
 // EEPROM.update(5, 0);
 // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
