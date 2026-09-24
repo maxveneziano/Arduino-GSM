@@ -709,18 +709,19 @@ void ListAutPhones()
 
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
   // Because it is called from the CMD N, it is sure that the MASTER number should be is present 
-  /* 
-    Elenca e stampa i telefoni autorizzati.
+   
+    //Elenca e stampa i telefoni autorizzati.
 
-    Crea un SMS con tutti i numeri utilizzando le variabili globali:
-    - phone
-    - outmessage
+    //Crea un SMS con tutti i numeri utilizzando le variabili globali:
+    //- phone
+    //- outmessage
 
-    Aggiorna lastPhoneIndex.
+    //Aggiorna lastPhoneIndex.
 
-    Invia l’elenco (outmessage) tramite SMS al numero (phone) che ha richiesto l’informazione (solo il Master). */
+    //Invia l’elenco (outmessage) tramite SMS al numero (phone) che ha richiesto l’informazione (solo il Master). */
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
+
 /*
     lastPhoneIndex = 0;
     outmessage [0] = '\0';
@@ -758,6 +759,42 @@ SendMsg();
 
 */
 
+
+void RestorePhones()
+{
+    // At INIT (Power ON) copy EEPROM to phoneAut
+
+    lastPhoneIndex = 0;
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        // Legge direttamente dalla EEPROM in phoneAut[i]
+        read_String(EPTELIN + i * EPTELPRO, phoneAut[i], EPTELPRO);
+
+        // Verifica presenza del numero
+        if (phoneAut[i][0] == '+')
+        {
+            lastPhoneIndex = i;
+        }
+        else
+        {
+            // Nessun numero: termina la scansione
+            break;
+        }
+
+        Serial.print(F("Authorized phone n."));
+        Serial.print(i);
+        Serial.print(F(": "));
+        Serial.println(phoneAut[i]);
+    }
+
+    Serial.print(F("Numero di telefoni ausiliari + Master: "));
+    Serial.println(lastPhoneIndex + 1);
+}
+
+
+
+/*
   void RestorePhones()
  {
   // At INIT (Power ON) copy EEPROM to phoneAut
@@ -801,7 +838,7 @@ SendMsg();
   Serial.print (F ("Numero di telefoni ausiliari + Master: "));
   Serial.println(lastPhoneIndex+1);
 }
-
+*/
 
 //   ============  FUNZIONI    STANDARD ======================
 
@@ -1164,7 +1201,94 @@ if (message[0] == 'M')
                         }
                 } // ############################### Fine comando D
 
+
 // ########################################### Comando A
+// Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO
+// Valido solo se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
+
+if (message[0] == 'A')
+{
+    if (strcmp(phone, phoneAut[0]) == 0) // Solo se numero Master
+    {
+        // Formato Numero errato ?
+        // Lunghezza Numero errato 10 > N > 13
+        if ((strlen(message) - 3) < 10 || (strlen(message) - 3) > 13)
+        {
+            sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
+            Serial.println(outmessage);
+            SendMsg();
+        }
+        else
+        {
+            // Formato Numero corretto
+            phoneI = atoi(message + 1);  // es. "A2+393..." -> 2
+
+            // Trova l'indice
+            if (phoneI >= 1 && phoneI <= 3)
+            {
+                CalcAuxnphones(); // Calcola il numero attuale di telefoni ausiliari
+
+                if (phoneI <= lastPhoneIndex + 1)
+                // Se l'indice è già presente o è il prossimo da inserire
+                {
+                    // MODIFICA:
+                    // prima:
+                    // strncpy(phoneT, message + 2, strlen(message) - 2);
+                    // phoneT[strlen(message) - 2] = '\0';
+                    // strcpy(phoneAut[phoneI], phoneT);
+
+                    // Adesso copia direttamente in phoneAut
+                    strncpy(phoneAut[phoneI], message + 2, EPTELPRO - 1);
+                    phoneAut[phoneI][EPTELPRO - 1] = '\0';
+
+                    // Salva EEPROM
+                    write_String(
+                        EPTELIN + phoneI * EPTELPRO,
+                        phoneAut[phoneI],
+                        EPTELPRO
+                    );
+
+                    CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari
+
+                    sprintf(
+                        outmessage,
+                        "%s%d %s %s",
+                        "A",
+                        phoneI,
+                        " TELEPHONE NUMBER SAVED ",
+                        message
+                    );
+
+                    Serial.println(outmessage);
+                    SendMsg();
+                }
+                else
+                {
+                    sprintf(outmessage, "WRONG - INDEX OVERLAP %s", message);
+                    Serial.println(outmessage);
+                    SendMsg();
+                }
+            }
+            else
+            {
+                sprintf(outmessage, "INDEX OUTSIDE THE RANGE %s", message);
+                Serial.println(outmessage);
+                SendMsg();
+            }
+        }
+    }
+    else
+    {
+        strcpy(outmessage, "Request from NOT AUTHORIZED number");
+        Serial.println(outmessage);
+        SendMsg();
+    }
+}
+// ########################################### Fine - Comando A
+
+
+
+/*
 // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione.... 
 // Valido solo se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
               
@@ -1226,6 +1350,7 @@ if (message[0] == 'A')
     }
 }
 // ########################################### Fine - Comando A
+*/
 
 // ########################################### Comando P
 // Comando SMS "P 12345 54321" SOSTITUISCE PIN (PIN OLD, PIN NEW)
