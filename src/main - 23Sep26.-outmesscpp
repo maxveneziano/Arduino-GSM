@@ -655,7 +655,7 @@ void ListAutPhones()
   // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
   // Because it is called from the CMD N, it is sure that the MASTER number should be is present 
   /* 
-    Elenca e stampa i telefoni autorizzati.
+    //Elenca e stampa i telefoni autorizzati.
 
     Crea un SMS con tutti i numeri utilizzando le variabili globali:
     - phone
@@ -698,7 +698,7 @@ SendMsg();
 
 }
 
-
+*/
   void RestorePhones()
  {
   // At INIT (Power ON) copy EEPROM to phoneAut

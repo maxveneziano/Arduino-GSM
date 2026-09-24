@@ -170,7 +170,7 @@ con EPTELIN=12 ed EPTELPRO=16:
 #define EPTELPRO 16
 char message[MESSAGE_LENGTH]; // Message = 160 Char
 char outmessage[MESSAGE_LENGTH];
-char outmess[30];
+//char outmess[30];
 char locDateTime[BUFFER_LENGTH];// Local Date and Time = 25 Char
 /* Giorno, Ora e Minuto
 Reset Day (rday) a 0 perchè diverso da 1 e da 31 e quindi 
@@ -648,6 +648,51 @@ void CalcAuxnphones()
   }
 
 void ListAutPhones()
+{
+    lastPhoneIndex = 0;
+
+    // Inizializza il messaggio
+    outmessage[0] = '\0';
+
+    // Numero di caratteri già presenti in outmessage
+    size_t len = 0;
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        if (phoneAut[i][0] == '+')
+        {
+            lastPhoneIndex = i;
+
+            // Aggiunge direttamente la nuova riga a outmessage
+            len += snprintf_P(
+                outmessage + len,
+                sizeof(outmessage) - len,
+                PSTR("Authorized phone n. %d: %s\n"),
+                i,
+                phoneAut[i]
+            );
+
+            // Scrive su Serial
+            Serial.print(F("Authorized phone n."));
+            Serial.print(i);
+            Serial.print(F(": "));
+            Serial.println(phoneAut[i]);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    Serial.print(F("Numero di telefoni ausiliari + Master: "));
+    Serial.println(lastPhoneIndex + 1);
+
+    SendMsg();
+}
+
+
+/*
+void ListAutPhones()
  {
   // Remember that in phoneAut if the first char of an entry (phone) is '+'
   // it is considered that a phone is loaded
@@ -666,6 +711,7 @@ void ListAutPhones()
     Invia l’elenco (outmessage) tramite SMS al numero (phone) che ha richiesto l’informazione (solo il Master). */
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
+/*
     lastPhoneIndex = 0;
     outmessage [0] = '\0';
     // outmess [0] = '\0';
@@ -699,6 +745,8 @@ Serial.println (lastPhoneIndex+1);
 SendMsg();
 
 }
+
+*/
 
   void RestorePhones()
  {
