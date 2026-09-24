@@ -198,8 +198,8 @@ float PowerVoltage;
 char phone [16];
 char phoneT [16];
 char pinRead [6];
-char pinOld [6];
-char pinNew [6];
+//char pinOld [6];
+//char pinNew [6];
 char pinDfl [6] = "123A5";
 char eprpin [6]; 
 bool PwrActv=true; //Default assume rete elettrica presente all'avvio
@@ -517,7 +517,7 @@ if (sim900_check_with_cmd (outmessage, "OK", CMD))
     // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
         } 
 
-   //AT+CLTS=1	// Enable date and time from network - WIND Funziona COOP VOCE NON FUNZIONA
+  //AT+CLTS=1	// Enable date and time from network - WIND Funziona COOP VOCE NON FUNZIONA
   
   // sim900_check_with_cmd(F("AT+CLTS=1\r\n"), "OK", CMD);
   // delay(2000);
@@ -1105,9 +1105,73 @@ if (message[0] == 'A')
 // ########################################### Fine - Comando A
 
 // ########################################### Comando P
+// Comando SMS "P 12345 54321" SOSTITUISCE PIN (PIN OLD, PIN NEW)
+// Valido solo se arriva dal numero telefonico autorizzato Master [0]
+
+if (message[0] == 'P')
+{
+    if (strcmp(phone, phoneAut[0]) == 0)
+    {
+        // Formato corretto:
+        // "P 12345 54321" = 13 caratteri
+        if (strlen(message) != 13)
+        {
+            strcpy(outmessage, "WRONG PINs FORMAT ");
+            strcat(outmessage, message);
+
+            Serial.println(outmessage);
+            SendMsg();
+        }
+        else
+        {
+            // Confronta direttamente il vecchio PIN:
+            // message[2..6] con eprpin
+            if (strncmp(message + 2, eprpin, 5) == 0)
+            {
+                // Il vecchio PIN è corretto.
+                // Copia direttamente il nuovo PIN:
+                // message[8..12] -> eprpin
+
+                strncpy(eprpin, message + 8, 5);
+                eprpin[5] = '\0';
+
+                // Salva il nuovo PIN in EEPROM
+                write_String(EPINPIN, eprpin, EPPINPRO);
+
+                strcpy(outmessage, "PIN SAVED");
+
+                Serial.println(outmessage);
+                SendMsg();
+            }
+            else
+            {
+                // Vecchio PIN errato
+                strcpy(outmessage, "WRONG OLD PIN ");
+                strcat(outmessage, message);
+
+                Serial.println(outmessage);
+                SendMsg();
+            }
+        }
+    }
+    else
+    {
+        // Numero non autorizzato
+        strcpy(outmessage, "Request from NOT AUTHORIZED number");
+
+        Serial.println(outmessage);
+        SendMsg();
+    }
+}
+// ########################################### Fine Comando P
+
+
+
+
 // Comando SMS "P 12345 54321" SOSTITUISCI PIN (PIN OLD, PIN NEW)
 // Valido solo se messaggio SMS "P 12345 54321" arriva dal numero telefonico autorizzato Master [0]
               
+/*
 if (message[0] == 'P')
 {  
     if (strcmp(phone, phoneAut[0]) == 0)
@@ -1154,7 +1218,7 @@ if (message[0] == 'P')
     } 
 }
 // ########################################### Fine - Comando P
-
+*/
 
 // ########################################### Comando N
 // Valido solo se la richiesta proviene dal MASTER
@@ -1251,9 +1315,7 @@ if (message[0] == 'P')
 
 // #################################### Comando S
 // Valido solo se proveniente da numero Autorizzato (Master o  Ausiliario)
-    if (message[0] == 'S')
-    // if (strcmp(message, "D") == 0)
-        {
+    if (message[0] == 'S')        {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
             // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
 
