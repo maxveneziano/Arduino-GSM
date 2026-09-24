@@ -196,8 +196,8 @@ uint8_t Auth;
 uint8_t messageIndex = 0;
 float PowerVoltage;
 char phone [16];
-char phoneT [16];
-char pinRead [6];
+//char phoneT [16];
+//char pinRead [6];
 //char pinOld [6];
 //char pinNew [6];
 char pinDfl [6] = "123A5";
@@ -903,6 +903,128 @@ void loop()
 // ====================================================================================
 // Se messaggio SMS arriva dal numero telefonico autorizzato MASTER [0]
 // o stringa vuota "" (Factory - nessun telefono ancora registrato -> richiede il PIN)
+//
+// Telefono Master già inserito:
+// M+393391255597
+//
+// Telefono Master non ancora inserito:
+// M+393391255597 12345
+// ====================================================================================
+
+if (message[0] == 'M')
+{
+    if (strlen(phoneAut[0]) == 0)
+    // Telefono Master vuoto -> richiede comando con PIN
+    {
+        // Lunghezza Numero + PIN
+        if ((strlen(message) - 2) < 16 || (strlen(message) - 2) > 19)
+        {
+            sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
+            Serial.println(outmessage);
+            SendMsg();
+        }
+        else
+        {
+            // Cerca lo spazio che separa numero telefonico e PIN
+            char *pin = strchr(message, ' ');
+
+            if (pin == NULL)
+            {
+                sprintf(outmessage, "WRONG PIN FORMAT %s", message);
+                Serial.println(outmessage);
+                SendMsg();
+            }
+            else
+            {
+                // Verifica che il PIN sia esattamente di 5 caratteri
+                if (strlen(pin + 1) != 5)
+                {
+                    sprintf(outmessage, "WRONG PIN FORMAT %s", message);
+                    Serial.println(outmessage);
+                    SendMsg();
+                }
+                else
+                {
+                    // Confronta direttamente il PIN ricevuto con eprpin
+                    if (strcmp(eprpin, pin + 1) != 0)
+                    {
+                        sprintf(outmessage, "WRONG PIN %s", message);
+                        Serial.println(outmessage);
+                        SendMsg();
+                    }
+                    else
+                    {
+                        // Il numero telefonico è compreso tra message[1] e lo spazio
+                        size_t phoneLen = pin - (message + 1);
+
+                        // Copia direttamente in phoneAut[0]
+                        memcpy(phoneAut[0], message + 1, phoneLen);
+                        phoneAut[0][phoneLen] = '\0';
+
+                        // Salva il numero Master in EEPROM
+                        write_String(EPTELIN, phoneAut[0], EPTELPRO);
+
+                        sprintf(outmessage,
+                                "M TELEPHONE NUMBER + PIN SAVED %s",
+                                phoneAut[0]);
+
+                        Serial.println(outmessage);
+                        SendMsg();
+                    }
+                }
+            }
+        }
+    }
+
+    else if (strcmp(phone, phoneAut[0]) == 0)
+    {
+        // Lunghezza Numero errato ? 10 > N > 13
+        // compreso tra 10 e 13 cifre
+
+        if ((strlen(message) - 2) < 10 || (strlen(message) - 2) > 13)
+        {
+            sprintf(outmessage, "WRONG M NUMBER FORMAT %s", message);
+            Serial.println(outmessage);
+            SendMsg();
+        }
+        else
+        {
+            // Formato Numero M corretto
+
+            // Copia direttamente da message in phoneAut[0]
+            strncpy(phoneAut[0], message + 1, strlen(message) - 1);
+            phoneAut[0][strlen(message) - 1] = '\0';
+
+            // Salva in EEPROM
+            write_String(EPTELIN, phoneAut[0], EPTELPRO);
+
+            sprintf(outmessage,
+                    "M TELEPHONE NUMBER SAVED %s",
+                    phoneAut[0]);
+
+            Serial.println(outmessage);
+            SendMsg();
+        }
+    }
+
+    else
+    {
+        // Notifica tentativo non autorizzato
+        strcpy(outmessage, "Request from NOT AUTHORIZED number");
+        Serial.println(outmessage);
+        SendMsg();
+    }
+}
+
+// ########################################### FINE messaggio "M"
+
+
+
+
+/*
+// ====================================================================================
+// Se messaggio SMS arriva dal numero telefonico autorizzato MASTER [0]
+// o stringa vuota "" (Factory - nessun telefono ancora registrato -> richiede il PIN)
 // Telefono Master già inserito                         Regime -  Comando: M+393391255597
 // Telefono Master non ancora inserito (EEPROM vuota) - Inizio -  Comando: M+393391255597 12345
 // ====================================================================================
@@ -1008,6 +1130,7 @@ void loop()
                                       } 
                                 
                             } // FINE messaggio "M"
+                             */
 
 // ################################# COMANDO D DELETE AUXILIARIES
 // Comando SMS "D" cancella tutti i numeri eccetto il MASTER
@@ -1243,6 +1366,95 @@ if (message[0] == 'P')
                 }
 // ################################### Fine - Comando N
 
+// ########################################### Comando F
+// Comando SMS: "F12345"
+// Factory reset - Solo Master con PIN
+// Cancella tutti i numeri e ripristina il PIN di default
+// ################## Messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: 12345
+
+
+if (message[0] == 'F')
+{
+    if (strcmp(phone, phoneAut[0]) == 0)
+    {
+        // Il comando deve essere:
+        // F + 5 caratteri PIN = 6 caratteri
+        if (strlen(message) != 6)
+        {
+            strcpy(outmessage, "WRONG PIN FORMAT ");
+            strcat(outmessage, message);
+
+            Serial.println(outmessage);
+            SendMsg();
+        }
+        else
+        {
+            // Confronta direttamente il PIN ricevuto
+            // message[1] ... message[5]
+            if (strncmp(eprpin, message + 1, 5) != 0)
+            {
+                strcpy(outmessage, "WRONG PIN ");
+                strcat(outmessage, message);
+
+                Serial.println(outmessage);
+                SendMsg();
+            }
+            else
+            {
+                // PIN corretto
+                // Cancella tutti i numeri in RAM e EEPROM
+
+                for (uint8_t i = 0; i < 4; i++)
+                {
+                    phoneAut[i][0] = '\0';
+
+                    write_String(
+                        EPTELIN + i * EPTELPRO,
+                        "",
+                        EPTELPRO
+                    );
+                }
+
+                // Ripristina il PIN di fabbrica
+                write_String(
+                    EPINPIN,
+                    pinDfl,
+                    EPPINPRO
+                );
+
+                strcpy(eprpin, pinDfl);
+
+                lastPhoneIndex = 0;
+
+                strcpy(
+                    outmessage,
+                    "ALL NUMBERS DELETED & PIN SET TO FACTORY"
+                );
+
+                Serial.println(outmessage);
+                SendMsg();
+            }
+        }
+    }
+    else
+    {
+        // Numero non autorizzato
+        strcpy(
+            outmessage,
+            "Request from NOT AUTHORIZED number"
+        );
+
+        Serial.println(outmessage);
+        SendMsg();
+    }
+}
+
+// ########################################### Fine Comando F
+
+
+
+
+/*
 // ########################################### Comando F    
 // ##################
 // ################## Se messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: 12345
@@ -1312,6 +1524,7 @@ if (message[0] == 'P')
                           } //  FINE comando F
 
 // #################################### Fine Comando F
+*/
 
 // #################################### Comando S
 // Valido solo se proveniente da numero Autorizzato (Master o  Ausiliario)
