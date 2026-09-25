@@ -150,6 +150,21 @@ con EPTELIN=12 ed EPTELPRO=16:
   Serial.println(F("String"));
 */
 
+//#define E2PROMFAC
+//#define DEBUG
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(x) Serial.print(x)
+  #define DEBUG_PRINTLN(x) Serial.println(x)
+  #define DEBUG_PRINTF(x) Serial.printF(x)
+  #define DEBUG_PRINTFnl(x) Serial.printFln(x)
+#else
+  #define DEBUG_PRINT(x)
+  #define DEBUG_PRINTLN(x)
+  #define DEBUG_PRINTF(x)
+  #define DEBUG_PRINTFln(x)
+#endif
+
 #include "GPRS_Shield_Arduino.h"
 #include "EmonLib.h"
 #include "EEPROM.h"
@@ -766,10 +781,15 @@ void RestorePhones()
 
     lastPhoneIndex = 0;
 
+        Serial.print(F("phoneAut[0]: "));
+        Serial.println(phoneAut[0]);
+
     for (uint8_t i = 0; i < 4; i++)
     {
         // Legge direttamente dalla EEPROM in phoneAut[i]
         read_String(EPTELIN + i * EPTELPRO, phoneAut[i], EPTELPRO);
+
+        
 
         // Verifica presenza del numero
         if (phoneAut[i][0] == '+')
@@ -780,7 +800,7 @@ void RestorePhones()
         {
             // Nessun numero: termina la scansione
             break;
-        }
+        }                  
 
         Serial.print(F("Authorized phone n."));
         Serial.print(i);
@@ -790,6 +810,8 @@ void RestorePhones()
 
     Serial.print(F("Numero di telefoni ausiliari + Master: "));
     Serial.println(lastPhoneIndex + 1);
+
+    
 }
 
 
@@ -847,6 +869,34 @@ void setup()
   // Poichè viene eseguito al Power Up (prima alimentazione o disalimentazione rete o batteria),
   // si suppone che sia presente la rete.
     pinMode(PIN_RST, OUTPUT);
+
+    #ifdef E2PROMFAC 
+    // Scrive in EEPROM le condizioni di fabbrica
+     //Cancella tutti i numeri tranne MASTER in RAM e EEPROM
+                write_String(EPTELIN,phoneAut[0], EPTELPRO);
+ 
+
+                for (uint8_t i = 1; i < 4; i++)
+                {
+                    phoneAut[i][0] = '\0';
+
+                    write_String(EPTELIN + i * EPTELPRO,"", EPTELPRO);
+                }
+
+                // Ripristina il PIN di fabbrica
+                write_String(
+                    EPINPIN,
+                    pinDfl,
+                    EPPINPRO
+                );
+
+                strcpy(eprpin, pinDfl);
+
+                Serial.print(F("phoneAut[0]: "));
+                Serial.println(phoneAut[0]);
+    #endif
+
+
     
 // Inizializza GSM e Valore Tempo iniziale - Per evitare valori non determinati
     initapp();
@@ -1478,7 +1528,11 @@ if (message[0] == 'P')
 // Comando SMS "N" Ritorna i numeri autorizzati
 // SOLO se il messaggio SMS e la richiesta è proveniente dal numero autorizzato MASTER[0]
 
-                    if (strcmp(phone, phoneAut[0]) == 0)
+                Serial.print (F ("phoneAut[0]: "));
+                Serial.println(phoneAut[0]);                    
+
+
+if (strcmp(phone, phoneAut[0]) == 0)
                         {
                             ListAutPhones();                    
                         }
