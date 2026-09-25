@@ -481,15 +481,15 @@ delay(500);
     Serial.println(messageIndex);
 
     Serial.println(F("RIASSUNTO: "));
-    Serial.println(F("From number: "));
+    Serial.print(F("From number: "));
     Serial.println(phone);
     //Serial.flush();
-    Serial.println(F("Datetime: "));
+    Serial.print(F("Datetime: "));
     Serial.println(datetime);
-    Serial.flush();
-    Serial.println(F("Received Message:"));
+    //Serial.flush();
+    Serial.print(F("Received Message:"));
     Serial.println(message);
-    Serial.flush();
+    //Serial.flush();
 
     // RTC Network Time updating is disabled
     sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
@@ -505,7 +505,7 @@ delay(500);
     
 if (sim900_check_with_cmd (outmessage, "OK", CMD))
       {
-        Serial.println (F("A buon Fine"));
+        Serial.print (F("A buon Fine: "));
         Serial.println (outmessage);
         Serial.flush();
       }
@@ -537,7 +537,7 @@ if (sim900_check_with_cmd (outmessage, "OK", CMD))
 
  // Ricava da RTC Data e ora e li pone in locDateTime
   gprs.getDateTime(locDateTime);
-  Serial.print(" Data e Ora da rete: ");
+  Serial.print (F (" Data e Ora da rete: "));
   Serial.println(locDateTime);
 
 }
@@ -873,16 +873,17 @@ if (strlen(eprpin) != 5)
     {
       // Se EEPROM sporca o vuota, scrive il PIN di default "123A5"
       write_String(EPINPIN, pinDfl, EPPINPRO);
-      Serial.print(F("Executing Setup "));
-      Serial.print(F("!= 5 eprpin " ));
+      Serial.println(F("Executing Setup "));
+      Serial.print(F("Lenght eprpin != 5 eprpin: " ));
       Serial.println(eprpin);
       Serial.println (strlen(eprpin));
       strcpy(eprpin, pinDfl);      // scrive in eprpin il PIN di default "123A5"
     }
 
-      Serial.print(F("Executing Setup "));
-      Serial.print(F("== 5 eprpin " ));
-      Serial.println(eprpin);
+      Serial.println(F("Executing Setup "));
+      Serial.print(F("Lenght eprpin == 5 eprpin: " ));
+      Serial.print(eprpin);
+      Serial.print(F(" Lunghezza PIN: "));
       Serial.println (strlen(eprpin));
 
   }
@@ -921,7 +922,7 @@ void loop()
 // and deletes it from SIM memory to avoid filling it up
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
                 delay (1000);
-                Serial.print (F("At least, there is one UNREAD SMS"));
+                Serial.println (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
                 // Si prepara per il prossimo ciclo di lettura SMS
