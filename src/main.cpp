@@ -1,4 +1,3 @@
-#include <Arduino.h>
 /* SMS Manager for Power monitoring
 
   Uses GSM Library GPRS_Shield_Arduino 2024 (Non Suli)
@@ -151,20 +150,19 @@ con EPTELIN=12 ed EPTELPRO=16:
 */
 
 //#define E2PROMFAC
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
-  #define DEBUG_PRINT(x) Serial.print(x)
-  #define DEBUG_PRINTLN(x) Serial.println(x)
-  #define DEBUG_PRINTF(x) Serial.printF(x)
-  #define DEBUG_PRINTFnl(x) Serial.printFln(x)
+  #define DEBUG_PRINT(msg) Serial.print(msg)
+  #define DEBUG_PRINTLN(msgx) Serial.println(msg)
+  
 #else
-  #define DEBUG_PRINT(x)
-  #define DEBUG_PRINTLN(x)
-  #define DEBUG_PRINTF(x)
-  #define DEBUG_PRINTFln(x)
+  #define DEBUG_PRINT(msg)
+  #define DEBUG_PRINTLN(msg)
+
 #endif
 
+#include <Arduino.h>
 #include "GPRS_Shield_Arduino.h"
 #include "EmonLib.h"
 #include "EEPROM.h"
@@ -901,8 +899,10 @@ void setup()
 // Inizializza GSM e Valore Tempo iniziale - Per evitare valori non determinati
     initapp();
 
-    Serial.print(F("RAM libera dopo initapp(): "));
-    Serial.println(freeMemory());
+    //Serial.print(F("RAM libera dopo initapp(): "));
+    DEBUG_PRINT(F("RAM libera dopo initapp(): "));
+    DEBUG_PRINTL(F(freeMemory()));
+    //Serial.println(freeMemory());
 
 // EEPROM.update(5, 0);
 // Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
