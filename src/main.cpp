@@ -932,7 +932,8 @@ void loop()
 // and deletes it from SIM memory to avoid filling it up
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
                 delay (1000);
-                Serial.println (F("At least, there is one UNREAD SMS"));
+                DEBUG_PRINTLN(F("At least, there is one UNREAD SMS"));
+                //Serial.println (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
                 // Si prepara per il prossimo ciclo di lettura SMS
