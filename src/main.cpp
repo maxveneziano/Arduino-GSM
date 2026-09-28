@@ -150,7 +150,7 @@ con EPTELIN=12 ed EPTELPRO=16:
 */
 
 //#define E2PROMFAC
-//#define DEBUG_EN
+#define DEBUG_EN
 
 #ifdef DEBUG_EN
   #define DEBUG_PRINT(msg) Serial.print(msg)
@@ -438,7 +438,7 @@ delay(500);
              //Serial.print(F("No SMS received yet!\n"));
              DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
              //Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
-             DEBUG_PRINT(messageIndex);
+             DEBUG_PRINTLN(messageIndex);
              //Serial.println(messageIndex);
            }
     }
@@ -480,7 +480,7 @@ delay(500);
 
         DEBUG_PRINT(F("SMS indice: "));
         //Serial.print(F("SMS indice: "));
-        DEBUG_PRINT(messageIndex);
+        DEBUG_PRINTLN(messageIndex);
         //Serial.println(messageIndex);
 
         DEBUG_PRINT(F("Da: "));
@@ -731,18 +731,12 @@ void ListAutPhones()
             lastPhoneIndex = i;
 
             // Aggiunge direttamente la nuova riga a outmessage
-            len += snprintf_P(
-                outmessage + len,
-                sizeof(outmessage) - len,
-                PSTR("Authorized phone n. %d: %s\n"),
-                i,
-                phoneAut[i]
-            );
+            len += snprintf_P(outmessage + len, sizeof(outmessage) - len,PSTR("Authorized phone n. %d: %s\n"), i, phoneAut[i]);
 
             // Scrive su Serial
-            DEBUG_PRINT(F("Authorized phone n."));
+            DEBUG_PRINTLN(F("Authorized phone n."));
             //Serial.print(F("Authorized phone n."));
-            DEBUG_PRINT(i);
+            DEBUG_PRINTLN(i);
             //Serial.print(i);
             DEBUG_PRINT(F(": "));
             //Serial.print(F(": "));
@@ -796,7 +790,7 @@ void RestorePhones()
         //Serial.print(F("Authorized phone n."));
         DEBUG_PRINT(i);
         //Serial.print(i);
-        DEBUG_PRINT(i);
+        DEBUG_PRINT(F(": "));
         //Serial.print(F(": "));
         DEBUG_PRINTLN(phoneAut[i]);
         //Serial.println(phoneAut[i]);
