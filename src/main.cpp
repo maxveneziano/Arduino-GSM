@@ -150,7 +150,7 @@ con EPTELIN=12 ed EPTELPRO=16:
 */
 
 //#define E2PROMFAC
-#define DEBUG_EN
+//#define DEBUG_EN
 
 #ifdef DEBUG_EN
   #define DEBUG_PRINT(msg) Serial.print(msg)
@@ -382,7 +382,8 @@ delay(500);
   if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
     {
 // Set message mode to ASCII
-      Serial.println (F (" Set ASCII TEXT mode for SMS...."));
+      DEBUG_PRINTLN(F (" Set ASCII TEXT mode for SMS...."));
+      //Serial.println (F (" Set ASCII TEXT mode for SMS...."));
     }
    delay(500);  
 
@@ -415,7 +416,8 @@ delay(500);
   // C'è il rischio che si frapponga un SMS di servizio del provider
   // Solo se non passa molto tempo dalla registrazione alla rete
   // (Vedi cancellazione preventiva)
-    Serial.println(F("Attende la ricezione del messaggio INFO"));
+    DEBUG_PRINTLN(F("Attende la ricezione del messaggio INFO"));
+    //Serial.println(F("Attende la ricezione del messaggio INFO"));
 
     // Attende di ricevere il messaggio INFO
     while (messageIndex < 1 || messageIndex == 255)
@@ -444,10 +446,10 @@ delay(500);
       // delay(100); Da cancellare?
       //Serial.flush();
 
-      //DEBUG_PRINT(F("SMS received - Current messageIndex: "));
-      Serial.print(F("SMS received - Current messageIndex: "));
-      //DEBUG_PRINTLN(messageIndex);
-      Serial.println(messageIndex);
+      DEBUG_PRINT(F("SMS received - Current messageIndex: "));
+      //Serial.print(F("SMS received - Current messageIndex: "));
+      DEBUG_PRINTLN(messageIndex);
+      //Serial.println(messageIndex);
 
       //sim900_flush_serial();
       //delay(5000);
@@ -761,66 +763,6 @@ void ListAutPhones()
     SendMsg();
 }
 
-
-/*
-void ListAutPhones()
- {
-  // Remember that in phoneAut if the first char of an entry (phone) is '+'
-  // it is considered that a phone is loaded
-
-  // Auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
-  // Because it is called from the CMD N, it is sure that the MASTER number should be is present 
-   
-    //Elenca e stampa i telefoni autorizzati.
-
-    //Crea un SMS con tutti i numeri utilizzando le variabili globali:
-    //- phone
-    //- outmessage
-
-    //Aggiorna lastPhoneIndex.
-
-    //Invia l’elenco (outmessage) tramite SMS al numero (phone) che ha richiesto l’informazione (solo il Master). */
-
-// °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
-
-/*
-    lastPhoneIndex = 0;
-    outmessage [0] = '\0';
-    // outmess [0] = '\0';
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        if (phoneAut[i][0] == '+')
-// Checks the presence of a Phone number (*) in EEPROM. If not breaks the loop with lastPhoneIndex set i
-            {
-                lastPhoneIndex = i;
-// Counts valid phones
-            } 
-        else 
-            {
-                break;
-// Empty position
-            }
-
-  //sprintf(outmessage, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
-  sprintf(outmess, "Authorized phone n. %d: %s\n", i, phoneAut[i]);
-  strcat(outmessage, outmess);
-
-  // Scrive su Serial
-  Serial.print (F("Autorized phone n."));
-  Serial.print (i);
-  Serial.print (F (": "));
-  Serial.println (phoneAut[i]);
-    }
-
-Serial.print (F ("Numero di telefoni ausiliari + Master: "));
-Serial.println (lastPhoneIndex+1);
-SendMsg();
-
-}
-
-*/
-
-
 void RestorePhones()
 {
     // At INIT (Power ON) copy EEPROM to phoneAut
@@ -868,53 +810,6 @@ void RestorePhones()
     
 }
 
-
-
-/*
-  void RestorePhones()
- {
-  // At INIT (Power ON) copy EEPROM to phoneAut
-
-  // If in EEPROM the first char of an entry (phone) is '+' it is considered that a phone is loaded
-  // Otherwise load the predefined number as defined in RAM (phoneAut).
-
-  // Scan and Read from EEPROM content (authorized phone numbers, Master included) and copy the content to phoneAut 
-  // Remember that auxiliary numbers are set only if a MASTER number is present (phoneAut[0] = Master number)
-    lastPhoneIndex = 0;
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        //OLD read_StringTel(6 + i*16, phoneT);
-        read_String(EPTELIN + i*EPTELPRO, phoneT, EPTELPRO);
-        // Nuova funzione che legge la EEPROM e copia in phoneT (phoneAut) - elemento "i"
-        
-        // Checks the presence of a Phone number (*) in EEPROM.
-        // if (phoneAut[i][0] == '+')
-          if (phoneT[0] == '+')
-
-        {
-            // If number is present, breaks the loop and set lastPhoneIndex to i
-            strcpy(phoneAut[i], phoneT);
-            lastPhoneIndex = i;
-        } 
-        else 
-        {
-        // If no number present, breaks the loop
-        break;
-        // Empty position
-        }
-    // Now the content in RAM (phoneAut) = EEPROM
-    // Except for the first time when EEPROM is empty and phoneAut has a predefined number
-    // Counts valid phones
-    Serial.print (F ("Autorized phone n."));
-    Serial.print (i);
-    Serial.print (F (": "));
-    Serial.println (phoneAut[i]);
-
-   } 
-  Serial.print (F ("Numero di telefoni ausiliari + Master: "));
-  Serial.println(lastPhoneIndex+1);
-}
-*/
 
 //   ============  FUNZIONI    STANDARD ======================
 
@@ -1176,122 +1071,7 @@ if (message[0] == 'M')
         SendMsg();
     }
 }
-
-// ########################################### FINE messaggio "M"
-
-
-
-
-/*
-// ====================================================================================
-// Se messaggio SMS arriva dal numero telefonico autorizzato MASTER [0]
-// o stringa vuota "" (Factory - nessun telefono ancora registrato -> richiede il PIN)
-// Telefono Master già inserito                         Regime -  Comando: M+393391255597
-// Telefono Master non ancora inserito (EEPROM vuota) - Inizio -  Comando: M+393391255597 12345
-// ====================================================================================
-                
-// Comando SMS "M+393391255597" (12) "M+393334188263" (12)
-                        if (message[0] == 'M')
-                          {
-                            if (strlen(phoneAut[0]) == 0)
-                              // Telefono Master vuoto -> richiede comando con PIN
-                            {
-                              // Lunghezza Numero errato ? 16 > N > 19   compreso tra 16 e 19  
-                                  if ((strlen(message) -2) < 16 || (strlen(message) - 2) > 19)
-                                    { 
-                                        sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
-                                        Serial.println(outmessage);
-                                        SendMsg();
-                                    }
-                                else // Formato (Numero e PIN) corretto
-                                      {
-                                        // Restituisce il n.telefonico comprensivo di "+" e "/0")
-                                        int i = 0;
-                                        while (message[i + 1] != ' ' && message[i + 1] != '\0')
-                                            {
-                                                phoneT[i] = message[i + 1];
-                                                i++;
-                                            }
-                                        phoneT[i] = '\0';
-
-                                        // Estrae il PIN Restituisce il PIN comprensivo "/0")
-                                        int j = 0;
-                                        while (message[i + 2 + j] != '\0' && j < 5)
-                                            {
-                                                pinRead[j] = message[i + 2 + j];
-                                                j++;
-                                            }
-                                        pinRead[j] = '\0';
-
-                              // PIN valido solo se ha esattamente 5 caratteri E il messaggio finisce qui
-                                        if (j != 5 || message[i + 2 + j] != '\0')
-                                        {
-                                            sprintf(outmessage, "WRONG PIN FORMAT %s", message);
-                                            Serial.println(outmessage);
-                                            SendMsg();
-                                        }
-                                            else
-                                            {
-                                            // Formato (PIN) corretto
-                                            // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
-                                                                                    
-                                            if (strcmp(eprpin, pinRead) != 0)
-                                                {
-                                                 sprintf(outmessage, "WRONG PIN %s", message);
-                                                 Serial.println(outmessage);
-                                                 SendMsg();
-                                                }
-                                                else
-                                                  // PIN corretto
-                                                    {
-                                                    strcpy(phoneAut[0], phoneT);
-                                                    write_String(EPTELIN, phoneT,EPTELPRO);
-
-                                                    sprintf(outmessage, "M TELEPHONE NUMBER + PIN SAVED %s", phoneT);
-                                                    Serial.println(outmessage);
-                                                    SendMsg();
-                                                    }
-                                              } //Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER
-                                            } // End Formato (Numero e PIN) corretto
-                                } // End Numero M Vuoto
-                                
-                                else if (strcmp(phone, phoneAut[0]) == 0)
-                                      {
-                                  // Lunghezza Numero errato ? 10 > N > 13   compreso tra 10 e 13   
-                                        if ((strlen(message) - 2) < 10 || (strlen(message) - 2) > 13)
-                                          {
-                                            sprintf(outmessage, "WRONG M NUMBER FORMAT %s", message);
-                                            Serial.println(outmessage);
-                                            SendMsg();
-                                          }
-                                        else 
-                                            {
-                                              // Formato Numero M corretto
-                                              // Salva in EEPROM e in phoneAut il nuovo numero telefonico MASTER  
-                                            
-                                              strncpy(phoneT, message + 1, strlen(message) - 1);
-                                              phoneT[strlen(message) - 1] = '\0';
-                                        
-                                            
-                                              strcpy(phoneAut[0], phoneT);
-                                              write_String(EPTELIN, phoneT, EPTELPRO);
-
-                                              sprintf(outmessage, "M TELEPHONE NUMBER SAVED %s", phoneT);
-                                              Serial.println(outmessage);
-                                              SendMsg();
-                                            }
-                                            } // FINE Numero MASTER in EEPROM
-                                            
-                                     else
-                                      {
-                                      // Notifica tentativo non autorizzato
-                                      strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                                      Serial.println(outmessage);
-                                      SendMsg();
-                                      } 
-                                
-                            } // FINE messaggio "M"
-                             */
+// ########################################### FINE messaggio "M" ################
 
 // ################################# COMANDO D DELETE AUXILIARIES
 // Comando SMS "D" cancella tutti i numeri eccetto il MASTER
@@ -1407,73 +1187,8 @@ if (message[0] == 'A')
         SendMsg();
     }
 }
-// ########################################### Fine - Comando A
+// ########################################### Fine - Comando A #######################
 
-
-
-/*
-// Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO in posizione.... 
-// Valido solo se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
-              
-if (message[0] == 'A')
-{
-    if (strcmp(phone, phoneAut[0]) == 0) // Solo se numero Master
-    {      
-// Formato Numero errato ?
-// Lunghezza Numero errato  10 > N > 13   compreso tra 10 e 13       
-            if ((strlen(message) -3) < 10 || (strlen(message) - 3) > 13)
-              {
-                sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
-                Serial.println(outmessage);
-                SendMsg();
-              } else
-                {
-// Formato Numero corretto
-                  phoneI = atoi(message + 1);  // es. '2' → 2 perchè si ferma al primo carattere non numerico (+)
-// Trova l'indice
-                  if (phoneI >= 1 && phoneI <= 3)
-// Per sicurezza solo nel caso phoneI sia compreso tra 1 e 3 (A1 A2 A3)
-                    {
-                      CalcAuxnphones(); // Calcola il numero attuale di telefoni ausiliari (lastPhoneIndex)
-                      
-                      if (phoneI <= lastPhoneIndex+1)
-                      // Se l'indice è già presente o è il prossimo da sostituire
-                      // Se è il primo inserimento di A1 (lastPhoneIndex)=0
-                            {
-                                strncpy(phoneT, message + 2, strlen(message) - 2);
-                                phoneT[strlen(message) - 2] = '\0';
-                                strcpy(phoneAut[phoneI], phoneT); // Salva in FLASH
-                                // OLD write_String(6 + phoneI * 16, phoneT);
-                                write_String(EPTELIN + phoneI * EPTELPRO, phoneT, EPTELPRO);                               // Salva EEPROM
-
-                                CalcAuxnphones(); // Aggiorna il numero di telefoni ausiliari (lastPhoneIndex)
-
-                                sprintf(outmessage, "%s%d %s %s","A", phoneI, " TELEPHONE NUMBER SAVED ", message);
-                                Serial.println(outmessage);
-                                SendMsg();
-                            } else
-                              {
-                                    sprintf(outmessage, "WRONG - INDEX OVERLAP %s", message);
-                                    Serial.println(outmessage);
-                                    SendMsg();
-                              }                              
-                  } else
-                        {
-                          sprintf(outmessage, "INDEX OUTSIDE THE RANGE %s", message);
-                          Serial.println(outmessage);
-                          SendMsg();
-                        }
-                }
-    }
-    else
-    {
-        strcpy(outmessage, "Request from NOT AUTHORIZED number");
-        Serial.println(outmessage);
-        SendMsg();
-    }
-}
-// ########################################### Fine - Comando A
-*/
 
 // ########################################### Comando P
 // Comando SMS "P 12345 54321" SOSTITUISCE PIN (PIN OLD, PIN NEW)
@@ -1537,59 +1252,6 @@ if (message[0] == 'P')
 // ########################################### Fine Comando P
 
 
-
-
-// Comando SMS "P 12345 54321" SOSTITUISCI PIN (PIN OLD, PIN NEW)
-// Valido solo se messaggio SMS "P 12345 54321" arriva dal numero telefonico autorizzato Master [0]
-              
-/*
-if (message[0] == 'P')
-{  
-    if (strcmp(phone, phoneAut[0]) == 0)
-    { // Solo se arriva dal numero telefonico autorizzato Master [0]
-      // Formato PIN errato ?      
-      if (strlen(message) != 13)
-        {
-          // Formato PIN errato
-          sprintf(outmessage, "WRONG PINs FORMAT %s", message);
-          Serial.println(outmessage);
-          SendMsg();
-        } else
-          {
-            strncpy(pinOld, message + 2, 5);
-            pinOld[5] = '\0';
-
-            strncpy(pinNew, message + 8, 5);
-            pinNew[5] = '\0';
-
-            if (strcmp(pinOld, eprpin) == 0)
-            {
-            // Formato PIN corretto
-            strcpy(eprpin, pinNew); // Salva in RAM
-            write_String(EPINPIN, eprpin, EPPINPRO); // Salva in EEPROM
-
-            sprintf(outmessage, "PIN SAVED");
-            Serial.println(outmessage);
-            SendMsg();
-            } 
-            else
-              {
-                sprintf(outmessage, "WRONG OLD PIN %s", message);
-                Serial.println(outmessage);
-                SendMsg();
-              }
-            }
-
-    }
-    else
-    {
-        strcpy(outmessage, "Request from NOT AUTHORIZED number");
-        Serial.println(outmessage);
-        SendMsg();
-    } 
-}
-// ########################################### Fine - Comando P
-*/
 
 // ########################################### Comando N
 // Valido solo se la richiesta proviene dal MASTER
