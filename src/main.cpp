@@ -108,11 +108,12 @@ con EPTELIN=12 ed EPTELPRO=16:
   EEPROM.read(5) Indicatore Rete presente (0) Rete assente (1) - NON PIU' UTILIZZATO
 
   1st Power On
-  -  inizialmente la EEPROM non ha numeri (tutti "") 
-  -  Definire il numero Master (M)
+  -  Inizialmente la EEPROM non ha numeri (tutti "") – equivale ad un Factory Reset
+  -  Definire il numero Master M con PIN (es, M+393334188263 123A5)
   -  Una volta definito il numero master è possibile definire il primo numero ausiliario (A1)
      e poi il secondo numero Ausiliario (A2)
-  -  Con "D" il MASTER può CANCELLARE tutti i cellulari eccetto il numero Master autorizzato (0)    
+  -  Con "D" il MASTER può CANCELLARE tutti i cellulari eccetto il numero Master autorizzato (0)
+  -	 Con “N” il MASTER può ottenere la lista dei numeri autorizzati (Master + Ausiliari)
 
   SoftwareSerial library Notes
   With Arduino 1.0 you should be able to use the SoftwareSerial library included with the distribution (instead of NewSoftSerial).
@@ -126,6 +127,8 @@ con EPTELIN=12 ed EPTELPRO=16:
   If using multiple software serial ports, only one can receive data at a time.
   http://arduino.cc/hu/Reference/SoftwareSerial This means that if you try to add another serial device ie grove serial LCD you may get communication errors
   unless you craft your code carefully.
+
+  ATTUALMRNTR CON 64 FUNZIONA
 
   AT+CLTS    Get Local Timestamp
   Test Command AT+CLTS=? Response +CLTS: "yy/MM/dd,hh:mm:ss+/-zz" OK
@@ -254,10 +257,10 @@ char phoneAut[][16] = {
 
 
 // uint32_t iniTime;	// Valore Tempo iniziale
-uint32_t previousMilliscc = 0, previousMillisora = 0;
-uint32_t intervalcc = 5000; //intervallo per il controllo del valore di tensione attuale - 10 sec
+uint32_t previousMilliscc = 0, previousMillisora = 0, previousMillisMs = 0 ;
+uint32_t intervalcc = 5000; // intervallo per il Parser - 5sec
+uint32_t intervalMs = 1000; // Controllo del valore di tensione attuale - 1 sec
 uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minuti - 3600000 1 ora
-//uint32_t intervalora = 120000; //intervallo per il controllo dell'ora - 2 Minuti - 3600000 1 ora
 
 //COOP INFO SMS (Credito residuo)
 #define INFO_NUMBER "4243688"
@@ -849,9 +852,6 @@ void setup()
     DEBUG_PRINTLN(freeMemory());
     //Serial.println(freeMemory());
 
-// EEPROM.update(5, 0);
-// Aggiorna EEPROM 5 a 0 solo se non è già a 0 - Presenza rete
-
     PwrActv=true; // Assume rete presente al primo avvio
 
     RestorePhones();
@@ -895,8 +895,7 @@ void loop()
    
   unsigned long currentMillis = millis();
 
-  // VERIFICA OGNI 10 secondi (intervalcc) se ci sono SMS da processare
-  // o ci sono state variazioni sulla rete elettrica.
+  // VERIFICA OGNI 5 secondi (intervalcc) se ci sono SMS da processare
   // Gestisce la richieste via SMS
   if (currentMillis - previousMilliscc > intervalcc)
    {
@@ -1496,20 +1495,26 @@ if (message[0] == 'F')
                           errorStop();
                           // Blocca l'esecuzione e notifica con un led ad esempio lampeggiante
 		                  } 
-  }
-// FINE VERIFICA OGNI 10 secondi (intervalcc)
+}
+// FINE VERIFICA OGNI 5 secondi (intervalcc)
 
 
 
-// ============ VISUALIZZA STATO SU SERIALE IN MODO CONTINUO =====================
+// ============ VISUALIZZA STATO SU SERIALE OGNI SECCONDO =====================
+
+  // VERIFICA OGNI 1 sec se ci sono state variazioni sulla rete elettrica.
+
+if (currentMillis - previousMillisMs > intervalMs)
+{
+ previousMillisMs = currentMillis;     
 
 calc();				//	Calculates PowerVoltage Vrms
 DEBUG_PRINT(F (" Current Voltage: "));
 //Serial.print (F (" Current Voltage: "));
-Serial.flush();
+//Serial.flush();
 DEBUG_PRINTLN(PowerVoltage);
 //Serial.println(PowerVoltage);
-Serial.flush();
+//Serial.flush();
 
   gprs.getDateTime(locDateTime); 
   day = (locDateTime[6] - '0') * 10 + (locDateTime[7] - '0');
@@ -1531,11 +1536,8 @@ if (PowerVoltage <= 100.0)
       {
 // =====================   MANCANZA RETE    =====================
 
-// EEPROM.read(5)  0 Rete presente 1 Rete assente
-// Identifica transizione da 0 Rete Presente a 1 Rete Assente
-/*       if (EEPROM.read(5) == 0)
-            {
-              EEPROM.update(5, 1); Aggiorna EEPROM a 1 */
+// PwrActv = true Rete presente false Rete assente
+// Identifica transizione da true Rete Presente a false Rete Assente
 
         if (PwrActv == true) // significa che la rete era presente e quindi invia SMS di notifica
 			        {
@@ -1566,19 +1568,16 @@ if (PowerVoltage <= 100.0)
 if (PowerVoltage >= 200.0)
 // Soglia 200.0 V per la ripresa 
       {
-    //                  RETE PRESENTE
+// =====================    RETE PRESENTE    =====================
 
-    /* EEPROM.read(5)  0 Rete presente 1 Rete assente
-        if (EEPROM.read(5) == 1)
-                {
-                    EEPROM.update(5, 0); // Aggiorna EEPROM a 0 */
+    // PwrActv = true Rete presente false Rete assente
+    // Identifica transizione da false Rete Assente a true Rete Presente
 
                 if (PwrActv == false) // significa che la rete era presente e quindi invia SMS
                 {
                     PwrActv = true; // Resetta la variabile di stato rete presente  
                     int power = (int)(PowerVoltage);
                     gprs.getDateTime(locDateTime);
-//                  sprintf(outmessage, "%s %s %d Vac", locDateTime, "RIPRESA RETE, ultima lettura:", power);
                     sprintf(outmessage, "%s RIPRESA RETE, ultima lettura: %d Vac", locDateTime, power);
                     
                     Serial.println(outmessage);
@@ -1598,9 +1597,9 @@ if (PowerVoltage >= 200.0)
 			                          } // close the Else
 
                           } // Close the for 1
-                } // Close the (EEPROM) Status Flag if (Rete presente)
+                } // Close the PwrActv == true (Rete presente)
       } // Close Theshold 200V Present
-    
+    } // Fine verifica Tensione ogni secondo
 
 /* RESET GIORNALIERO 
 Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
