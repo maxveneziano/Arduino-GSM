@@ -915,19 +915,19 @@ void loop()
     // In caso di errore NON esegue il Parser ed esce dal While
     // Fuori dal While indica l'errore sulla serial output
     // e blocca l'esecuzione lampeggiando il led
-    {  DEBUG_PRINT(F("SMS received !\n"));
-      //Serial.print(F("SMS received !\n"));
-      DEBUG_PRINT(F("Received one SMS - messageIndex: "));
-      //Serial.print(F("Received one SMS - messageIndex: "));
-      DEBUG_PRINTLN(messageIndex);
-     // Serial.println(messageIndex);
+    {  //DEBUG_PRINT(F("SMS received !\n"));
+      Serial.print(F("SMS received !\n"));
+      //DEBUG_PRINT(F("Received one SMS - messageIndex: "));
+      Serial.print(F("Received one SMS - messageIndex: "));
+      //DEBUG_PRINTLN(messageIndex);
+      Serial.println(messageIndex);
 
 // At least, there is one UNREAD SMS then reads the content of the SMS
 // and deletes it from SIM memory to avoid filling it up
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
                 delay (1000);
-                DEBUG_PRINTLN(F("At least, there is one UNREAD SMS"));
-                //Serial.println (F("At least, there is one UNREAD SMS"));
+                //DEBUG_PRINTLN(F("At least, there is one UNREAD SMS"));
+                Serial.println (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
                 // Si prepara per il prossimo ciclo di lettura SMS
@@ -935,19 +935,18 @@ void loop()
                 //delay(500);
 
 // Write on Serial Monitor the content of received SMS.
-                DEBUG_PRINT(F ("From number: "));
-                //Serial.print (F ("From number: "));
-                //DEBUG_PRINT(phone);
-                DEBUG_PRINTLN(phone);
-                //Serial.println(phone);
-                DEBUG_PRINT(F ("Datetime: "));
-                //Serial.print (F ("Datetime: "));
-                DEBUG_PRINTLN(datetime);
-                //Serial.println(datetime);
-                DEBUG_PRINT(F ("Received Message: "));
-                //Serial.print (F ("Received Message: "));
-                DEBUG_PRINTLN(message);
-                //Serial.println(message);
+                //DEBUG_PRINT(F ("From number: "));
+                Serial.print (F ("From number: "));
+                //DEBUG_PRINTLN(phone);
+                Serial.println(phone);
+                //DEBUG_PRINT(F ("Datetime: "));
+                Serial.print (F ("Datetime: "));
+                //DEBUG_PRINTLN(datetime);
+                Serial.println(datetime);
+                //DEBUG_PRINT(F ("Received Message: "));
+                Serial.print (F ("Received Message: "));
+                //DEBUG_PRINTLN(message);
+                Serial.println(message);
 
 // ############################## COMANDO M - Sostituisce o Imposta cellulare Autorizzato MASTER
 // ====================================================================================
