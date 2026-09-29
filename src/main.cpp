@@ -1360,9 +1360,6 @@ if (message[0] == 'F')
 
 // ########################################### Fine Comando F
 
-
-
-
 /*
 // ########################################### Comando F    
 // ##################
@@ -1552,15 +1549,22 @@ if (PowerVoltage <= 100.0)
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
               for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
                     {
+                        delay(2000);
+                        DEBUG_PRINT(F ("PhoneAut[i]: "));
+                        DEBUG_PRINTLN(phoneAut[i]);
+                        DEBUG_PRINT(F ("outmessage: "));
+                        DEBUG_PRINTLN(outmessage);
+
                         if (gprs.sendSMS(phoneAut[i], outmessage))
                           {  
                             DEBUG_PRINT(F ("Send SMS Succeed!\r\n"));
                             //Serial.print (F ("Send SMS Succeed!\r\n"));
-		                      } else
+		                  } else
                               {
                                 DEBUG_PRINT(F ("Send SMS failed!\r\n")); 
                                 //Serial.print (F ("Send SMS failed!\r\n"));
-			                        }
+			                  }
+                         delay(2000);     
                     }
 		        }
       } // Power Voltage <= 100V
