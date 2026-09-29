@@ -255,7 +255,7 @@ char phoneAut[][16] = {
 
 // uint32_t iniTime;	// Valore Tempo iniziale
 uint32_t previousMilliscc = 0, previousMillisora = 0;
-uint32_t intervalcc = 10000; //intervallo per il controllo del valore di tensione attuale - 10 sec
+uint32_t intervalcc = 5000; //intervallo per il controllo del valore di tensione attuale - 10 sec
 uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minuti - 3600000 1 ora
 //uint32_t intervalora = 120000; //intervallo per il controllo dell'ora - 2 Minuti - 3600000 1 ora
 
@@ -734,9 +734,9 @@ void ListAutPhones()
             len += snprintf_P(outmessage + len, sizeof(outmessage) - len,PSTR("Authorized phone n. %d: %s\n"), i, phoneAut[i]);
 
             // Scrive su Serial
-            DEBUG_PRINTLN(F("Authorized phone n."));
+            DEBUG_PRINT(F("Authorized phone n."));
             //Serial.print(F("Authorized phone n."));
-            DEBUG_PRINTLN(i);
+            DEBUG_PRINT(i);
             //Serial.print(i);
             DEBUG_PRINT(F(": "));
             //Serial.print(F(": "));
