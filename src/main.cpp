@@ -1622,7 +1622,7 @@ if (currentMillis - previousMillisora > intervalora)
                 // Scrive su Serial una sola volta ma manda messaggio SMS completo          
                     DEBUG_PRINTLN(outmessage);
 
-                    if (gprs.sendSMS(phoneAut[i], outmessage))
+                    if (gprs.sendSMS(phoneAut[0], outmessage))
                                     { 
                                       DEBUG_PRINT(F ("Send SMS Succeed!\r\n"));
                                       //Serial.print (F ("Send SMS Succeed!\r\n"));
