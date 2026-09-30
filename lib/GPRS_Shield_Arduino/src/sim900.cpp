@@ -178,6 +178,62 @@ boolean sim900_send_AT(void) {
 void sim900_send_End_Mark(void) {
     sim900_send_byte((char)26);
 }
+/* Function for Debug
+boolean sim900_wait_for_resp(const char* resp, DataType type,
+                             unsigned int timeout, unsigned int chartimeout) {
+    int len = strlen(resp);
+    int sum = 0;
+    unsigned long timerStart, prevChar;
+
+    timerStart = millis();
+    prevChar = 0;
+
+    while (1) {
+
+        if (sim900_check_readable()) {
+            char c = serialSIM900->read();
+
+            // Mostra sulla Serial tutto quello che arriva dal SIM900
+            Serial.print(c);
+
+            prevChar = millis();
+
+            sum = (c == resp[sum]) ? sum + 1 : 0;
+
+            if (sum == len) {
+                Serial.println();
+                Serial.println(F(">>> RISPOSTA OK TROVATA"));
+                break;
+            }
+        }
+
+        // Timeout totale
+        if ((unsigned long)(millis() - timerStart) > timeout * 1000UL) {
+            Serial.println();
+            Serial.println(F(">>> TIMEOUT TOTALE"));
+            return false;
+        }
+
+        // Timeout tra caratteri
+        if (((unsigned long)(millis() - prevChar) > chartimeout) &&
+            (prevChar != 0)) {
+            Serial.println();
+            Serial.println(F(">>> TIMEOUT INTERCHAR"));
+            return false;
+        }
+    }
+
+    // Se è un CMD, svuota il buffer seriale
+    if (type == CMD) {
+        sim900_flush_serial();
+    }
+
+    return true;
+}
+*/
+
+
+// ###############
 
 boolean sim900_wait_for_resp(const char* resp, DataType type, unsigned int timeout, unsigned int chartimeout) {
     int len = strlen(resp);
@@ -211,7 +267,6 @@ boolean sim900_wait_for_resp(const char* resp, DataType type, unsigned int timeo
     }
     return true;
 }
-
 
 boolean sim900_check_with_cmd(const char* cmd, const char* resp, DataType type, unsigned int timeout,
                               unsigned int chartimeout) {

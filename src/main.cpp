@@ -1,6 +1,8 @@
 /* SMS Manager for Power monitoring
 
-  Uses GSM Library GPRS_Shield_Arduino 2024 (Non Suli)
+  Uses GSM Library GPRS_Shield_Arduino 2024 (Non Suli)eout 
+  Modificata GPRS::sendSMS per aumentare il timeout intercarattere a 15000ms - 15s
+  Solo per Debug, modificata sim900_wait_for_resp in sim900.cpp
 
   Specifiche:
   - OK    Verifica corretta registrazione
