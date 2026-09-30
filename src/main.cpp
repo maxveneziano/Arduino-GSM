@@ -29,6 +29,8 @@
   Gestire più SMS in ricezione (SCANDIRLI TUTTI) e processarli uno alla volta (FIFO) - FATTO
   Magari un ciclo while? FATTO
 
+  Comando I(nfo) per SMS SALDO residuo
+
      .......................... Scopo del codice
 
 Il programma:
@@ -1545,18 +1547,12 @@ if (PowerVoltage <= 100.0)
               gprs.getDateTime(locDateTime);
 //sprintf(outmessage, "%s %s %d Vac", locDateTime," MANCANZA RETE, ultima lettura:", power);
               sprintf(outmessage, "%s MANCANZA RETE, ultima lettura: %d Vac", locDateTime, power);
-            
+// Scrive su Serial una sola volta ma manda messaggio SMS completo          
               Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
               for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
                     {
-                        delay(2000);
-                        DEBUG_PRINT(F ("PhoneAut[i]: "));
-                        DEBUG_PRINTLN(phoneAut[i]);
-                        DEBUG_PRINT(F ("outmessage: "));
-                        DEBUG_PRINTLN(outmessage);
-
                         if (gprs.sendSMS(phoneAut[i], outmessage))
                           {  
                             DEBUG_PRINT(F ("Send SMS Succeed!\r\n"));
@@ -1565,8 +1561,7 @@ if (PowerVoltage <= 100.0)
                               {
                                 DEBUG_PRINT(F ("Send SMS failed!\r\n")); 
                                 //Serial.print (F ("Send SMS failed!\r\n"));
-			                  }
-                         delay(2000);     
+			                  }                   
                     }
 		        }
       } // Power Voltage <= 100V
