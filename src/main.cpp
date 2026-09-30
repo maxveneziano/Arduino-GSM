@@ -1633,7 +1633,7 @@ if (currentMillis - previousMillisora > intervalora)
                                         //Serial.print (F("Send SMS failed!\r\n"));
 			                          } // close the Else
                     
-                    DEBUG_PRINTLN(F (" Devo fare Reset "));
+                    DEBUG_PRINTLN(F (" Ora faccio Reset "));
                     //Serial.print (F (" Devo fare Reset "));
                     initapp();
                 } // close the if 2
