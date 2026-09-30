@@ -156,7 +156,7 @@ con EPTELIN=12 ed EPTELPRO=16:
   Serial.println(F("String"));
 */
 
-//#define E2PROMFAC
+//#define E2PROMFAC // Factory Reset
 #define DEBUG_EN
 
 #ifdef DEBUG_EN
@@ -1257,13 +1257,7 @@ if (message[0] == 'P')
             if (message[0] == 'N')
                 {
 // Comando SMS "N" Ritorna i numeri autorizzati
-// SOLO se il messaggio SMS e la richiesta è proveniente dal numero autorizzato MASTER[0]
-
-                DEBUG_PRINT(F ("phoneAut[0]: "));
-                //Serial.print (F ("phoneAut[0]: "));
-                DEBUG_PRINTLN(phoneAut[0]);  
-                //Serial.println(phoneAut[0]);                    
-
+// SOLO se il messaggio SMS e la richiesta è proveniente dal numero autorizzato MASTER[0]                   
 
 if (strcmp(phone, phoneAut[0]) == 0)
                         {
@@ -1278,6 +1272,156 @@ if (strcmp(phone, phoneAut[0]) == 0)
                         }
                 }
 // ################################### Fine - Comando N
+
+// ########################################### Comando I
+// Valido solo se la richiesta proviene dal MASTER
+
+//Se messaggio SMS è di tipo "I"
+            if (message[0] == 'I')
+                {
+// Comando SMS "I" Ritorna il messaggio SALDO
+// SOLO se il messaggio SMS è proveniente dal numero autorizzato MASTER[0]                   
+
+if (strcmp(phone, phoneAut[0]) == 0)
+                        {
+                        // Invia SMS al numero Coop Voce 42 43 688 INFO SIM per credito residuo
+                        // in modo da ricavare la data e l'ora corrente
+  
+                        DEBUG_PRINT(F("Invio Messaggio INFO\n"));
+                        //Serial.print(F("Invio Messaggio INFO\n"));
+
+                            // Send SMS to defined phone number and text
+                            if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
+                                { 
+                                DEBUG_PRINT(F("Send SMS Succeed!\r\n"));
+                                //Serial.print(F("Send SMS Succeed!\r\n"));
+                             Serial.flush();
+                                 } 
+                             else
+                                {
+                                    DEBUG_PRINT(F("Send SMS failed!\r\n"));
+                                    //Serial.print(F("Send SMS failed!\r\n"));
+                                    Serial.flush();
+                                }
+
+
+  // #################  Legge il messaggio INFO ricevuto ################
+  // C'è il rischio che si frapponga un SMS di servizio del provider
+  // Solo se non passa molto tempo dalla registrazione alla rete
+  // (Vedi cancellazione preventiva)
+                            DEBUG_PRINTLN(F("Attende la ricezione del messaggio INFO"));
+                            //Serial.println(F("Attende la ricezione del messaggio INFO"));
+
+                            // Attende di ricevere il messaggio INFO
+                             while (messageIndex < 1 || messageIndex == 255)
+                                {   
+                                    if (messageIndex == 255)
+                                        { 
+                                            DEBUG_PRINT(F ("Waiting INFO Message 255 code Error!\r\n"));
+                                             //Serial.print (F ("Waiting INFO Message 255 code Error!\r\n"));
+                                        errorStop();
+                                        }
+                                else
+
+                                        {
+                                            //delay(500);  
+                                            // Si prepara per il prossimo ciclo
+                                            messageIndex = gprs.isSMSunread(); 
+                                            DEBUG_PRINT(F("No SMS received yet!\n"));
+                                            //Serial.print(F("No SMS received yet!\n"));
+                                            DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
+                                            //Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
+                                            DEBUG_PRINTLN(messageIndex);
+                                            //Serial.println(messageIndex);
+                                        }
+                                }
+// Messaggio Ricevuto - messageIndex >= 1
+                                // delay(100); Da cancellare?
+                                //Serial.flush();
+
+                                DEBUG_PRINT(F("SMS received - Current messageIndex: "));
+                                //Serial.print(F("SMS received - Current messageIndex: "));
+                                DEBUG_PRINTLN(messageIndex);
+                                //Serial.println(messageIndex);
+
+                                //sim900_flush_serial();
+                                //delay(5000);
+
+
+  // Legge in continuazione SMS finchè non rimangono più messaggi non letti (messageIndex=0)
+  // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
+  // Riconoscendo il codice 255 si blocca facendo lampeggiare il led in quanto si tratta di
+  // un probabile errore di comunicazione con il modem, modem non inizializzato
+  // o non collegato alla rete
+  // ###########################################################################
+  
+  //messageIndex = gprs.isSMSunread();
+  
+  //while ((messageIndex = gprs.isSMSunread()))
+                                while ((messageIndex = gprs.isSMSunread()) != 0)
+                                {
+
+                                    if (messageIndex == 255)
+                                    { 
+                                        DEBUG_PRINT(F ("SMS INFO READ 255 code Error!\r\n"));
+                                        //Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
+                                        errorStop();
+                                    }
+                                    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
+                                    {
+                                        delay(1000);
+
+                                        DEBUG_PRINT(F("SMS indice: "));
+                                        //Serial.print(F("SMS indice: "));
+                                        DEBUG_PRINTLN(messageIndex);
+                                        //Serial.println(messageIndex);
+
+                                        DEBUG_PRINT(F("Da: "));
+                                        //Serial.print(F("Da: "));
+                                        DEBUG_PRINTLN(phone);
+                                        //Serial.println(phone);
+
+                                        DEBUG_PRINT(F("Testo: "));
+                                        //Serial.print(F("Testo: "));
+                                        DEBUG_PRINTLN(message);
+                                        //Serial.println(message);
+
+                                        gprs.deleteSMS(messageIndex);
+                                    }
+ 
+                                } // End SMS unread index 
+                        
+                        
+// Prepares for the SMS and writes on Serial Monitor
+                        gprs.getDateTime(locDateTime);
+                        sprintf(outmessage, "%s Messaggio SALDO:\r\n", locDateTime);
+                        DEBUG_PRINTLN(outmessage);    // Writes on Serial Monitor the SALDO Message       
+                        DEBUG_PRINTLN(message);
+
+                        delay(5000);
+
+                  if (gprs.sendSMS(phoneAut[0], message)) // Sends the SMS to the requesting number and check the result
+                      { 
+                        DEBUG_PRINTLN(F ("Send SMS Succeed!\r\n"));
+                        //Serial.print (F ("Send SMS Succeed!\r\n"));
+                        DEBUG_PRINTLN(message);    // Writes on Serial Monitor the SALDO Message
+
+		                  }   else
+                          {
+                            DEBUG_PRINT(F ("Send SMS failed!\r\n"));  
+                            //Serial.print (F ("Send SMS failed!\r\n"));
+			                    }
+                        } // End numero uguale a Master
+                        else
+                            {
+// Notifica tentativo non autorizzato
+                                strcpy(outmessage, "Request from NOT AUTHORIZED number");
+                                Serial.println(outmessage);
+                                SendMsg();
+                            }
+                } // End Comando I
+// ################################### Fine - Comando I
+
 
 // ########################################### Comando F
 // Comando SMS: "F12345"
@@ -1363,78 +1507,6 @@ if (message[0] == 'F')
 }
 
 // ########################################### Fine Comando F
-
-/*
-// ########################################### Comando F    
-// ##################
-// ################## Se messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: 12345
-
-// Comando SMS "F12345" (6)
-                        if (message[0] == 'F')
-                            { 
-                              if (strcmp(phone, phoneAut[0]) == 0)
-                                {                              
-                              // Lunghezza Comando errato ? 5 
-                                  if ((strlen(message) -1) != 5)
-                                    {
-                                        sprintf(outmessage, "WRONG PIN FORMAT %s", message);
-                                        Serial.println(outmessage);
-                                        SendMsg();
-                                    }
-                                   else // Formato PIN corretto
-                                      {
-                                        // Estrae il PIN Restituisce il PIN comprensivo con "/0")
-                                        int i = 0;
-                                        // while (message[i + 1 + j] != '\0')
-                                        while (message[i + 1] != '\0' && i < 5)
-                                            {
-                                                pinRead[i] = message[i + 1];
-                                                i++;
-                                            }
-                                        pinRead[i] = '\0';
-                                          
-                                            // Formato (PIN) corretto
-                                                                                                                                
-                                            // Controllo equivalenza PIN
-                                            if (strcmp(eprpin, pinRead) != 0)
-                                                {
-                                                 sprintf(outmessage, "WRONG PIN %s", message);
-                                                 Serial.println(outmessage);
-                                                 SendMsg();
-                                                }
-                                                else
-                                                {
-                                                  // PIN corretto
-
-                                                  // Delete in EEPROM and phoneAut (FLASH) all phone numbers - Set PIN to Factory 123A5
-                                                  for (uint8_t i = 0; i < 4; i++)
-                                                    {
-                                                      phoneAut[i][0] = '\0';
-                                                    // OLD write_String((6+i*16), "");
-                                                    // OLD Initial Address 6 and String type data [16 char])
-                                                      write_String((EPTELIN+i*EPTELPRO), "", EPTELPRO);                      
-                                                    }
-                                                  write_String(EPINPIN, pinDfl, EPPINPRO);
-                                                  strcpy(eprpin, pinDfl);      // scrive in eprpin il PIN di default "123A5" 
-                                                  lastPhoneIndex = 0;
-                                                  sprintf(outmessage, "ALL NUMBERS DELETED & PIN SET TO FACTORY");
-                                                  Serial.println(outmessage);
-                                                  SendMsg();
-                                                }                        
-                                                  
-                                              } // End Formato PIN corretto 
-                            } // FINE messaggo proveniente da MASTER
-                            else
-                              {
-                                strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                                Serial.println(outmessage);
-                                SendMsg();
-                              }
-
-                          } //  FINE comando F
-
-// #################################### Fine Comando F
-*/
 
 // #################################### Comando S
 // Valido solo se proveniente da numero Autorizzato (Master o  Ausiliario)
