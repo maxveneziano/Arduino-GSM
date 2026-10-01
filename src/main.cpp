@@ -286,46 +286,6 @@ int freeMemory()
                 ? (char *)&__heap_start
                 : (char *)__brkval);
 }
-//  Init GPRS/GSMGPRS Modem with Timeout (30 sec) - Return true if success, false if timeout
-bool gprsInitwTO(unsigned long timeoutGSM)
-{
-    unsigned long startTO = millis();
-
-    while (!gprs.init())
-    {
-        if (millis() - startTO >= timeoutGSM)
-        {
-            Serial.println(F("GSM INIT TIMEOUT"));
-            return false;
-        }
-
-        gprs.powerUpDown(PIN_RST);
-        delay(1000);
-    }
-
-    return true;
-}
-//  Wait for Network registration with Timeout (30 sec) - Return true if success, false if timeout
-
-bool waitNetwork(unsigned long timeoutNW)
-{
-    unsigned long startTO = millis();
-
-    while (!gprs.isNetworkRegistered())
-    {
-        if (millis() - startTO >= timeoutNW)
-        {
-            Serial.println(F("NETWORK TIMEOUT"));
-            return false;
-        }
-
-        delay(1000);
-        // Aspetta un secondo e riverifica il collegamento alla rete GSM
-    }
-
-    return true;
-}
-
 
 //  Error Stop - Blink LED
   void errorStop()
@@ -342,118 +302,6 @@ bool waitNetwork(unsigned long timeoutNW)
     }
 }
 
-void initapp()
-  {
-  //Initialize Modem and emoncms
-
-  Serial.begin(9600);
-
-  DEBUG_PRINT(F("Program started...\nStarting Power On sequence\n"));
-  //Serial.print(F("Program started...\nStarting Power On sequence\n"));
-  
-  emon1.voltage(0, VOLT_CAL, 1.7);  // Defines Voltage: input pin, Voltage calibration, phase_shift
-  //emon1.current(0, 32);
-  for (uint8_t i = 0; i < 5; i++)
-   { //Stabilyze EmonCMS data
-    emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave (200ms) with a 2000ms Timeout
-   }
-
-  if (!gprsInitwTO(30000)) // 30 sec timeout
-{
-    Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
-    errorStop();
-    // Blocca l'esecuzione e notifica con un led lampeggiante
-}
-// delay(1000); Da rimuovere ?
-  DEBUG_PRINT(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
-  //Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
-  // iniTime = millis(); // Valore Tempo iniziale
-  
-// Garantisce che il Modem sia registrato sulla rete entro 60 sec
-if (!waitNetwork(60000))
-{
-    Serial.println(F("Rete GSM non disponibile"));
-    errorStop();
-    // Blocca l'esecuzione e notifica con un led ad esempio lampeggiante
-}
-DEBUG_PRINT(F("GSM network initialization done!\n"));  
-//Serial.print(F("GSM network initialization done!\n"));
-
-// ###########################   IMPOSTAZIONI SMS
-
-// SELEZIONA MEMORIA SMS SIM CARD
-sim900_check_with_cmd(F("AT+CPMS=\"SM\",\"SM\",\"SM\"\r\n"), "OK", CMD);
-delay(500);
-
-//AT+CMGF=1	// Enable ASCII TEXT mode for SMS
-  if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
-    {
-// Set message mode to ASCII
-      DEBUG_PRINTLN(F (" Set ASCII TEXT mode for SMS...."));
-      //Serial.println (F (" Set ASCII TEXT mode for SMS...."));
-    }
-    delay(500);  
-    InfoSMS();
-
-    // RTC Network Time updating is disabled
-    sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
-
-    /* Set RTC time to i.e (datetime). 
-    "yy/MM/dd,hh:mm:ss+/-zz"
-    zz quarter (-47....+48)of hour between local time and GMT
-    6 maggio 2010,00:01:52 GMT +2 ore
-    "10/05/06,00:01:52+08
-    */ 
-    
-    sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
-    
-if (sim900_check_with_cmd (outmessage, "OK", CMD))
-      {
-        
-        DEBUG_PRINT(F("A buon Fine: "));
-        //Serial.print (F("A buon Fine: "));
-        DEBUG_PRINTLN(outmessage);
-        //Serial.println (outmessage);
-        Serial.flush();
-      }
-      else
-        {
-            DEBUG_PRINTLN(F ("Non a buon Fine"));
-            //Serial.println (F ("Non a buon Fine"));
-            Serial.flush();
-
-    // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
-        } 
-
-  //AT+CLTS=1	// Enable date and time from network - WIND Funziona COOP VOCE NON FUNZIONA
-  
-  // sim900_check_with_cmd(F("AT+CLTS=1\r\n"), "OK", CMD);
-  // delay(2000);
-
-  // Sync date time GSM RTC to Network
-  //sim900_check_with_cmd(F("AT+CCLK?\r\n"), "OK", 0);
-  //	AT+CCLK?						--> 8 + CR = 9
-  //+CCLK: "14/11/13,21:14:41+04"	--> CRLF + 29 + CRLF = 33
-  //
-  //OK							--> CRLF + 2 + CRLF =  6
-  /*
-    "yy/MM/dd,hh:mm:ss+/-zz"
-    zz quarter (-47....+48)of hour between local time and GMT
-    6 maggio 2010,00:01:52 GMT +2 ore
-    "10/05/06,00:01:52+08
-  */
-
- // Ricava da RTC Data e ora e li pone in locDateTime
-  gprs.getDateTime(locDateTime);
-  DEBUG_PRINT(F (" Data e Ora da rete: "));
-  //Serial.print (F (" Data e Ora da rete: "));
-  DEBUG_PRINTLN(locDateTime);
-  //Serial.println(locDateTime);
-
-}
-
-//   ============  A L T R E   F U N Z I O N I ======================
-
 void InfoSMS()
 {
 // ###########################   PREVENTIVELY DELETE ALL SMS UNREAD
@@ -469,7 +317,7 @@ void InfoSMS()
   // Send SMS to defined phone number and text
   if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
     { 
-        DEBUG_PRINTLN("SALDO message Sent succesfully !");
+        DEBUG_PRINTLN(F("SALDO message Sent succesfully !"));
         //Serial.print(F("Send SMS Succeed!\r\n"));
         Serial.flush();
     } 
@@ -603,6 +451,165 @@ void InfoSMS()
 
     //Serial.flush();
 }
+
+
+//  Init GPRS/GSMGPRS Modem with Timeout (30 sec) - Return true if success, false if timeout
+bool gprsInitwTO(unsigned long timeoutGSM)
+{
+    unsigned long startTO = millis();
+
+    while (!gprs.init())
+    {
+        if (millis() - startTO >= timeoutGSM)
+        {
+            DEBUG_PRINTLN(F("GSM INIT TIMEOUT"));
+            //Serial.println(F("GSM INIT TIMEOUT"));
+            return false;
+        }
+
+        gprs.powerUpDown(PIN_RST);
+        delay(1000);
+    }
+
+    return true;
+}
+//  Wait for Network registration with Timeout (30 sec) - Return true if success, false if timeout
+
+bool waitNetwork(unsigned long timeoutNW)
+{
+    unsigned long startTO = millis();
+
+    while (!gprs.isNetworkRegistered())
+    {
+        if (millis() - startTO >= timeoutNW)
+        {
+            
+            DEBUG_PRINTLN(F("NETWORK TIMEOUT"));
+            //Serial.println(F("NETWORK TIMEOUT"));
+            return false;
+        }
+
+        delay(1000);
+        // Aspetta un secondo e riverifica il collegamento alla rete GSM
+    }
+
+    return true;
+}
+
+void initapp()
+  {
+  //Initialize Modem and emoncms
+
+  Serial.begin(9600);
+
+  DEBUG_PRINT(F("Program started...\nStarting Power On sequence\n"));
+  //Serial.print(F("Program started...\nStarting Power On sequence\n"));
+  
+  emon1.voltage(0, VOLT_CAL, 1.7);  // Defines Voltage: input pin, Voltage calibration, phase_shift
+  //emon1.current(0, 32);
+  for (uint8_t i = 0; i < 5; i++)
+   { //Stabilyze EmonCMS data
+    emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave (200ms) with a 2000ms Timeout
+   }
+
+  if (!gprsInitwTO(30000)) // 30 sec timeout
+{
+    DEBUG_PRINTLN(F("ERRORE: GSM INIT TIMEOUT"));
+    //Serial.println(F("ERRORE: GSM INIT TIMEOUT"));
+    errorStop();
+    // Blocca l'esecuzione e notifica con un led lampeggiante
+}
+// delay(1000); Da rimuovere ?
+  DEBUG_PRINT(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
+  //Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
+  // iniTime = millis(); // Valore Tempo iniziale
+  
+// Garantisce che il Modem sia registrato sulla rete entro 60 sec
+if (!waitNetwork(60000))
+{
+    
+    DEBUG_PRINTLN(F("Rete GSM non disponibile"));
+    //Serial.println(F("Rete GSM non disponibile"));
+    errorStop();
+    // Blocca l'esecuzione e notifica con un led ad esempio lampeggiante
+}
+DEBUG_PRINT(F("GSM network initialization done!\n"));  
+//Serial.print(F("GSM network initialization done!\n"));
+
+// ###########################   IMPOSTAZIONI SMS
+
+// SELEZIONA MEMORIA SMS SIM CARD
+sim900_check_with_cmd(F("AT+CPMS=\"SM\",\"SM\",\"SM\"\r\n"), "OK", CMD);
+delay(500);
+
+//AT+CMGF=1	// Enable ASCII TEXT mode for SMS
+  if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
+    {
+// Set message mode to ASCII
+      DEBUG_PRINTLN(F (" Set ASCII TEXT mode for SMS...."));
+      //Serial.println (F (" Set ASCII TEXT mode for SMS...."));
+    }
+    delay(500);  
+    InfoSMS();
+
+    // RTC Network Time updating is disabled
+    sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
+
+    /* Set RTC time to i.e (datetime). 
+    "yy/MM/dd,hh:mm:ss+/-zz"
+    zz quarter (-47....+48)of hour between local time and GMT
+    6 maggio 2010,00:01:52 GMT +2 ore
+    "10/05/06,00:01:52+08
+    */ 
+    
+    sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
+    
+if (sim900_check_with_cmd (outmessage, "OK", CMD))
+      {
+        
+        DEBUG_PRINT(F("A buon Fine: "));
+        //Serial.print (F("A buon Fine: "));
+        DEBUG_PRINTLN(outmessage);
+        //Serial.println (outmessage);
+        Serial.flush();
+      }
+      else
+        {
+            DEBUG_PRINTLN(F ("Non a buon Fine"));
+            //Serial.println (F ("Non a buon Fine"));
+            Serial.flush();
+
+    // If effetti qui bisognerebbe gestire che l'SMS sia un vero messaggio di data
+        } 
+
+  //AT+CLTS=1	// Enable date and time from network - WIND Funziona COOP VOCE NON FUNZIONA
+  
+  // sim900_check_with_cmd(F("AT+CLTS=1\r\n"), "OK", CMD);
+  // delay(2000);
+
+  // Sync date time GSM RTC to Network
+  //sim900_check_with_cmd(F("AT+CCLK?\r\n"), "OK", 0);
+  //	AT+CCLK?						--> 8 + CR = 9
+  //+CCLK: "14/11/13,21:14:41+04"	--> CRLF + 29 + CRLF = 33
+  //
+  //OK							--> CRLF + 2 + CRLF =  6
+  /*
+    "yy/MM/dd,hh:mm:ss+/-zz"
+    zz quarter (-47....+48)of hour between local time and GMT
+    6 maggio 2010,00:01:52 GMT +2 ore
+    "10/05/06,00:01:52+08
+  */
+
+ // Ricava da RTC Data e ora e li pone in locDateTime
+  gprs.getDateTime(locDateTime);
+  DEBUG_PRINT(F (" Data e Ora da rete: "));
+  //Serial.print (F (" Data e Ora da rete: "));
+  DEBUG_PRINTLN(locDateTime);
+  //Serial.println(locDateTime);
+
+}
+
+//   ============  A L T R E   F U N Z I O N I ======================
 
 void SendMsg()
 {
@@ -845,8 +852,10 @@ void setup()
 
                 strcpy(eprpin, pinDfl);
 
-                Serial.print(F("phoneAut[0]: "));
-                Serial.println(phoneAut[0]);
+                DEBUG_PRINT(F("phoneAut[0]: "));
+                //Serial.print(F("phoneAut[0]: "));
+                DEBUG_PRINTLN(phoneAut[0]);
+                //Serial.println(phoneAut[0]);
     #endif
 
 
@@ -921,11 +930,11 @@ void loop()
     // In caso di errore NON esegue il Parser ed esce dal While
     // Fuori dal While indica l'errore sulla serial output
     // e blocca l'esecuzione lampeggiando il led
-    {  //DEBUG_PRINT(F("SMS received !\n"));
-      Serial.print(F("SMS received !\n"));
-      //DEBUG_PRINT(F("Received one SMS - messageIndex: "));
-      Serial.print(F("Received one SMS - messageIndex: "));
-      //DEBUG_PRINTLN(messageIndex);
+    {  DEBUG_PRINT(F("SMS received !\n"));
+      //Serial.print//;
+      DEBUG_PRINT(F("Received one SMS - messageIndex: "));
+      //Serial.print(F("Received one SMS - messageIndex: "));
+      DEBUG_PRINTLN(messageIndex);
       Serial.println(messageIndex);
 
 // At least, there is one UNREAD SMS then reads the content of the SMS
@@ -933,7 +942,7 @@ void loop()
                 gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
                 delay (1000);
                 //DEBUG_PRINTLN(F("At least, there is one UNREAD SMS"));
-                Serial.println (F("At least, there is one UNREAD SMS"));
+                //Serial.println (F("At least, there is one UNREAD SMS"));
 // In order not to full SIM Memory, is better to delete it
                 gprs.deleteSMS(messageIndex);
                 // Si prepara per il prossimo ciclo di lettura SMS
@@ -941,18 +950,18 @@ void loop()
                 //delay(500);
 
 // Write on Serial Monitor the content of received SMS.
-                //DEBUG_PRINT(F ("From number: "));
-                Serial.print (F ("From number: "));
-                //DEBUG_PRINTLN(phone);
-                Serial.println(phone);
-                //DEBUG_PRINT(F ("Datetime: "));
-                Serial.print (F ("Datetime: "));
-                //DEBUG_PRINTLN(datetime);
-                Serial.println(datetime);
-                //DEBUG_PRINT(F ("Received Message: "));
-                Serial.print (F ("Received Message: "));
-                //DEBUG_PRINTLN(message);
-                Serial.println(message);
+                DEBUG_PRINT(F ("From number: "));
+                //Serial.print (F ("From number: "));
+                DEBUG_PRINTLN(phone);
+                //Serial.println(phone);
+                DEBUG_PRINT(F ("Datetime: "));
+                //Serial.print (F ("Datetime: "));
+                DEBUG_PRINTLN(datetime);
+                //Serial.println(datetime);
+                DEBUG_PRINT(F ("Received Message: "));
+                //Serial.print (F ("Received Message: "));
+                DEBUG_PRINTLN(message);
+                //Serial.println(message);
 
 // ############################## COMANDO M - Sostituisce o Imposta cellulare Autorizzato MASTER
 // ====================================================================================
@@ -975,7 +984,8 @@ if (message[0] == 'M')
         if ((strlen(message) - 2) < 16 || (strlen(message) - 2) > 19)
         {
             sprintf(outmessage, "WRONG M NUMBER OR PIN FORMAT %s", message);
-            Serial.println(outmessage);
+            DEBUG_PRINTLN(outmessage);
+            //Serial.println(outmessage);
             SendMsg();
         }
         else
@@ -986,7 +996,9 @@ if (message[0] == 'M')
             if (pin == NULL)
             {
                 sprintf(outmessage, "WRONG PIN FORMAT %s", message);
-                Serial.println(outmessage);
+                
+                DEBUG_PRINTLN(outmessage);
+                //Serial.println(outmessage);
                 SendMsg();
             }
             else
@@ -995,7 +1007,9 @@ if (message[0] == 'M')
                 if (strlen(pin + 1) != 5)
                 {
                     sprintf(outmessage, "WRONG PIN FORMAT %s", message);
-                    Serial.println(outmessage);
+                    
+                    DEBUG_PRINTLN(outmessage);
+                    //Serial.println(outmessage);
                     SendMsg();
                 }
                 else
@@ -1004,7 +1018,9 @@ if (message[0] == 'M')
                     if (strcmp(eprpin, pin + 1) != 0)
                     {
                         sprintf(outmessage, "WRONG PIN %s", message);
-                        Serial.println(outmessage);
+                        
+                        DEBUG_PRINTLN(outmessage);
+                        //Serial.println(outmessage);
                         SendMsg();
                     }
                     else
@@ -1024,6 +1040,7 @@ if (message[0] == 'M')
                                 "M TELEPHONE NUMBER + PIN SAVED %s",
                                 phoneAut[0]);
 
+                        DEBUG_PRINTLN(outmessage);
                         Serial.println(outmessage);
                         SendMsg();
                     }
@@ -1040,7 +1057,9 @@ if (message[0] == 'M')
         if ((strlen(message) - 2) < 10 || (strlen(message) - 2) > 13)
         {
             sprintf(outmessage, "WRONG M NUMBER FORMAT %s", message);
-            Serial.println(outmessage);
+            
+            DEBUG_PRINTLN(outmessage);
+            //Serial.println(outmessage);
             SendMsg();
         }
         else
@@ -1058,7 +1077,8 @@ if (message[0] == 'M')
                     "M TELEPHONE NUMBER SAVED %s",
                     phoneAut[0]);
 
-            Serial.println(outmessage);
+            DEBUG_PRINTLN(outmessage);
+            //Serial.println(outmessage);
             SendMsg();
         }
     }
@@ -1067,7 +1087,8 @@ if (message[0] == 'M')
     {
         // Notifica tentativo non autorizzato
         strcpy(outmessage, "Request from NOT AUTHORIZED number");
-        Serial.println(outmessage);
+        DEBUG_PRINTLN(outmessage);
+        //Serial.println(outmessage);
         SendMsg();
     }
 }
@@ -1093,14 +1114,18 @@ if (message[0] == 'M')
                           lastPhoneIndex = 0;
                       // sprintf(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
                       strcpy(outmessage, "ALL THE AUXILIARY NUMBERS ARE DELETED");
-                      Serial.println(outmessage);
+                      
+                      DEBUG_PRINTLN(outmessage);
+                      //Serial.println(outmessage);
                       SendMsg();                    
                         }
                         else
                         {
 // Notifica tentativo non autorizzato
                             strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                            Serial.println(outmessage);
+                            
+                            DEBUG_PRINTLN(outmessage);
+                            //Serial.println(outmessage);
                             SendMsg();
                         }
                 } // ############################### Fine comando D
@@ -1120,7 +1145,9 @@ if (message[0] == 'A')
         // Non tiene conto del "+"
         {
             sprintf(outmessage, "WRONG TELEPHONE NUMBER FORMAT %s", message);
-            Serial.println(outmessage);
+            
+            DEBUG_PRINTLN(outmessage);
+            //Serial.println(outmessage);
             SendMsg();
         }
         else
@@ -1162,20 +1189,25 @@ if (message[0] == 'A')
                         message
                     );
 
-                    Serial.println(outmessage);
+                    DEBUG_PRINTLN(outmessage);
+                    //Serial.println(outmessage);
                     SendMsg();
                 }
                 else
                 {
                     sprintf(outmessage, "WRONG - INDEX OVERLAP %s", message);
-                    Serial.println(outmessage);
+                    
+                    DEBUG_PRINTLN(outmessage);
+                    //Serial.println(outmessage);
                     SendMsg();
                 }
             }
             else
             {
                 sprintf(outmessage, "INDEX OUTSIDE THE RANGE %s", message);
-                Serial.println(outmessage);
+                
+                DEBUG_PRINTLN(outmessage);
+                //Serial.println(outmessage);
                 SendMsg();
             }
         }
@@ -1183,7 +1215,9 @@ if (message[0] == 'A')
     else
     {
         strcpy(outmessage, "Request from NOT AUTHORIZED number");
-        Serial.println(outmessage);
+        
+        DEBUG_PRINTLN(outmessage);
+        //Serial.println(outmessage);
         SendMsg();
     }
 }
@@ -1205,7 +1239,9 @@ if (message[0] == 'P')
             strcpy(outmessage, "WRONG PINs FORMAT ");
             strcat(outmessage, message);
 
-            Serial.println(outmessage);
+            
+            DEBUG_PRINTLN(outmessage);
+            //Serial.println(outmessage);
             SendMsg();
         }
         else
@@ -1226,7 +1262,8 @@ if (message[0] == 'P')
 
                 strcpy(outmessage, "PIN SAVED");
 
-                Serial.println(outmessage);
+                DEBUG_PRINTLN(outmessage);
+                //Serial.println(outmessage);
                 SendMsg();
             }
             else
@@ -1235,7 +1272,9 @@ if (message[0] == 'P')
                 strcpy(outmessage, "WRONG OLD PIN ");
                 strcat(outmessage, message);
 
-                Serial.println(outmessage);
+                
+                DEBUG_PRINTLN(outmessage);
+                //Serial.println(outmessage);
                 SendMsg();
             }
         }
@@ -1245,7 +1284,9 @@ if (message[0] == 'P')
         // Numero non autorizzato
         strcpy(outmessage, "Request from NOT AUTHORIZED number");
 
-        Serial.println(outmessage);
+        
+        DEBUG_PRINTLN(outmessage);
+        //Serial.println(outmessage);
         SendMsg();
     }
 }
@@ -1270,7 +1311,9 @@ if (strcmp(phone, phoneAut[0]) == 0)
                         {
 // Notifica tentativo non autorizzato
                             strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                            Serial.println(outmessage);
+                            
+                            DEBUG_PRINTLN(outmessage);
+                            //Serial.println(outmessage);
                             SendMsg();
                         }
                 }
@@ -1287,139 +1330,15 @@ if (strcmp(phone, phoneAut[0]) == 0)
 
 if (strcmp(phone, phoneAut[0]) == 0)
                         {
-                        // Invia SMS al numero Coop Voce 42 43 688 INFO SIM per credito residuo
-                        // in modo da ricavare la data e l'ora corrente
-  
-                        DEBUG_PRINT(F("Invio Messaggio INFO\n"));
-                        //Serial.print(F("Invio Messaggio INFO\n"));
-
-                            // Send SMS to defined phone number and text
-                            if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
-                                { 
-                                DEBUG_PRINT(F("Send SMS Succeed!\r\n"));
-                                //Serial.print(F("Send SMS Succeed!\r\n"));
-                             Serial.flush();
-                                 } 
-                             else
-                                {
-                                    DEBUG_PRINT(F("Send SMS failed!\r\n"));
-                                    //Serial.print(F("Send SMS failed!\r\n"));
-                                    Serial.flush();
-                                }
-
-
-  // #################  Legge il messaggio INFO ricevuto ################
-  // C'è il rischio che si frapponga un SMS di servizio del provider
-  // Solo se non passa molto tempo dalla registrazione alla rete
-  // (Vedi cancellazione preventiva)
-                            DEBUG_PRINTLN(F("Attende la ricezione del messaggio INFO"));
-                            //Serial.println(F("Attende la ricezione del messaggio INFO"));
-
-                            // Attende di ricevere il messaggio INFO
-                             while (messageIndex < 1 || messageIndex == 255)
-                                {   
-                                    if (messageIndex == 255)
-                                        { 
-                                            DEBUG_PRINT(F ("Waiting INFO Message 255 code Error!\r\n"));
-                                             //Serial.print (F ("Waiting INFO Message 255 code Error!\r\n"));
-                                        errorStop();
-                                        }
-                                else
-
-                                        {
-                                            //delay(500);  
-                                            // Si prepara per il prossimo ciclo
-                                            messageIndex = gprs.isSMSunread(); 
-                                            DEBUG_PRINT(F("No SMS received yet!\n"));
-                                            //Serial.print(F("No SMS received yet!\n"));
-                                            DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
-                                            //Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
-                                            DEBUG_PRINTLN(messageIndex);
-                                            //Serial.println(messageIndex);
-                                        }
-                                }
-// Messaggio Ricevuto - messageIndex >= 1
-                                // delay(100); Da cancellare?
-                                //Serial.flush();
-
-                                DEBUG_PRINT(F("SMS received - Current messageIndex: "));
-                                //Serial.print(F("SMS received - Current messageIndex: "));
-                                DEBUG_PRINTLN(messageIndex);
-                                //Serial.println(messageIndex);
-
-                                //sim900_flush_serial();
-                                //delay(5000);
-
-
-  // Legge in continuazione SMS finchè non rimangono più messaggi non letti (messageIndex=0)
-  // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
-  // Riconoscendo il codice 255 si blocca facendo lampeggiare il led in quanto si tratta di
-  // un probabile errore di comunicazione con il modem, modem non inizializzato
-  // o non collegato alla rete
-  // ###########################################################################
-  
-  //messageIndex = gprs.isSMSunread();
-  
-  //while ((messageIndex = gprs.isSMSunread()))
-                                while ((messageIndex = gprs.isSMSunread()) != 0)
-                                {
-
-                                    if (messageIndex == 255)
-                                    { 
-                                        DEBUG_PRINT(F ("SMS INFO READ 255 code Error!\r\n"));
-                                        //Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
-                                        errorStop();
-                                    }
-                                    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
-                                    {
-                                        delay(1000);
-
-                                        DEBUG_PRINT(F("SMS indice: "));
-                                        //Serial.print(F("SMS indice: "));
-                                        DEBUG_PRINTLN(messageIndex);
-                                        //Serial.println(messageIndex);
-
-                                        DEBUG_PRINT(F("Da: "));
-                                        //Serial.print(F("Da: "));
-                                        DEBUG_PRINTLN(phone);
-                                        //Serial.println(phone);
-
-                                        DEBUG_PRINT(F("Testo: "));
-                                        //Serial.print(F("Testo: "));
-                                        DEBUG_PRINTLN(message);
-                                        //Serial.println(message);
-
-                                        gprs.deleteSMS(messageIndex);
-                                    }
- 
-                                } // End SMS unread index 
-                        
-                        
-// Prepares for the SMS and writes on Serial Monitor
-                        gprs.getDateTime(locDateTime);
-                        sprintf(outmessage, "%s Messaggio SALDO:\r\n", locDateTime);
-                        DEBUG_PRINTLN(outmessage);    // Writes on Serial Monitor the SALDO Message       
-                        DEBUG_PRINTLN(message);
-
-                        delay(5000);
-
-                  if (gprs.sendSMS(phoneAut[0], message)) // Sends the SMS to the requesting number and check the result
-                      { 
-                        DEBUG_PRINTLN(F ("Send SMS Succeed!\r\n"));
-                        //Serial.print (F ("Send SMS Succeed!\r\n"));
-                        DEBUG_PRINTLN(message);    // Writes on Serial Monitor the SALDO Message
-
-		                  }   else
-                          {
-                            DEBUG_PRINT(F ("Send SMS failed!\r\n"));  
-                            //Serial.print (F ("Send SMS failed!\r\n"));
-			                    }
+                            InfoSMS();
                         } // End numero uguale a Master
                         else
                             {
 // Notifica tentativo non autorizzato
                                 strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                                Serial.println(outmessage);
+                                
+                                DEBUG_PRINTLN(outmessage);
+                                //Serial.println(outmessage);
                                 SendMsg();
                             }
                 } // End Comando I
@@ -1444,7 +1363,9 @@ if (message[0] == 'F')
             strcpy(outmessage, "WRONG PIN FORMAT ");
             strcat(outmessage, message);
 
-            Serial.println(outmessage);
+            
+            DEBUG_PRINTLN(outmessage);
+            //Serial.println(outmessage);
             SendMsg();
         }
         else
@@ -1456,7 +1377,8 @@ if (message[0] == 'F')
                 strcpy(outmessage, "WRONG PIN ");
                 strcat(outmessage, message);
 
-                Serial.println(outmessage);
+                DEBUG_PRINTLN(outmessage);
+                //Serial.println(outmessage);
                 SendMsg();
             }
             else
@@ -1486,12 +1408,9 @@ if (message[0] == 'F')
 
                 lastPhoneIndex = 0;
 
-                strcpy(
-                    outmessage,
-                    "ALL NUMBERS DELETED & PIN SET TO FACTORY"
-                );
-
-                Serial.println(outmessage);
+                strcpy(outmessage,"ALL NUMBERS DELETED & PIN SET TO FACTORY");
+                DEBUG_PRINTLN(outmessage);
+                //Serial.println(outmessage);
                 SendMsg();
             }
         }
@@ -1499,12 +1418,10 @@ if (message[0] == 'F')
     else
     {
         // Numero non autorizzato
-        strcpy(
-            outmessage,
-            "Request from NOT AUTHORIZED number"
-        );
-
-        Serial.println(outmessage);
+        strcpy(outmessage, "Request from NOT AUTHORIZED number");
+        
+        DEBUG_PRINTLN(outmessage);
+        //Serial.println(outmessage);
         SendMsg();
     }
 }
@@ -1537,7 +1454,8 @@ if (message[0] == 'F')
                   int power = (int)(PowerVoltage);
                   gprs.getDateTime(locDateTime);
                   sprintf(outmessage, "%s Current Voltage: %d Vac", locDateTime, power);
-                  Serial.println(outmessage);    // Writes on Serial Monitor the current voltage and the date/time       
+                  DEBUG_PRINTLN(outmessage);    // Writes on Serial Monitor the current voltage and the date/time
+                  //Serial.println(outmessage);    // Writes on Serial Monitor the current voltage and the date/time       
 
                   if (gprs.sendSMS(phone, outmessage)) // Sends the SMS to the requesting number and check the result
                       { 
@@ -1553,7 +1471,9 @@ if (message[0] == 'F')
                 {
 // Notifica tentativo non autorizzato
                   strcpy(outmessage, "Request from NOT AUTHORIZED number");
-                  Serial.println(outmessage);
+                  
+                  DEBUG_PRINTLN(outmessage);
+                  //Serial.println(outmessage);
                   SendMsg();
                 }
         }
@@ -1576,9 +1496,9 @@ if (message[0] == 'F')
 
 
 
-// ============ VISUALIZZA STATO SU SERIALE OGNI SECCONDO =====================
+// ============ VISUALIZZA STATO SU SERIALE OGNI SECONDO =====================
 
-  // VERIFICA OGNI 1 sec se ci sono state variazioni sulla rete elettrica.
+  // VERIFICA OGNI SECONDO se ci sono state variazioni sulla rete elettrica.
 
 if (currentMillis - previousMillisMs > intervalMs)
 {
@@ -1623,7 +1543,8 @@ if (PowerVoltage <= 100.0)
 //sprintf(outmessage, "%s %s %d Vac", locDateTime," MANCANZA RETE, ultima lettura:", power);
               sprintf(outmessage, "%s MANCANZA RETE, ultima lettura: %d Vac", locDateTime, power);
 // Scrive su Serial una sola volta ma manda messaggio SMS completo          
-              Serial.println(outmessage);
+              DEBUG_PRINTLN(outmessage);              
+              //Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
               for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
@@ -1655,8 +1576,9 @@ if (PowerVoltage >= 200.0)
                     int power = (int)(PowerVoltage);
                     gprs.getDateTime(locDateTime);
                     sprintf(outmessage, "%s RIPRESA RETE, ultima lettura: %d Vac", locDateTime, power);
-                    
-                    Serial.println(outmessage);
+                                       
+                    DEBUG_PRINTLN(outmessage);
+                    //Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
                     for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
