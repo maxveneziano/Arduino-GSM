@@ -549,8 +549,8 @@ delay(500);
       DEBUG_PRINTLN(F (" Set ASCII TEXT mode for SMS...."));
       //Serial.println (F (" Set ASCII TEXT mode for SMS...."));
     }
-    delay(500);  
-    InfoSMS();
+    //delay(500);  
+    InfoSMS(); // Richiede l'SMS di SALDO residuo per ricavare data e ora correnti
 
     // RTC Network Time updating is disabled
     sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
@@ -566,8 +566,7 @@ delay(500);
     
 if (sim900_check_with_cmd (outmessage, "OK", CMD))
       {
-        
-        DEBUG_PRINT(F("A buon Fine: "));
+        DEBUG_PRINT(F("Configurazione RTC A buon Fine: "));
         //Serial.print (F("A buon Fine: "));
         DEBUG_PRINTLN(outmessage);
         //Serial.println (outmessage);
@@ -575,7 +574,7 @@ if (sim900_check_with_cmd (outmessage, "OK", CMD))
       }
       else
         {
-            DEBUG_PRINTLN(F ("Non a buon Fine"));
+            DEBUG_PRINTLN(F ("Configurazione RTC Non a buon Fine"));
             //Serial.println (F ("Non a buon Fine"));
             Serial.flush();
 
@@ -1330,7 +1329,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
 
 if (strcmp(phone, phoneAut[0]) == 0)
                         {
-                            InfoSMS();
+                            InfoSMS(); // Richiede l'SMS di SALDO per ottenere il Saldo residuo
                         } // End numero uguale a Master
                         else
                             {
