@@ -392,155 +392,8 @@ delay(500);
       DEBUG_PRINTLN(F (" Set ASCII TEXT mode for SMS...."));
       //Serial.println (F (" Set ASCII TEXT mode for SMS...."));
     }
-   delay(500);  
-
-  // ###########################   PREVENTIVELY DELETE ALL SMS UNREAD
-  sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
-  delay(5000);   
-
-  // Invia SMS al numero Coop Voce 42 43 688 INFO SIM per credito residuo
-  // in modo da ricavare la data e l'ora corrente
-  
-  DEBUG_PRINT(F("Invio Messaggio INFO\n"));
-  //Serial.print(F("Invio Messaggio INFO\n"));
-
-  // Send SMS to defined phone number and text
-  if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
-    { 
-        DEBUG_PRINT(F("Send SMS Succeed!\r\n"));
-        //Serial.print(F("Send SMS Succeed!\r\n"));
-        Serial.flush();
-    } 
-  else
-    {
-        DEBUG_PRINT(F("Send SMS failed!\r\n"));
-        //Serial.print(F("Send SMS failed!\r\n"));
-      Serial.flush();
-    }
-
-
-  // #################  Legge il messaggio INFO ricevuto ################
-  // C'è il rischio che si frapponga un SMS di servizio del provider
-  // Solo se non passa molto tempo dalla registrazione alla rete
-  // (Vedi cancellazione preventiva)
-    DEBUG_PRINTLN(F("Attende la ricezione del messaggio INFO"));
-    //Serial.println(F("Attende la ricezione del messaggio INFO"));
-
-    // Attende di ricevere il messaggio INFO
-    while (messageIndex < 1 || messageIndex == 255)
-    {   
-      if (messageIndex == 255)
-        { 
-            DEBUG_PRINT(F ("Waiting INFO Message 255 code Error!\r\n"));
-            //Serial.print (F ("Waiting INFO Message 255 code Error!\r\n"));
-          errorStop();
-        }
-        else
-
-          {
-          //delay(500);  
-          // Si prepara per il prossimo ciclo
-             messageIndex = gprs.isSMSunread(); 
-             DEBUG_PRINT(F("No SMS received yet!\n"));
-             //Serial.print(F("No SMS received yet!\n"));
-             DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
-             //Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
-             DEBUG_PRINTLN(messageIndex);
-             //Serial.println(messageIndex);
-           }
-    }
-// Messaggio Ricevuto - messageIndex >= 1
-      // delay(100); Da cancellare?
-      //Serial.flush();
-
-      DEBUG_PRINT(F("SMS received - Current messageIndex: "));
-      //Serial.print(F("SMS received - Current messageIndex: "));
-      DEBUG_PRINTLN(messageIndex);
-      //Serial.println(messageIndex);
-
-      //sim900_flush_serial();
-      //delay(5000);
-
-
-  // Legge in continuazione SMS finchè non rimangono più messaggi non letti (messageIndex=0)
-  // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
-  // Riconoscendo il codice 255 si blocca facendo lampeggiare il led in quanto si tratta di
-  // un probabile errore di comunicazione con il modem, modem non inizializzato
-  // o non collegato alla rete
-  // ###########################################################################
-  
-  //messageIndex = gprs.isSMSunread();
-  
-  //while ((messageIndex = gprs.isSMSunread()))
-  while ((messageIndex = gprs.isSMSunread()) != 0)
-    {
-
-    if (messageIndex == 255)
-        { 
-          DEBUG_PRINT(F ("SMS INFO READ 255 code Error!\r\n"));
-          //Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
-          errorStop();
-        }
-    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
-        {
-        delay(1000);
-
-        DEBUG_PRINT(F("SMS indice: "));
-        //Serial.print(F("SMS indice: "));
-        DEBUG_PRINTLN(messageIndex);
-        //Serial.println(messageIndex);
-
-        DEBUG_PRINT(F("Da: "));
-        //Serial.print(F("Da: "));
-        DEBUG_PRINTLN(phone);
-        //Serial.println(phone);
-
-        DEBUG_PRINT(F("Testo: "));
-        //Serial.print(F("Testo: "));
-        DEBUG_PRINTLN(message);
-        //Serial.println(message);
-
-        gprs.deleteSMS(messageIndex);
-        }
- 
-}
-
-// ######################  CANCELLA TUTTI GLI SMS
-    //In order to not full SIM Memory, is better to delete all SMS
-    DEBUG_PRINT(F("CANCELLA TUTTI GLI SMS: "));
-    //Serial.print(F("CANCELLA TUTTI GLI SMS: "));
-
-  sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
-  delay(5000);
-
-    messageIndex = gprs.isSMSunread();
-    // delay(2000);
-
-    
-    DEBUG_PRINT(F("messageIndex - After ALL SMS deletion: "));
-    //Serial.print(F("messageIndex - After ALL SMS deletion: "));
-    DEBUG_PRINTLN(messageIndex);
-    //Serial.println(messageIndex);
-    DEBUG_PRINT(F("RIASSUNTO: "));
-    //Serial.println(F("RIASSUNTO: "));
-    DEBUG_PRINT(F("From number: "));
-    //Serial.print(F("From number: "));
-    DEBUG_PRINTLN(phone);
-    //Serial.println(phone);
-
-    //Serial.flush();
-    DEBUG_PRINT(F("Datetime: "));
-    //Serial.print(F("Datetime: "));
-    DEBUG_PRINTLN(datetime);
-    //Serial.println(datetime);
-
-    //Serial.flush();
-    DEBUG_PRINT(F("Received Message:"));
-    //Serial.print(F("Received Message:"));
-    DEBUG_PRINTLN(message);
-    //Serial.println(message);
-
-    //Serial.flush();
+    delay(500);  
+    InfoSMS();
 
     // RTC Network Time updating is disabled
     sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
@@ -600,6 +453,156 @@ if (sim900_check_with_cmd (outmessage, "OK", CMD))
 }
 
 //   ============  A L T R E   F U N Z I O N I ======================
+
+void InfoSMS()
+{
+// ###########################   PREVENTIVELY DELETE ALL SMS UNREAD
+  sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
+  delay(1000);   
+
+  // Invia SMS al numero Coop Voce 42 43 688 INFO SIM per credito residuo
+  // in modo da ricavare la data e l'ora corrente
+  
+  DEBUG_PRINT(F("Invio Messaggio INFO\n"));
+  //Serial.print(F("Invio Messaggio INFO\n"));
+
+  // Send SMS to defined phone number and text
+  if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
+    { 
+        DEBUG_PRINTLN("SALDO message Sent succesfully !");
+        //Serial.print(F("Send SMS Succeed!\r\n"));
+        Serial.flush();
+    } 
+  else
+    {
+        DEBUG_PRINT(F("SALDO message Sent failed!"));
+        //Serial.print(F("Send SMS failed!\r\n"));
+      Serial.flush();
+    }
+
+
+  // #################  Legge il messaggio INFO ricevuto ################
+  // C'è il rischio che si frapponga un SMS di servizio del provider
+  // Solo se non passa molto tempo dalla registrazione alla rete
+  // (Vedi cancellazione preventiva)
+    DEBUG_PRINTLN(F("Attende la ricezione del messaggio INFO"));
+    //Serial.println(F("Attende la ricezione del messaggio INFO"));
+
+    // Attende di ricevere il messaggio INFO
+    while (messageIndex < 1 || messageIndex == 255)
+    {   
+      if (messageIndex == 255)
+        { 
+            DEBUG_PRINTLN(F ("Waiting INFO Message 255 code Error!"));
+            //Serial.print (F ("Waiting INFO Message 255 code Error!\r\n"));
+          errorStop();
+        }
+        else
+
+          {
+          //delay(500);  
+          // Si prepara per il prossimo ciclo
+             messageIndex = gprs.isSMSunread(); 
+             DEBUG_PRINTLN(F("No SMS received yet!"));
+             //Serial.print(F("No SMS received yet!\n"));
+             DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
+             //Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
+             DEBUG_PRINTLN(messageIndex);
+             //Serial.println(messageIndex);
+           }
+    }
+// Messaggio Ricevuto - messageIndex >= 1
+
+      // delay(100); Da cancellare?
+      //Serial.flush();
+
+      DEBUG_PRINT(F("SMS received - Current messageIndex: "));
+      //Serial.print(F("SMS received - Current messageIndex: "));
+      DEBUG_PRINTLN(messageIndex);
+      //Serial.println(messageIndex);
+
+      //sim900_flush_serial();
+      //delay(5000);
+
+
+  // Legge in continuazione SMS finchè non rimangono più messaggi non letti (messageIndex=0)
+  // L'SMS di INFO è probabilmente il più recente e quindi aggiorna con i dati dell'ultimo SMS ricevuto.
+  // Riconoscendo il codice 255 si blocca facendo lampeggiare il led in quanto si tratta di
+  // un probabile errore di comunicazione con il modem, modem non inizializzato
+  // o non collegato alla rete
+  // ###########################################################################
+  
+  // SMS di SALDO successivi al primo
+  while ((messageIndex = gprs.isSMSunread()) != 0)
+    {
+
+    if (messageIndex == 255)
+        { 
+          DEBUG_PRINT(F ("SMS INFO READ 255 code Error!\r\n"));
+          //Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
+          errorStop();
+        }
+    if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
+        {
+        delay(1000);
+
+        DEBUG_PRINT(F("SMS index: "));
+        //Serial.print(F("SMS indice: "));
+        DEBUG_PRINTLN(messageIndex);
+        //Serial.println(messageIndex);
+
+        DEBUG_PRINT(F("From: "));
+        //Serial.print(F("Da: "));
+        DEBUG_PRINTLN(phone);
+        //Serial.println(phone);
+
+        DEBUG_PRINT(F("Text: "));
+        //Serial.print(F("Testo: "));
+        DEBUG_PRINTLN(message);
+        //Serial.println(message);
+
+        gprs.deleteSMS(messageIndex);
+        }
+ 
+} // Fine lettura SMS ricevuti dal gestore a seguito di SMS SALDO
+
+// ######################  CANCELLA TUTTI GLI SMS
+    //In order to not to full SIM Memory, is better to delete all SMS
+    DEBUG_PRINT(F("DELETE ALL THE SMS: "));
+    //Serial.print(F("CANCELLA TUTTI GLI SMS: "));
+
+  sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
+  delay(5000);
+
+    messageIndex = gprs.isSMSunread();
+    // delay(2000);
+
+    DEBUG_PRINTLN(F("=============================="));
+    DEBUG_PRINT(F("messageIndex - After ALL SMS deletion: "));
+    //Serial.print(F("messageIndex - After ALL SMS deletion: "));
+    DEBUG_PRINTLN(messageIndex);
+    //Serial.println(messageIndex);
+    DEBUG_PRINTLN(F("SUMMARY: "));
+    //Serial.println(F("RIASSUNTO: "));
+    DEBUG_PRINT(F("From number: "));
+    //Serial.print(F("From number: "));
+    DEBUG_PRINTLN(phone);
+    //Serial.println(phone);
+
+    //Serial.flush();
+    DEBUG_PRINT(F("Datetime: "));
+    //Serial.print(F("Datetime: "));
+    DEBUG_PRINTLN(datetime);
+    //Serial.println(datetime);
+
+    //Serial.flush();
+    DEBUG_PRINT(F("Received Message:"));
+    //Serial.print(F("Received Message:"));
+    DEBUG_PRINTLN(message);
+    //Serial.println(message);
+
+    //Serial.flush();
+}
 
 void SendMsg()
 {
