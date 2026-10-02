@@ -154,6 +154,7 @@ con EPTELIN=12 ed EPTELPRO=16:
   AT+CCLK? Response +CCLK: "16/12/28,16:01:27+22" OK
 
   Serial.println(F("String"));
+
 */
 
 //#define E2PROMFAC // Factory Reset
