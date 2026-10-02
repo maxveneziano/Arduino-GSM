@@ -158,7 +158,8 @@ con EPTELIN=12 ed EPTELPRO=16:
 */
 
 //#define E2PROMFAC // Factory Reset
-#define DEBUG_EN
+
+//#define DEBUG_EN
 
 #ifdef DEBUG_EN
   #define DEBUG_PRINT(msg) Serial.print(msg)
@@ -342,8 +343,8 @@ void InfoSMS()
     {   
       if (messageIndex == 255)
         { 
-            DEBUG_PRINTLN(F ("Waiting INFO Message 255 code Error!"));
-            //Serial.print (F ("Waiting INFO Message 255 code Error!\r\n"));
+            //DEBUG_PRINTLN(F ("Waiting INFO Message 255 code Error!"));
+            Serial.print (F ("Waiting INFO Message 255 code Error!\r\n"));
           errorStop();
         }
         else
@@ -352,12 +353,12 @@ void InfoSMS()
           //delay(500);  
           // Si prepara per il prossimo ciclo
              messageIndex = gprs.isSMSunread(); 
-             DEBUG_PRINTLN(F("No SMS received yet!"));
-             //Serial.print(F("No SMS received yet!\n"));
-             DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
-             //Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
-             DEBUG_PRINTLN(messageIndex);
-             //Serial.println(messageIndex);
+             //DEBUG_PRINTLN(F("No SMS received yet!"));
+             Serial.print(F("No SMS received yet!\n"));
+             //DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
+             Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
+             //DEBUG_PRINTLN(messageIndex);
+             Serial.println(messageIndex);
            }
     }
 // Messaggio Ricevuto - messageIndex >= 1
@@ -375,29 +376,33 @@ if (messageIndex > 0) {
     int totalParts;
     int partNumber;
 
+
     int result = gprs.getSMSPartInfo_PDU(messageIndex, &concatID, &totalParts, &partNumber);
+
+    Serial.print(F("Results "));
+    Serial.print(result);
 
     if (result == 1) {
 
-        Serial.print("SMS concatenato ");
+        Serial.print(F("SMS concatenato "));
         Serial.print(partNumber);
-        Serial.print("/");
+        Serial.print(F("/"));
         Serial.print(totalParts);
 
-        Serial.print(" ID=");
+        Serial.print(F(" ID="));
         Serial.println(concatID);
 
         if (partNumber == 1) {
-            Serial.println("PRIMA PARTE");
+            Serial.println(F("PRIMA PARTE"));
         }
     }
     else if (result == 0) {
 
-        Serial.println("SMS normale");
+        Serial.println(F("SMS normale"));
     }
     else {
 
-        Serial.println("Errore lettura PDU");
+        Serial.println(F("Errore lettura PDU"));
     }
 
     /*
@@ -417,10 +422,10 @@ if (messageIndex > 0) {
 
 
 
-      DEBUG_PRINT(F("SMS received - Current messageIndex: "));
-      //Serial.print(F("SMS received - Current messageIndex: "));
-      DEBUG_PRINTLN(messageIndex);
-      //Serial.println(messageIndex);
+      //DEBUG_PRINT(F("SMS received - Current messageIndex: "));
+      Serial.print(F("SMS received - Current messageIndex: "));
+      //DEBUG_PRINTLN(messageIndex);
+      Serial.println(messageIndex);
 
       //sim900_flush_serial();
       //delay(5000);
@@ -440,7 +445,7 @@ if (messageIndex > 0) {
     if (messageIndex == 255)
         { 
           DEBUG_PRINT(F ("SMS INFO READ 255 code Error!\r\n"));
-          //Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
+          Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
           errorStop();
         }
 
@@ -448,20 +453,20 @@ if (messageIndex > 0) {
         {
         delay(1000);
 
-        DEBUG_PRINT(F("SMS index: "));
-        //Serial.print(F("SMS indice: "));
-        DEBUG_PRINTLN(messageIndex);
-        //Serial.println(messageIndex);
+        //DEBUG_PRINT(F("SMS index: "));
+        Serial.print(F("SMS indice: "));
+        //DEBUG_PRINTLN(messageIndex);
+        Serial.println(messageIndex);
 
-        DEBUG_PRINT(F("From: "));
-        //Serial.print(F("Da: "));
-        DEBUG_PRINTLN(phone);
-        //Serial.println(phone);
+        //DEBUG_PRINT(F("From: "));
+        Serial.print(F("Da: "));
+        //DEBUG_PRINTLN(phone);
+        Serial.println(phone);
 
-        DEBUG_PRINT(F("Text: "));
-        //Serial.print(F("Testo: "));
-        DEBUG_PRINTLN(message);
-        //Serial.println(message);
+        //DEBUG_PRINT(F("Text: "));
+        Serial.print(F("Testo: "));
+        //DEBUG_PRINTLN(message);
+        Serial.println(message);
 
         gprs.deleteSMS(messageIndex);
         }

@@ -397,9 +397,15 @@ bool GPRS::readSMS_PDU(int messageIndex,
 
     sim900_clean_buffer(gprsBuffer, sizeof(gprsBuffer));
 
-    sim900_read_buffer(gprsBuffer,
-                       sizeof(gprsBuffer),
-                       DEFAULT_TIMEOUT);
+sim900_read_buffer(gprsBuffer,
+                   sizeof(gprsBuffer),
+                   DEFAULT_TIMEOUT);
+
+// DEBUG: mostra la risposta RAW del SIM900
+Serial.println(F("----- RAW CMGR -----"));
+Serial.println(gprsBuffer);
+Serial.println(F("--------------------"));
+
 
     /*
      * Cerca +CMGR:
