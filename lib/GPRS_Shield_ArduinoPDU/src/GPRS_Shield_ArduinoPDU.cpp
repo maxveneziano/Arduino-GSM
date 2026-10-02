@@ -30,7 +30,7 @@
 */
 
 #include <stdio.h>
-#include "GPRS_Shield_ArduinoPDU.h"
+#include "GPRS_Shield_Arduino.h"
 
 GPRS* GPRS::inst = NULL;
 
