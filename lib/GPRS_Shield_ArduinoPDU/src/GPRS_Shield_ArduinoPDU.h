@@ -1,5 +1,5 @@
 /*
-    GPRS_Shield_Arduino.h
+    GPRS_Shield_ArduinoPDU.h
     A library for SeeedStudio seeeduino GPRS shield
 
     Copyright (c) 2015 seeed technology inc.
@@ -29,8 +29,8 @@
     THE SOFTWARE.
 */
 
-#ifndef __GPRS_SHIELD_ARDUINO_H__
-#define __GPRS_SHIELD_ARDUINO_H__
+#ifndef __GPRS_SHIELD_ARDUINOPDU_H__
+#define __GPRS_SHIELD_ARDUINOPDU_H__
 
 #include "sim900.h"
 

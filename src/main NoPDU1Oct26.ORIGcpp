@@ -171,7 +171,7 @@ con EPTELIN=12 ed EPTELPRO=16:
 #endif
 
 #include <Arduino.h>
-#include "GPRS_Shield_ArduinoPDU.h"
+#include "GPRS_Shield_Arduino.h"
 #include "EmonLib.h"
 #include "EEPROM.h"
 
@@ -364,58 +364,6 @@ void InfoSMS()
 
       // delay(100); Da cancellare?
       //Serial.flush();
-// =========================================================================================
-//int messageIndex;
-
-//messageIndex = gprs.isSMSunread();
-
-if (messageIndex > 0) {
-
-    int concatID;
-    int totalParts;
-    int partNumber;
-
-    int result = gprs.getSMSPartInfo_PDU(messageIndex, &concatID, &totalParts, &partNumber);
-
-    if (result == 1) {
-
-        Serial.print("SMS concatenato ");
-        Serial.print(partNumber);
-        Serial.print("/");
-        Serial.print(totalParts);
-
-        Serial.print(" ID=");
-        Serial.println(concatID);
-
-        if (partNumber == 1) {
-            Serial.println("PRIMA PARTE");
-        }
-    }
-    else if (result == 0) {
-
-        Serial.println("SMS normale");
-    }
-    else {
-
-        Serial.println("Errore lettura PDU");
-    }
-
-    /*
-     * Continua a leggere il testo come facevi prima.
-     */
-    if (gprs.readSMS(messageIndex,
-                     message,
-                     MESSAGE_LENGTH,
-                     phone,
-                     datetime)) {
-
-        Serial.println(message);
-    }
-}
-
-// ========================================================================================
-
-
 
       DEBUG_PRINT(F("SMS received - Current messageIndex: "));
       //Serial.print(F("SMS received - Current messageIndex: "));
@@ -443,7 +391,6 @@ if (messageIndex > 0) {
           //Serial.print (F ("SMS INFO READ 255 code Error!\r\n"));
           errorStop();
         }
-
     if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
         {
         delay(1000);

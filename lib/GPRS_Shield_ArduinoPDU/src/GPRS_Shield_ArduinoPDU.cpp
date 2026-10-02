@@ -30,7 +30,7 @@
 */
 
 #include <stdio.h>
-#include "GPRS_Shield_Arduino.h"
+#include "GPRS_Shield_ArduinoPDU.h"
 
 GPRS* GPRS::inst = NULL;
 
@@ -325,6 +325,417 @@ bool GPRS::readSMS(int messageIndex, char* message, int length) {
     }
     return false;
 }
+// ========================================================================================
+
+// =======================================================================================
+// =======================================================================================
+// Funzione per estrarre un byte esadecimale da 2 caratteri ASCII
+// =======================================================================================
+
+static int hexByte(const char* p)
+{
+    int value = 0;
+    char c;
+
+    for (int i = 0; i < 2; i++) {
+
+        c = p[i];
+
+        value <<= 4;
+
+        if (c >= '0' && c <= '9')
+            value |= c - '0';
+        else if (c >= 'A' && c <= 'F')
+            value |= c - 'A' + 10;
+        else if (c >= 'a' && c <= 'f')
+            value |= c - 'a' + 10;
+        else
+            return -1;
+    }
+
+    return value;
+}
+
+
+// =======================================================================================
+// Lettura PDU di un SMS
+// =======================================================================================
+
+bool GPRS::readSMS_PDU(int messageIndex,
+                       char* pdu,
+                       int pduLength)
+{
+    char gprsBuffer[600];
+    char num[8];
+    char* s;
+    char* p;
+    int i;
+
+    if (pdu == NULL || pduLength < 2)
+        return false;
+
+    /*
+     * PDU mode
+     */
+    if (!sim900_check_with_cmd(F("AT+CMGF=0\r\n"),
+                               "OK\r\n",
+                               CMD)) {
+        return false;
+    }
+
+    /*
+     * AT+CMGR=<index>
+     */
+    sim900_flush_serial();
+
+    sim900_send_cmd(F("AT+CMGR="));
+
+    itoa(messageIndex, num, 10);
+    sim900_send_cmd(num);
+
+    sim900_send_cmd(F("\r\n"));
+
+    sim900_clean_buffer(gprsBuffer, sizeof(gprsBuffer));
+
+    sim900_read_buffer(gprsBuffer,
+                       sizeof(gprsBuffer),
+                       DEFAULT_TIMEOUT);
+
+    /*
+     * Cerca +CMGR:
+     */
+    s = strstr(gprsBuffer, "+CMGR:");
+
+    if (s == NULL) {
+        sim900_check_with_cmd(F("AT+CMGF=1\r\n"),
+                               "OK\r\n",
+                               CMD);
+        return false;
+    }
+
+    /*
+     * Il PDU è sulla riga successiva.
+     */
+    s = strstr(s, "\r\n");
+
+    if (s == NULL) {
+        sim900_check_with_cmd(F("AT+CMGF=1\r\n"),
+                               "OK\r\n",
+                               CMD);
+        return false;
+    }
+
+    s += 2;
+
+    /*
+     * Cerca la fine del PDU.
+     */
+    p = strstr(s, "\r\n");
+
+    if (p == NULL) {
+        p = s + strlen(s);
+    }
+
+    i = 0;
+
+    while (s < p && i < pduLength - 1) {
+
+        /*
+         * Accettiamo solo caratteri esadecimali.
+         */
+        if ((*s >= '0' && *s <= '9') ||
+            (*s >= 'A' && *s <= 'F') ||
+            (*s >= 'a' && *s <= 'f')) {
+
+            pdu[i++] = *s;
+        }
+
+        s++;
+    }
+
+    pdu[i] = '\0';
+
+    /*
+     * Torniamo alla modalità testo utilizzata
+     * dal resto della libreria.
+     */
+    sim900_check_with_cmd(F("AT+CMGF=1\r\n"),
+                          "OK\r\n",
+                          CMD);
+
+    return (i > 0);
+}
+
+
+// =======================================================================================
+// Estrae le informazioni di concatenazione di un SMS PDU
+//
+// Ritorno:
+//   -1 = errore
+//    0 = SMS singolo / nessuna concatenazione
+//    1 = SMS concatenato
+//
+// concatID    = identificativo della concatenazione
+// totalParts  = numero totale delle parti
+// partNumber  = numero della parte corrente
+// =======================================================================================
+
+int GPRS::getSMSPartInfo_PDU(int messageIndex,
+                             int* concatID,
+                             int* totalParts,
+                             int* partNumber)
+{
+    char pdu[600];
+
+    int pos;
+    int scaLength;
+    int firstOctet;
+    int oaLength;
+    int oaBytes;
+    int udl;
+    int udhl;
+
+    if (concatID == NULL ||
+        totalParts == NULL ||
+        partNumber == NULL) {
+
+        return -1;
+    }
+
+    *concatID = 0;
+    *totalParts = 0;
+    *partNumber = 0;
+
+    if (!readSMS_PDU(messageIndex,
+                     pdu,
+                     sizeof(pdu))) {
+
+        return -1;
+    }
+
+    /*
+     * -------------------------
+     * SMSC length
+     * -------------------------
+     *
+     * Primo byte del PDU.
+     */
+    pos = 0;
+
+    scaLength = hexByte(&pdu[pos]);
+
+    if (scaLength < 0)
+        return -1;
+
+    /*
+     * Skip:
+     *
+     * length byte
+     * SMSC address
+     *
+     * Ogni byte del PDU è rappresentato
+     * da due caratteri ASCII esadecimali.
+     */
+    pos += 2 + scaLength * 2;
+
+    /*
+     * First octet
+     */
+    firstOctet = hexByte(&pdu[pos]);
+
+    if (firstOctet < 0)
+        return -1;
+
+    pos += 2;
+
+    /*
+     * Deve essere SMS-DELIVER.
+     */
+    if ((firstOctet & 0x03) != 0)
+        return -1;
+
+    /*
+     * UDHI = bit 6
+     */
+    if ((firstOctet & 0x40) == 0) {
+
+        /*
+         * SMS normale, senza UDH.
+         */
+        return 0;
+    }
+
+    /*
+     * -------------------------
+     * Originating Address
+     * -------------------------
+     */
+
+    oaLength = hexByte(&pdu[pos]);
+
+    if (oaLength < 0)
+        return -1;
+
+    pos += 2;
+
+    /*
+     * Numero di ottetti necessari
+     * per il numero del mittente.
+     */
+    oaBytes = (oaLength + 1) / 2;
+
+    /*
+     * Skip:
+     *
+     * TOA       = 1 byte
+     * address   = oaBytes
+     */
+    pos += 2 + oaBytes * 2;
+
+    /*
+     * PID
+     */
+    pos += 2;
+
+    /*
+     * DCS
+     */
+    pos += 2;
+
+    /*
+     * SCTS = 7 byte
+     */
+    pos += 14;
+
+    /*
+     * UDL
+     */
+    udl = hexByte(&pdu[pos]);
+
+    if (udl < 0)
+        return -1;
+
+    pos += 2;
+
+    /*
+     * UDHL
+     */
+    udhl = hexByte(&pdu[pos]);
+
+    if (udhl < 0)
+        return -1;
+
+    pos += 2;
+
+    /*
+     * Ora siamo all'inizio dell'UDH.
+     */
+
+    int headerEnd = pos + udhl * 2;
+
+    while (pos + 4 <= headerEnd) {
+
+        int iei;
+        int ieLength;
+
+        iei = hexByte(&pdu[pos]);
+
+        if (iei < 0)
+            return -1;
+
+        pos += 2;
+
+        ieLength = hexByte(&pdu[pos]);
+
+        if (ieLength < 0)
+            return -1;
+
+        pos += 2;
+
+        /*
+         * --------------------------------
+         * Concatenated SMS - 8 bit ref
+         *
+         * 00 03 XX NN PP
+         *
+         * XX = reference
+         * NN = total parts
+         * PP = current part
+         * --------------------------------
+         */
+        if (iei == 0x00 && ieLength == 3) {
+
+            *concatID = hexByte(&pdu[pos]);
+
+            *totalParts =
+                hexByte(&pdu[pos + 2]);
+
+            *partNumber =
+                hexByte(&pdu[pos + 4]);
+
+            if (*concatID < 0 ||
+                *totalParts <= 0 ||
+                *partNumber <= 0) {
+
+                return -1;
+            }
+
+            return 1;
+        }
+
+        /*
+         * --------------------------------
+         * Concatenated SMS - 16 bit ref
+         *
+         * 08 04 XX XX NN PP
+         *
+         * XX XX = reference
+         * NN    = total parts
+         * PP    = current part
+         * --------------------------------
+         */
+        if (iei == 0x08 && ieLength == 4) {
+
+            int refHigh;
+            int refLow;
+
+            refHigh = hexByte(&pdu[pos]);
+            refLow = hexByte(&pdu[pos + 2]);
+
+            *totalParts =
+                hexByte(&pdu[pos + 4]);
+
+            *partNumber =
+                hexByte(&pdu[pos + 6]);
+
+            if (refHigh < 0 ||
+                refLow < 0 ||
+                *totalParts <= 0 ||
+                *partNumber <= 0) {
+
+                return -1;
+            }
+
+            *concatID =
+                (refHigh << 8) | refLow;
+
+            return 1;
+        }
+
+        /*
+         * Passa al prossimo Information Element.
+         */
+        pos += ieLength * 2;
+    }
+
+    /*
+     * SMS con UDH ma senza concatenazione.
+     */
+    return 0;
+    }
+
+//=========================================================================================
+
 
 bool GPRS::deleteSMS(int index) {
     //char cmd[16];
