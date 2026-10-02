@@ -1,0 +1,68 @@
+SMS received !
+Received one SMS - messageIndex: 1
+1
+From number: +393334188263
+Datetime: 26/10/02,11:01:46+08
+Received Message: I
+Invio Messaggio INFO
+SALDO message Sent succesfully !
+Attende la ricezione del messaggio INFO
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 0
+No SMS received yet!
+Waiting for INFO SMS - New messageIndex: 1
+SMS received - Current messageIndex: 1
+SMS index: 1
+From: CoopVoce
+Text: pp CoopVoce 
+Google: goo.gl/EuJUP6 
+IOS: goo.gl/Tojw2J
+DELETE ALL THE SMS: ==============================
+messageIndex - After ALL SMS deletion: 0
+SUMMARY: 
+From number: CoopVoce
+Datetime: 26/10/02,11:02:04+08
+Received Message:pp CoopVoce 
+Google: goo.gl/EuJUP6 
+IOS: goo.gl/Tojw2J
+ Current Voltage: 230.74
+ORA, MIN --> 11:1 <--
+ Current Voltage: 230.58
