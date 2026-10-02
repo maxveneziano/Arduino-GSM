@@ -135,7 +135,49 @@ class GPRS {
             true on success
             false on error
     */
-    bool readSMS(int messageIndex, char* message, int length);
+        bool readSMS(int messageIndex, char* message, int length);
+
+    //////////////////////////////////////////////////////
+    /// SMS PDU
+    //////////////////////////////////////////////////////
+
+    /** Read raw SMS in PDU mode
+        @param messageIndex index of SMS on SIM900
+        @param pdu buffer where the PDU string will be stored
+        @param pduLength size of pdu buffer
+        @returns true on success, false on error
+    */
+    bool readSMS_PDU(int messageIndex,
+                     char* pdu,
+                     int pduLength);
+
+    /** Extract concatenated SMS information from PDU
+        @param messageIndex index of SMS on SIM900
+        @param concatID concatenation reference
+        @param totalParts total number of SMS parts
+        @param partNumber number of this part
+        @returns 1 if concatenated SMS, 0 if normal SMS, -1 on error
+    */
+    int getSMSPartInfo_PDU(int messageIndex,
+                           int* concatID,
+                           int* totalParts,
+                           int* partNumber);
+
+    /** Read and decode SMS PDU text
+        @param messageIndex index of SMS on SIM900
+        @param message buffer for decoded text
+        @param messageLength size of message buffer
+        @param concatID concatenation reference
+        @param totalParts total number of SMS parts
+        @param partNumber number of this part
+        @returns true on success, false on error
+    */
+    bool readSMS_PDU_Text(int messageIndex,
+                          char* message,
+                          int messageLength,
+                          int* concatID,
+                          int* totalParts,
+                          int* partNumber);
 
     /** delete SMS message on SIM card
         @param  index   the index number which SMS message will be delete
@@ -144,6 +186,7 @@ class GPRS {
             false on error
     */
     bool deleteSMS(int index);
+
 
     /** call someone
         @param  number  the phone number which you want to call
