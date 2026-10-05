@@ -360,83 +360,32 @@ static int hexByte(const char* p)
 // =======================================================================================
 // Lettura PDU di un SMS
 // =======================================================================================
-// =======================================================================================
-// Lettura PDU di un SMS
-// Legge solamente l'HEADER +CMGR e NON consuma il PDU
-// =======================================================================================
 
-// =======================================================================================
-// Lettura PDU di un SMS
-//
-// Il SIM900 risponde in PDU mode con:
-//
-// AT+CMGR=n
-//
-// +CMGR: 0,"",74
-// 0791....604
-//
-// OK
-//
-// Il valore 74 indica il numero di BYTE del PDU.
-// Essendo il PDU rappresentato in ASCII HEX, dobbiamo leggere:
-//
-// 74 * 2 = 148 caratteri
-//
-// =======================================================================================
-
-// =======================================================================================
-// Lettura PDU di un SMS
-//
-// Il SIM900 risponde:
-//
-// +CMGR: 0,"",74
-// <148 caratteri HEX>
-// OK
-//
-// 74 = byte PDU
-// 148 = caratteri ASCII HEX
-//
-// =======================================================================================
-
-bool GPRS::readSMS_PDU(int messageIndex, char* pdu, int pduLength)
+bool GPRS::readSMS_PDU(int messageIndex,
+                       char* pdu,
+                       int pduLength)
 {
-    char buffer[200];
+    char gprsBuffer[600];
     char num[8];
-
-    int pos = 0;
-    unsigned long start;
+    char* s;
+    char* p;
+    int i;
 
     if (pdu == NULL || pduLength < 2)
         return false;
 
-    pdu[0] = '\0';
-
-    Serial.println(F("----- LETTURA CMGR -----"));
-
-    // =================================================
-    // 1. IMPOSTA PDU MODE
-    // =================================================
-
-    Serial.println(F("Imposto CMGF=0..."));
-
-    sim900_flush_serial();
-
+    /*
+     * PDU mode
+     */
     if (!sim900_check_with_cmd(F("AT+CMGF=0\r\n"),
-                                "OK",
-                                CMD,
-                                5,
-                                3000))
-    {
-        Serial.println(F("ERRORE CMGF=0"));
+                               "OK\r\n",
+                               CMD)) {
         return false;
     }
 
-    Serial.println(F("CMGF=0 OK"));
-
-    // =================================================
-    // 2. INVIA CMGR
-    // =================================================
-
+    /*
+     * AT+CMGR=<index>
+     */
     sim900_flush_serial();
 
     sim900_send_cmd(F("AT+CMGR="));
@@ -446,250 +395,102 @@ bool GPRS::readSMS_PDU(int messageIndex, char* pdu, int pduLength)
 
     sim900_send_cmd(F("\r\n"));
 
-    // =================================================
-    // 3. LEGGI LA RISPOSTA CMGR
-    // =================================================
+    sim900_clean_buffer(gprsBuffer, sizeof(gprsBuffer));
 
-    buffer[0] = '\0';
-    pos = 0;
+sim900_read_buffer(gprsBuffer,
+                   sizeof(gprsBuffer),
+                   DEFAULT_TIMEOUT);
 
-    start = millis();
+// DEBUG: mostra la risposta RAW del SIM900
+Serial.println(F("----- RAW CMGR -----"));
+Serial.println(gprsBuffer);
+Serial.println(F("--------------------"));
 
-    while ((millis() - start) < 5000UL)
-    {
-        if (sim900_check_readable())
-        {
-            char temp[2];
 
-            sim900_read_buffer(temp, 1, 1, 3000);
+    /*
+     * Cerca +CMGR:
+     */
+//    s = strstr(gprsBuffer, "+CMGR:");
 
-            char c = temp[0];
+  //  if (s == NULL) {
+    //    sim900_check_with_cmd(F("AT+CMGF=1\r\n"),
+      //                         "OK\r\n",
+        //                       CMD);
+        //return false;
+  //  }
 
-            if (pos < (int)sizeof(buffer) - 1)
-            {
-                buffer[pos++] = c;
-                buffer[pos] = '\0';
-            }
+s = strstr(gprsBuffer, "+CMGR:");
 
-            /*
-             * Abbiamo trovato +CMGR:
-             */
-            if (strstr(buffer, "+CMGR:") != NULL)
-            {
-                /*
-                 * Continua a leggere fino a trovare
-                 * la fine dell'header:
-                 *
-                 * +CMGR: 0,"",74\r\n
-                 */
-                while ((millis() - start) < 5000UL)
-                {
-                    if (sim900_check_readable())
-                    {
-                        sim900_read_buffer(temp, 1, 1, 3000);
+if (s == NULL) {
 
-                        char c2 = temp[0];
+    Serial.println(F("ERRORE: manca +CMGR:"));
 
-                        if (pos < (int)sizeof(buffer) - 1)
-                        {
-                            buffer[pos++] = c2;
-                            buffer[pos] = '\0';
-                        }
+    Serial.println(F("BUFFER COMPLETO:"));
+    Serial.print(F("["));
+    Serial.print(gprsBuffer);
+    Serial.println(F("]"));
 
-                        if (pos >= 2 &&
-                            buffer[pos - 2] == '\r' &&
-                            buffer[pos - 1] == '\n')
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                Serial.println(F("----- RISPOSTA CMGR -----"));
-                Serial.print(buffer);
-                Serial.println(F("-------------------------"));
-
-                /*
-                 * -------------------------------------------------
-                 * Trova la lunghezza PDU dall'header:
-                 *
-                 * +CMGR: 0,"",74
-                 *
-                 * 74 = numero di OTTETTI PDU
-                 * quindi la stringa PDU deve essere:
-                 *
-                 * 74 * 2 = 148 caratteri
-                 * -------------------------------------------------
-                 */
-
-                char* header = strstr(buffer, "+CMGR:");
-
-                if (header == NULL)
-                    return false;
-
-                Serial.print(F("Header trovato: "));
-                Serial.println(header);
-
-                /*
-                 * Cerca l'ultimo campo numerico dell'header.
-                 */
-                char* comma = strrchr(header, ',');
-
-                if (comma == NULL)
-                {
-                    Serial.println(F("Errore: virgola PDU non trovata"));
-                    return false;
-                }
-
-                int pduBytes = atoi(comma + 1);
-
-                if (pduBytes <= 0)
-                {
-                    Serial.println(F("Errore: lunghezza PDU non valida"));
-                    return false;
-                }
-
-                int pduChars = pduBytes * 2;
-
-                Serial.print(F("PDU bytes: "));
-                Serial.println(pduBytes);
-
-                Serial.print(F("PDU chars: "));
-                Serial.println(pduChars);
-
-                /*
-                 * -------------------------------------------------
-                 * Cerca l'inizio della PDU.
-                 *
-                 * Dopo l'header abbiamo:
-                 *
-                 * +CMGR: ...
-                 *
-                 * <CR><LF>
-                 *
-                 * 0791....
-                 * -------------------------------------------------
-                 */
-
-                char* pduStart = strstr(header, "\r\n");
-
-                if (pduStart == NULL)
-                {
-                    Serial.println(F("Errore: inizio PDU non trovato"));
-                    return false;
-                }
-
-                pduStart += 2;
-
-                /*
-                 * Controlliamo se la PDU è già tutta nel buffer.
-                 */
-                int available = pos - (pduStart - buffer);
-
-                if (available >= pduChars)
-                {
-                    Serial.println(F("PDU già presente nel buffer."));
-
-                    int copyLen = pduChars;
-
-                    if (copyLen >= pduLength)
-                        copyLen = pduLength - 1;
-
-                    memcpy(pdu, pduStart, copyLen);
-                    pdu[copyLen] = '\0';
-
-                    Serial.println(F("----- PDU -----"));
-                    Serial.println(pdu);
-                    Serial.println(F("----------------"));
-
-                    return true;
-                }
-
-                /*
-                 * -------------------------------------------------
-                 * La PDU non è ancora completamente arrivata.
-                 * Leggiamo esattamente i caratteri mancanti.
-                 * -------------------------------------------------
-                 */
-
-                int copied = available;
-
-                if (copied < 0)
-                    copied = 0;
-
-                if (copied > pduChars)
-                    copied = pduChars;
-
-                if (copied > 0)
-                {
-                    memcpy(pdu, pduStart, copied);
-                }
-
-                int remaining = pduChars - copied;
-
-                Serial.print(F("PDU parziale. Mancano "));
-                Serial.print(remaining);
-                Serial.println(F(" caratteri."));
-
-                int index = copied;
-
-                unsigned long pduStartTime = millis();
-
-                while (index < pduChars &&
-                       (millis() - pduStartTime) < 20000UL)
-                {
-                    if (sim900_check_readable())
-                    {
-                        char temp[2];
-
-                        sim900_read_buffer(temp, 1, 1, 3000);
-
-                        pdu[index++] = temp[0];
-                    }
-                }
-
-                pdu[index] = '\0';
-
-                /*
-                 * Controllo finale.
-                 */
-                if (index < pduChars)
-                {
-                    Serial.println(F("ERRORE: PDU incompleto"));
-
-                    Serial.print(F("Ricevuti "));
-                    Serial.print(index);
-
-                    Serial.print(F(" di "));
-                    Serial.print(pduChars);
-
-                    Serial.println(F(" caratteri"));
-
-                    return false;
-                }
-
-                Serial.println(F("PDU completa ricevuta."));
-
-                Serial.println(F("----- PDU -----"));
-                Serial.println(pdu);
-                Serial.println(F("----------------"));
-
-                return true;
-            }
-        }
-    }
-
-    Serial.println(F("----- RISPOSTA CMGR -----"));
-    Serial.println(buffer);
-    Serial.println(F("-------------------------"));
-    Serial.println(F("ERRORE: +CMGR non trovato"));
+    sim900_check_with_cmd(F("AT+CMGF=1\r\n"),
+                          "OK\r\n",
+                          CMD);
 
     return false;
 }
 
 
 
+    /*
+     * Il PDU è sulla riga successiva.
+     */
+    s = strstr(s, "\r\n");
 
+    if (s == NULL) {
+        sim900_check_with_cmd(F("AT+CMGF=1\r\n"),
+                               "OK\r\n",
+                               CMD);
+        return false;
+    }
+
+    s += 2;
+
+    /*
+     * Cerca la fine del PDU.
+     */
+    p = strstr(s, "\r\n");
+
+    if (p == NULL) {
+        p = s + strlen(s);
+    }
+
+    i = 0;
+
+    while (s < p && i < pduLength - 1) {
+
+        /*
+         * Accettiamo solo caratteri esadecimali.
+         */
+        if ((*s >= '0' && *s <= '9') ||
+            (*s >= 'A' && *s <= 'F') ||
+            (*s >= 'a' && *s <= 'f')) {
+
+            pdu[i++] = *s;
+        }
+
+        s++;
+    }
+
+    pdu[i] = '\0';
+
+    /*
+     * Torniamo alla modalità testo utilizzata
+     * dal resto della libreria.
+     */
+    sim900_check_with_cmd(F("AT+CMGF=1\r\n"),
+                          "OK\r\n",
+                          CMD);
+
+    return (i > 0);
+}
 
 
 // =======================================================================================

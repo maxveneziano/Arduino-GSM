@@ -595,6 +595,12 @@ if (!waitNetwork(60000))
 DEBUG_PRINT(F("GSM network initialization done!\n"));  
 //Serial.print(F("GSM network initialization done!\n"));
 
+// Disabilitazione degli URC
+
+//sendAT("AT+CNMI=0,0,0,0,0");
+sim900_check_with_cmd(F("AT+CNMI=0,0,0,0,0\r\n"), "OK", CMD);
+Serial.print(F("SET UNSOLICITED URC CODE OFF\n"));
+
 // ###########################   IMPOSTAZIONI SMS
 
 // SELEZIONA MEMORIA SMS SIM CARD
@@ -1605,6 +1611,7 @@ if (PowerVoltage <= 100.0)
               //Serial.println(outmessage);
 
 // Riconoscendo la transizione ON->OFF invia SMS a Numero/i telefono autorizzati
+/*
               for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
                     {
                         if (gprs.sendSMS(phoneAut[i], outmessage))
@@ -1617,6 +1624,7 @@ if (PowerVoltage <= 100.0)
                                 //Serial.print (F ("Send SMS failed!\r\n"));
 			                  }                   
                     }
+                    */
 		        }
       } // Power Voltage <= 100V
 
@@ -1639,6 +1647,7 @@ if (PowerVoltage >= 200.0)
                     //Serial.println(outmessage);
 
 // Riconoscendo la transizione OFF->ON invia SMS a Numero/i telefono autorizzati
+/*
                     for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
                           {
                               if (gprs.sendSMS(phoneAut[i], outmessage))
@@ -1653,7 +1662,7 @@ if (PowerVoltage >= 200.0)
 			                          } // close the Else
 
                           } // Close the for 1
-                } // Close the PwrActv == true (Rete presente)
+                           */                } // Close the PwrActv == true (Rete presente)
       } // Close Theshold 200V Present
     } // Fine verifica Tensione ogni secondo
 
