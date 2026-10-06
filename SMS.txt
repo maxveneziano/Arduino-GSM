@@ -1,0 +1,49 @@
+come leggere il primo SMS di2 SMS concatenati
+
+che funzione usare per avere la posizione di uno specifico carattere in Arduino C
+
+Credito: 1,56 euro
+
+ChatGPT ha detto:
+
+Se hai una stringa C (char* o char[]) e vuoi trovare la posizione di uno specifico carattere, puoi usare strchr().
+
+char buffer[] = "ABC123XYZ";
+
+char *p = strchr(buffer, '3');
+
+if (p != NULL) {
+    int posizione = p - buffer;
+    Serial.println(posizione);
+}
+
+Risultato:
+
+6
+
+perché gli indici partono da 0.
+Se vuoi trovare tutte le occorrenze
+
+char buffer[] = "ABC123XYZ3";
+
+for (char *p = buffer; (p = strchr(p, '3')) != NULL; p++) {
+    Serial.println(p - buffer);
+}
+
+Stampa:
+
+6
+10
+
+Se invece vuoi cercare una stringa
+
+Per esempio trovare "+CMGR:":
+
+char *p = strstr(buffer, "+CMGR:");
+
+if (p != NULL) {
+    int posizione = p - buffer;
+    Serial.println(posizione);
+}
+
+Quindi, nel tuo caso con la risposta CMGR, probabilmente ti interessa strstr() se vuoi trovare +CMGR: oppure strchr() se vuoi trovare un singolo carattere come \n, \r, " ecc.
