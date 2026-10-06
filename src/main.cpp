@@ -189,6 +189,8 @@ con EPTELIN=12 ed EPTELPRO=16:
 #define EPPINPRO 6
 #define EPTELIN 12
 #define EPTELPRO 16
+char balance[7]; // Credito residuo
+char expdate[12]; // Data di scadenza della SIM
 char message[MESSAGE_LENGTH]; // Message = 160 Char
 char outmessage[MESSAGE_LENGTH];
 //char outmess[30];
@@ -303,6 +305,65 @@ int freeMemory()
     }
 }
 
+//  Credito SIM
+  void SIMcredit()
+  {
+
+    char *p = strstr(message, "Credito:");
+
+    // Porta p subito dopo "Credito:"
+    p += strlen("Credito:");
+
+    // Salta gli spazi
+    while (*p == ' ')
+              p++;
+
+    // Legge il valore
+    //char balance[10];
+    //char credito[10];
+
+    size_t i = 0;
+    while (*p != ' ' && *p != '\0' && i < sizeof(balance) - 1)
+        {
+            balance[i++] = *p++;
+        }
+
+        balance[i] = '\0';
+
+        DEBUG_PRINT(F("Credito: "));
+        DEBUG_PRINTLN(balance);
+ 
+ }
+
+ void ExpDate()
+    {
+      char *p = strstr(message, "Scadenza SIM:");
+
+if (p != NULL)
+    {
+        p += strlen("Scadenza SIM:");
+
+         // Salta gli spazi
+        while (*p == ' ')
+            p++;
+
+        //char expdate[11];   // "30/09/2028" + '\0'
+        size_t i = 0;
+
+        // Copia la data fino allo spazio o fine stringa
+        while (*p != ' ' && *p != '\0' && i < sizeof(expdate) - 1)
+        {
+          expdate[i++] = *p++;
+        }
+
+        expdate[i] = '\0';
+
+        DEBUG_PRINT(F("Scadenza SIM: "));
+        DEBUG_PRINTLN(expdate);
+    }
+
+    }
+
 void InfoSMS()
 {
 // ###########################   PREVENTIVELY DELETE ALL SMS UNREAD
@@ -362,12 +423,12 @@ void InfoSMS()
     }
 // Messaggio Ricevuto - messageIndex >= 1
 
-      // delay(100); Da cancellare?
+      delay(6000); // Aspetta il 2o SMS - CRUCIALE
       //Serial.flush();
 
       DEBUG_PRINT(F("SMS received - Current messageIndex: "));
       //Serial.print(F("SMS received - Current messageIndex: "));
-      DEBUG_PRINTLN(messageIndex);
+      DEBUG_PRINTLN(messageIndex); // Legge il 1o SMS
       //Serial.println(messageIndex);
 
       //sim900_flush_serial();
@@ -381,7 +442,7 @@ void InfoSMS()
   // o non collegato alla rete
   // ###########################################################################
   
-  // SMS di SALDO successivi al primo
+  // Index SMS di SALDO successivi al primo
   while ((messageIndex = gprs.isSMSunread()) != 0)
     {
 
@@ -392,26 +453,34 @@ void InfoSMS()
           errorStop();
         }
     if (gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime))
-        {
-        delay(1000);
+            {
+                //delay(1000);
 
-        DEBUG_PRINT(F("SMS index: "));
-        //Serial.print(F("SMS indice: "));
-        DEBUG_PRINTLN(messageIndex);
-        //Serial.println(messageIndex);
+                DEBUG_PRINT(F("######## SMS index: "));
+                //Serial.print(F("SMS indice: "));
+                DEBUG_PRINTLN(messageIndex);
+                //Serial.println(messageIndex);
 
-        DEBUG_PRINT(F("From: "));
-        //Serial.print(F("Da: "));
-        DEBUG_PRINTLN(phone);
-        //Serial.println(phone);
+                DEBUG_PRINT(F("From: "));
+                //Serial.print(F("Da: "));
+                DEBUG_PRINTLN(phone);
+                //Serial.println(phone);
 
-        DEBUG_PRINT(F("Text: "));
-        //Serial.print(F("Testo: "));
-        DEBUG_PRINTLN(message);
-        //Serial.println(message);
+                DEBUG_PRINT(F("Text: "));
+                //Serial.print(F("Testo: "));
+                DEBUG_PRINTLN(message);
+                //Serial.println(message);
 
-        gprs.deleteSMS(messageIndex);
-        }
+                if (strstr(message, "Credito:") != NULL)
+                    {
+                        DEBUG_PRINTLN(F("Credito è presente"));
+                       
+                        // gprs.deleteSMS(messageIndex); Serve?
+
+                        break; // Exit the loop if "Credito:" is found
+                    }
+
+        }  // Fine lettura SMS
  
 } // Fine lettura SMS ricevuti dal gestore a seguito di SMS SALDO
 
@@ -420,8 +489,11 @@ void InfoSMS()
     DEBUG_PRINT(F("DELETE ALL THE SMS: "));
     //Serial.print(F("CANCELLA TUTTI GLI SMS: "));
 
+    delay(5000); // Serve?
+
   sim900_check_with_cmd(F("AT+CMGD=1,4\r\n"), "OK", CMD);
-  delay(5000);
+   
+  
 
     messageIndex = gprs.isSMSunread();
     // delay(2000);
@@ -451,6 +523,16 @@ void InfoSMS()
     //Serial.println(message);
 
     //Serial.flush();
+
+if (strstr(message, "Credito:") != NULL)
+                    {
+                       
+                        DEBUG_PRINTLN(F("Credito è presente"));
+                        SIMcredit();
+                        ExpDate();
+
+                    }
+
 }
 
 
@@ -520,6 +602,7 @@ void initapp()
     errorStop();
     // Blocca l'esecuzione e notifica con un led lampeggiante
 }
+
 // delay(1000); Da rimuovere ?
   DEBUG_PRINT(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
   //Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
@@ -537,6 +620,10 @@ if (!waitNetwork(60000))
 DEBUG_PRINT(F("GSM network initialization done!\n"));  
 //Serial.print(F("GSM network initialization done!\n"));
 
+// Disabilitazione degli URC sugli SMS ricevuti (AT+CNMI=0,0,0,0,0) - Non vengono più notificati gli SMS in arrivo
+sim900_check_with_cmd(F("AT+CNMI=0,0,0,0,0\r\n"), "OK", CMD);
+DEBUG_PRINT(F("SET UNSOLICITED URC CODE OFF\n"));
+
 // ###########################   IMPOSTAZIONI SMS
 
 // SELEZIONA MEMORIA SMS SIM CARD
@@ -551,7 +638,7 @@ delay(500);
       //Serial.println (F (" Set ASCII TEXT mode for SMS...."));
     }
     //delay(500);  
-    InfoSMS(); // Richiede l'SMS di SALDO residuo per ricavare data e ora correnti
+    InfoSMS(); // Richiede l'SMS di SALDO residuo per ricavare data e ora correnti, credito residuo e data di scadenza della SIM
 
     // RTC Network Time updating is disabled
     sim900_check_with_cmd(F("AT+CLTS=0\r\n"), "OK", CMD);
@@ -1320,7 +1407,7 @@ if (strcmp(phone, phoneAut[0]) == 0)
 // ################################### Fine - Comando N
 
 // ########################################### Comando I
-// Valido solo se la richiesta proviene dal MASTER
+// Valido solo se la richiesta proviene dal MASTER - SOLO COOPVOCE !!!!!!!
 
 //Se messaggio SMS è di tipo "I"
             if (message[0] == 'I')
