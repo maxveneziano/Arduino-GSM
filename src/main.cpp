@@ -206,8 +206,8 @@ uint8_t day, rday=0, hh, mm;
 //Ora e Minuto di Reset giornaliero
 uint8_t ORAr = 03, MINr = 00;
 // uint8_t Auxnphones,phoneI;
-uint8_t phoneI,lastPhoneIndex;
-uint8_t Auth;
+//uint8_t phoneI;
+uint8_t lastPhoneIndex;
 
 
 //          VARIABILI
@@ -1245,8 +1245,8 @@ if (message[0] == 'A')
         {
             // Formato Numero corretto
             // Estrae l'indice dell'ausiliario richiesto da modificare
-            phoneI = atoi(message + 1);  // es. "A2+393..." -> 2
-
+            // phoneI = atoi(message + 1);  // es. "A2+393..." -> 2
+            uint8_t phoneI = atoi(message + 1);   // es. "A2+393..." -> 2
             // Trova l'indice
             if (phoneI >= 1 && phoneI <= 3)
             {
@@ -1541,8 +1541,7 @@ if (message[0] == 'F')
     if (message[0] == 'S')        {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
             // SOLO se il messaggio SMS arriva da un numero autorizzato (Master [0] o Ausiliario[1-3])   
-
-            Auth=0;
+            uint8_t Auth = 0;
             // Inizializza Auth=0 prima dello scan per la verifica 
             // di una richiesta proveniente da un numero autorizzato
             for (uint8_t i = 0; i < lastPhoneIndex + 1; i++)
