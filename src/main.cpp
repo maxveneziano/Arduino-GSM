@@ -519,7 +519,7 @@ void InfoSMS()
     //Serial.println(datetime);
 
     //Serial.flush();
-    DEBUG_PRINT(F("Received Message:"));
+    DEBUG_PRINT(F("Received Message: "));
     //Serial.print(F("Received Message:"));
     DEBUG_PRINTLN(message);
     //Serial.println(message);
@@ -607,7 +607,7 @@ void initapp()
 }
 
 // delay(1000); Da rimuovere ?
-  DEBUG_PRINT(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
+  DEBUG_PRINTLN(F(" - Init Success - Completed GSM Power On Sequence - GSM Reset"));
   //Serial.print(F(" - Init Success - Completed GSM Power On Sequence - Reset\n"));
   // iniTime = millis(); // Valore Tempo iniziale
   
@@ -1025,7 +1025,7 @@ void loop()
       DEBUG_PRINT(F("Received one SMS - messageIndex: "));
       //Serial.print(F("Received one SMS - messageIndex: "));
       DEBUG_PRINTLN(messageIndex);
-      Serial.println(messageIndex);
+      //Serial.println(messageIndex);
 
 // At least, there is one UNREAD SMS then reads the content of the SMS
 // and deletes it from SIM memory to avoid filling it up
