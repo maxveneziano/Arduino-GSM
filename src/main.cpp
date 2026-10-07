@@ -379,13 +379,13 @@ void InfoSMS()
   // Send SMS to defined phone number and text
   if (gprs.sendSMS(INFO_NUMBER, INFOTXT))
     { 
-        DEBUG_PRINTLN(F("SALDO message Sent succesfully !"));
+        DEBUG_PRINTLN(F("INFO message Sent succesfully !"));
         //Serial.print(F("Send SMS Succeed!\r\n"));
         Serial.flush();
     } 
   else
     {
-        DEBUG_PRINT(F("SALDO message Sent failed!"));
+        DEBUG_PRINT(F("INFO message Sent failed!"));
         //Serial.print(F("Send SMS failed!\r\n"));
       Serial.flush();
     }
@@ -395,10 +395,10 @@ void InfoSMS()
   // C'è il rischio che si frapponga un SMS di servizio del provider
   // Solo se non passa molto tempo dalla registrazione alla rete
   // (Vedi cancellazione preventiva)
-    DEBUG_PRINTLN(F("Attende la ricezione del messaggio INFO"));
+    DEBUG_PRINTLN(F("Attende la ricezione di un primo SMS di INFO"));
     //Serial.println(F("Attende la ricezione del messaggio INFO"));
 
-    // Attende di ricevere il messaggio INFO
+    // Attende di ricevere una parte del SMS di INFO
     while (messageIndex < 1 || messageIndex == 255)
     {   
       if (messageIndex == 255)
@@ -413,22 +413,23 @@ void InfoSMS()
           //delay(500);  
           // Si prepara per il prossimo ciclo
              messageIndex = gprs.isSMSunread(); 
-             DEBUG_PRINTLN(F("No SMS received yet!"));
+             //DEBUG_PRINTLN(F("No SMS received yet!"));
              //Serial.print(F("No SMS received yet!\n"));
-             DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
+             //DEBUG_PRINT(F("Waiting for INFO SMS - New messageIndex: ")); 
              //Serial.print(F("Waiting for INFO SMS - New messageIndex: "));
-             DEBUG_PRINTLN(messageIndex);
+             //DEBUG_PRINTLN(messageIndex);
              //Serial.println(messageIndex);
            }
     }
 // Messaggio Ricevuto - messageIndex >= 1
+      DEBUG_PRINTLN(F("Ricevuto un SMS - ATTENDE il ricompattamento degli SMS di INFO concatenato - 6 sec")); 
 
       delay(6000); // Aspetta il 2o SMS - CRUCIALE
       //Serial.flush();
 
-      DEBUG_PRINT(F("SMS received - Current messageIndex: "));
+      //DEBUG_PRINT(F("SMS received - Current messageIndex: "));
       //Serial.print(F("SMS received - Current messageIndex: "));
-      DEBUG_PRINTLN(messageIndex); // Legge il 1o SMS
+      //DEBUG_PRINTLN(messageIndex); // Legge il 1o SMS
       //Serial.println(messageIndex);
 
       //sim900_flush_serial();
@@ -442,7 +443,7 @@ void InfoSMS()
   // o non collegato alla rete
   // ###########################################################################
   
-  // Index SMS di SALDO successivi al primo
+  // Index SMS di INFO successivi al primo
   while ((messageIndex = gprs.isSMSunread()) != 0)
     {
 
@@ -482,7 +483,7 @@ void InfoSMS()
 
         }  // Fine lettura SMS
  
-} // Fine lettura SMS ricevuti dal gestore a seguito di SMS SALDO
+} // Fine lettura SMS ricevuti dal gestore a seguito di SMS INFO
 
 // ######################  CANCELLA TUTTI GLI SMS
     //In order to not to full SIM Memory, is better to delete all SMS
@@ -499,10 +500,11 @@ void InfoSMS()
     // delay(2000);
 
     DEBUG_PRINTLN(F("=============================="));
-    DEBUG_PRINT(F("messageIndex - After ALL SMS deletion: "));
+    DEBUG_PRINT(F("SMS Index - After ALL SMS deletion: "));
     //Serial.print(F("messageIndex - After ALL SMS deletion: "));
     DEBUG_PRINTLN(messageIndex);
     //Serial.println(messageIndex);
+    DEBUG_PRINTLN(F(">>>>>>>>>>>>>>>>>>>>>"));
     DEBUG_PRINTLN(F("SUMMARY: "));
     //Serial.println(F("RIASSUNTO: "));
     DEBUG_PRINT(F("From number: "));
@@ -595,6 +597,7 @@ void initapp()
     emon1.calcVI(20,2000); // Run 20 measurement made of 20 halfwave (200ms) with a 2000ms Timeout
    }
 
+// Inizializza il GSM attraverso un Modem Reset temporizzato a 30 sec o si blocca lampeggiando
   if (!gprsInitwTO(30000)) // 30 sec timeout
 {
     DEBUG_PRINTLN(F("ERRORE: GSM INIT TIMEOUT"));
@@ -622,7 +625,7 @@ DEBUG_PRINT(F("GSM network initialization done!\n"));
 
 // Disabilitazione degli URC sugli SMS ricevuti (AT+CNMI=0,0,0,0,0) - Non vengono più notificati gli SMS in arrivo
 sim900_check_with_cmd(F("AT+CNMI=0,0,0,0,0\r\n"), "OK", CMD);
-DEBUG_PRINT(F("SET UNSOLICITED URC CODE OFF\n"));
+//DEBUG_PRINT(F("SET UNSOLICITED URC CODE OFF\n"));
 
 // ###########################   IMPOSTAZIONI SMS
 
@@ -634,7 +637,7 @@ delay(500);
   if (sim900_check_with_cmd(F("AT+CMGF=1\r\n"), "OK", CMD))
     {
 // Set message mode to ASCII
-      DEBUG_PRINTLN(F (" Set ASCII TEXT mode for SMS...."));
+      //DEBUG_PRINTLN(F (" Set ASCII TEXT mode for SMS...."));
       //Serial.println (F (" Set ASCII TEXT mode for SMS...."));
     }
     //delay(500);  

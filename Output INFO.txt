@@ -1,45 +1,39 @@
-Program started...
-Starting Power On sequence
- - Init Success - Completed GSM Power On Sequence - Reset
-GSM network initialization done!
 Invio Messaggio INFO
-Send SMS Succeed!
-Attende la ricezione del messaggio INFO
-No SMS received yet!
-Waiting for INFO SMS - messageIndex: 0
-No SMS received yet!
-Waiting for INFO SMS - messageIndex: 0
-No SMS received yet!
-Waiting for INFO SMS - messageIndex: 0
-No SMS received yet!
-Waiting for INFO SMS - messageIndex: 0
-No SMS received yet!
-Waiting for INFO SMS - messageIndex: 0
-No SMS received yet!
-Waiting for INFO SMS - messageIndex: 0
-No SMS received yet!
-Waiting for INFO SMS - messageIndex: 1
-SMS received - messageIndex: 1
-SMS indice: 1
-Da: CoopVoce
-Testo: pp CoopVoce 
+INFO message Sent succesfully !
+Attende la ricezione di un primo SMS di INFO
+Ricevuto un SMS - ATTENDE il ricompattamento degli SMS di INFO concatenato - 6 sec
+######## SMS index: 1
+From: CoopVoce
+Text: pp CoopVoce 
 Google: goo.gl/EuJUP6 
 IOS: goo.gl/Tojw2J
-SMS indice: 2
-Da: CoopVoce
-Testo: Credito: 3,76 euro di cui 0,00 di bonus. Non ci sono promozioni attive. Scadenza SIM: 27/05/2028. Lista delle migliori offerte su coopvoce.it Scarica l'A
-CANCELLA TUTTI GLI SMS: messageIndex - After ALL SMS deletion: 0
-RIASSUNTO: 
+######## SMS index: 1
+From: CoopVoce
+Text: pp CoopVoce 
+Google: goo.gl/EuJUP6 
+IOS: goo.gl/Tojw2J
+######## SMS index: 2
+From: CoopVoce
+Text: Credito: 1,32 euro di cui 0,00 di bonus. Non ci sono promozioni attive. Scadenza SIM: 30/09/2028. Lista delle migliori offerte su coopvoce.it Scarica l'A
+Credito è presente
+DELETE ALL THE SMS: ==============================
+SMS Index - After ALL SMS deletion: 0
+>>>>>>>>>>>>>>>>>>>>>
+SUMMARY: 
 From number: CoopVoce
-Datetime: 26/06/23,17:38:38+08
-Received Message: Credito: 3,76 euro di cui 0,00 di bonus. Non ci sono promozioni attive. Scadenza SIM: 27/05/2028. Lista delle migliori offerte su coopvoce.it Scarica l'A
-A buon Fine
-AT+CCLK="26/06/23,17:38:38+08"
+Datetime: 26/10/07,11:23:47+08
+Received Message:Credito: 1,32 euro di cui 0,00 di bonus. Non ci sono promozioni attive. Scadenza SIM: 30/09/2028. Lista delle migliori offerte su coopvoce.it Scarica l'A
+Credito è presente
+Credito: 1,32
+Scadenza SIM: 30/09/2028.
+Configurazione RTC A buon Fine: AT+CCLK="26/10/07,11:23:47+08"
 
- Data e Ora da rete: 26/06/23,17:38:38+08
- Set ASCII TEXT mode for SMS....
-Autorized phone n.0: +393334188263
+ Data e Ora da rete: 26/10/07,11:23:47+08
+RAM libera dopo initapp(): 396
+phoneAut[0]: +393334188263
+Authorized phone n.0: +393334188263
 Numero di telefoni ausiliari + Master: 1
- Current Voltage: 223.72
-ORA, MIN --> 17:38 <--
- Current Voltage: 224.78
+Executing Setup 123A5 Lunghezza PIN: 5
+ Current Voltage: 223.35
+  
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
