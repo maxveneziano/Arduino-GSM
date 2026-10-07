@@ -9,7 +9,7 @@
   - OK    Reinizializzazione ogni 24 ore (ogni giorno) ad ora prestabilita
   - OK    invio SMS mancanza energia fino a 4 numeri
   - OK    invio SMS riattivazione energia fino a 4 numeri
-  - OK    Comando SMS (S) per stato Power Supply e SMS a numero richiedente
+  - OK    COMANDO SMS (S) per stato Power Supply e SMS a numero richiedente
           + Messaggio SMS per richiedente non autorizzato 
   - (NON Implementato)    Salvataggio stato in memoria non volatile (EEPROM O FLASH)
   - OK da Master    Prevedere la richiesta SMS (CMD N) per vedere quanti e quali numeri sono impostati
@@ -19,7 +19,7 @@
 
   - NON Ancora set/reset pin uscita da SMS numero richiedente abilitato
   - NON Ancora Stato pin ingresso su richiesta SMS a numero richiedente abilitato
-  - OK Inserimento PIN su comando M (per definizione Master da vuoto) o factory reset da comando M
+  - OK Inserimento PIN su COMANDO M (per definizione Master da vuoto) o factory reset da COMANDO M
   - OK  F - Ripristino a condizioni di fabbrica con PIN (solo Master)
 
   - OK Verifica Indice telefoni ausiliari per evitare sovrapposizioni in input (INDEX OVERLAP) - FATTO
@@ -29,7 +29,7 @@
   Gestire più SMS in ricezione (SCANDIRLI TUTTI) e processarli uno alla volta (FIFO) - FATTO
   Magari un ciclo while? FATTO
 
-  Comando I(nfo) per SMS SALDO residuo
+  COMANDO I(nfo) per SMS SALDO residuo
 
      .......................... Scopo del codice
 
@@ -55,7 +55,7 @@ Il programma:
 
 - S → Invia stato tensione      -  OK
 
-- E → Comando con PIN riservato, cancella tutti i numeri
+- E → COMANDO con PIN riservato, cancella tutti i numeri
 
 - P Cambia PIN / richiede precedente
 
@@ -88,7 +88,7 @@ Comandi SMS
   D → Cancella numeri ausiliari
 - N → Elenca numeri autorizzati
 - S → Invia stato tensione
-- E → Comando con PIN riservato, cancella tutti i numeri
+- E → COMANDO con PIN riservato, cancella tutti i numeri
 - P Cambia PIN /richiede precedente
 - F Factory reset - Solo Master
 
@@ -318,9 +318,6 @@ int freeMemory()
     while (*p == ' ')
               p++;
 
-    // Legge il valore
-    //char balance[10];
-    //char credito[10];
 
     size_t i = 0;
     while (*p != ' ' && *p != '\0' && i < sizeof(balance) - 1)
@@ -1068,7 +1065,7 @@ void loop()
 if (message[0] == 'M')
 {
     if (strlen(phoneAut[0]) == 0)
-    // Telefono Master vuoto -> richiede comando con PIN
+    // Telefono Master vuoto -> richiede COMANDO con PIN
     {
         // Lunghezza Numero + PIN
         if ((strlen(message) - 2) < 16 || (strlen(message) - 2) > 19)
@@ -1185,7 +1182,7 @@ if (message[0] == 'M')
 // ########################################### FINE messaggio "M" ################
 
 // ################################# COMANDO D DELETE AUXILIARIES
-// Comando SMS "D" cancella tutti i numeri eccetto il MASTER
+// COMANDO SMS "D" cancella tutti i numeri eccetto il MASTER
 // SOLO se il messaggio SMS di richiesta è proveniente dal MASTER[0]
 //Se messaggio SMS è di tipo "D"
             if (message[0] == 'D')
@@ -1218,10 +1215,10 @@ if (message[0] == 'M')
                             //Serial.println(outmessage);
                             SendMsg();
                         }
-                } // ############################### Fine comando D
+                } // ############################### Fine COMANDO D
 
 
-// ########################################### Comando A
+// ########################################### COMANDO A
 // Comando SMS "A1+393391255597" AGGIUNGI/SOSTITUISCI cellulare AUSILIARIO
 // Valido solo se messaggio SMS "An" arriva dal numero telefonico autorizzato Master [0]
 
@@ -1311,10 +1308,10 @@ if (message[0] == 'A')
         SendMsg();
     }
 }
-// ########################################### Fine - Comando A #######################
+// ########################################### Fine - COMANDO A #######################
 
 
-// ########################################### Comando P
+// ########################################### COMANDO P
 // Comando SMS "P 12345 54321" SOSTITUISCE PIN (PIN OLD, PIN NEW)
 // Valido solo se arriva dal numero telefonico autorizzato Master [0]
 
@@ -1380,11 +1377,11 @@ if (message[0] == 'P')
         SendMsg();
     }
 }
-// ########################################### Fine Comando P
+// ########################################### Fine COMANDO P
 
 
 
-// ########################################### Comando N
+// ########################################### COMANDO N
 // Valido solo se la richiesta proviene dal MASTER
 
 //Se messaggio SMS è di tipo "N"
@@ -1407,36 +1404,53 @@ if (strcmp(phone, phoneAut[0]) == 0)
                             SendMsg();
                         }
                 }
-// ################################### Fine - Comando N
+// ################################### Fine - COMANDO N
 
-// ########################################### Comando I
+// ########################################### COMANDO I
 // Valido solo se la richiesta proviene dal MASTER - SOLO COOPVOCE !!!!!!!
 
 //Se messaggio SMS è di tipo "I"
             if (message[0] == 'I')
                 {
-// Comando SMS "I" Ritorna il messaggio SALDO
+// COMANDO SMS "I" Ritorna il messaggio SALDO
 // SOLO se il messaggio SMS è proveniente dal numero autorizzato MASTER[0]                   
 
 if (strcmp(phone, phoneAut[0]) == 0)
-                        {
-                            InfoSMS(); // Richiede l'SMS di SALDO per ottenere il Saldo residuo
-                        } // End numero uguale a Master
-                        else
-                            {
-// Notifica tentativo non autorizzato
-                                strcpy(outmessage, "Request from NOT AUTHORIZED number");
+    {
+        InfoSMS(); // Richiede l'SMS di INFO per ottenere il Saldo residuo
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        // Prepares for the SMS and writes on Serial Monitor
+                  
+        sprintf(outmessage, "Credito Residuo: %s \nScadenza SIM %s \n", balance, expdate);
+        //DEBUG_PRINTLN(outmessage);    // Writes on Serial Monitor the current voltage and the date/time
+        //Serial.println(outmessage); // Writes on Serial Monitor the current voltage and the date/time       
+
+        if (gprs.sendSMS(phoneAut[0], outmessage)) // Sends the SMS to the MASTER number and check the result
+            { 
+            DEBUG_PRINT(F ("Send SMS Succeed!\r\n"));
+            //Serial.print (F ("Send SMS Succeed!\r\n"));
+		    } else
+                {
+                  DEBUG_PRINT(F ("Send SMS failed!\r\n"));  
+                  //Serial.print (F ("Send SMS failed!\r\n"));
+        }
+
+    } // End numero uguale a Master   
+    else
+        {
+            // Notifica tentativo non autorizzato
+            strcpy(outmessage, "Request from NOT AUTHORIZED number");
                                 
-                                DEBUG_PRINTLN(outmessage);
-                                //Serial.println(outmessage);
-                                SendMsg();
-                            }
-                } // End Comando I
-// ################################### Fine - Comando I
+            DEBUG_PRINTLN(outmessage);
+            //Serial.println(outmessage);
+            strcpy(phone, phoneAut[0]); // Invia il messaggio di tentativo non autorizzato al numero Master
+            SendMsg();
+        }
+} // End COMANDO I
+// ################################### Fine - COMANDO I
 
-
-// ########################################### Comando F
-// Comando SMS: "F12345"
+// ########################################### COMANDO F
+// Comando SMS:"F12345"
 // Factory reset - Solo Master con PIN
 // Cancella tutti i numeri e ripristina il PIN di default
 // ################## Messaggio SMS "F" arriva da Telefono MASTER + PIN Comando: 12345
@@ -1516,9 +1530,9 @@ if (message[0] == 'F')
     }
 }
 
-// ########################################### Fine Comando F
+// ########################################### Fine COMANDO F
 
-// #################################### Comando S
+// #################################### COMANDO S
 // Valido solo se proveniente da numero Autorizzato (Master o  Ausiliario)
     if (message[0] == 'S')        {
             // Comando SMS "S" Ritorna lo stato della tensione di rete
@@ -1567,7 +1581,7 @@ if (message[0] == 'F')
                   SendMsg();
                 }
         }
-// #################################### Fine Comando S
+// #################################### Fine COMANDO S
 
     } // ####################################  FINE CICLO WHILE PROCESSAMENTO COMANDI SMS
 // Finiti SMS da processare, esce dal ciclo while con MessageIndex anche in caso di errore (255)
