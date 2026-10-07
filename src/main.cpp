@@ -655,6 +655,10 @@ delay(500);
     */ 
     
     sprintf (outmessage, "AT+CCLK=\"%s\"\r\n", datetime);
+
+    DEBUG_PRINT(F("RAM libera dopo InfoSMS(): "));
+    DEBUG_PRINTLN(freeMemory());
+
     
 if (sim900_check_with_cmd (outmessage, "OK", CMD))
       {
@@ -954,10 +958,6 @@ void setup()
 // Inizializza GSM e Valore Tempo iniziale - Per evitare valori non determinati
     initapp();
 
-    //Serial.print(F("RAM libera dopo initapp(): "));
-    DEBUG_PRINT(F("RAM libera dopo initapp(): "));
-    DEBUG_PRINTLN(freeMemory());
-    //Serial.println(freeMemory());
 
     PwrActv=true; // Assume rete presente al primo avvio
 
