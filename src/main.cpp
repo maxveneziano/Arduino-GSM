@@ -185,16 +185,20 @@ con EPTELIN=12 ed EPTELPRO=16:
 #define VOLT_CAL 136.0 
 #define MESSAGE_LENGTH 160
 #define BUFFER_LENGTH 24
+#define DATETIME_BUFFER_LENGTH 21
 #define EPINPIN 6
 #define EPPINPRO 6
 #define EPTELIN 12
 #define EPTELPRO 16
+#define INTERVAL_CC   5000UL
+#define INTERVAL_MS   1000UL
+#define INTERVAL_ORA  900000UL
 char balance[7]; // Credito residuo
 char expdate[12]; // Data di scadenza della SIM
 char message[MESSAGE_LENGTH]; // Message = 160 Char
 char outmessage[MESSAGE_LENGTH];
 //char outmess[30];
-char locDateTime[BUFFER_LENGTH];// Local Date and Time = 25 Char
+char locDateTime[DATETIME_BUFFER_LENGTH];// Local Date and Time = 21 Char
 /* Giorno, Ora e Minuto
 Reset Day (rday) a 0 perchè diverso da 1 e da 31 e quindi 
 consente il reset fin dalla prima ora giusta del primo giorno */
@@ -226,7 +230,7 @@ char phone [16];
 char pinDfl [6] = "123A5";
 char eprpin [6]; 
 bool PwrActv=true; //Default assume rete elettrica presente all'avvio
-char datetime[BUFFER_LENGTH];
+char datetime[DATETIME_BUFFER_LENGTH];
 
 //char *phoneAut[] = {"+393334188263","+393383418818", "+393391255597",""};
 //char *phoneAut[] = {"+393460607220","+393383418818", "",""};
@@ -265,9 +269,9 @@ char phoneAut[][16] = {
 
 // uint32_t iniTime;	// Valore Tempo iniziale
 uint32_t previousMilliscc = 0, previousMillisora = 0, previousMillisMs = 0 ;
-uint32_t intervalcc = 5000; // intervallo per il Parser - 5sec
-uint32_t intervalMs = 1000; // Controllo del valore di tensione attuale - 1 sec
-uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minuti - 3600000 1 ora
+//uint32_t intervalcc = 5000; // intervallo per il Parser - 5sec
+//uint32_t intervalMs = 1000; // Controllo del valore di tensione attuale - 1 sec
+//uint32_t intervalora = 900000; //intervallo per il controllo dell'ora - 15 Minuti - 3600000 1 ora
 
 //COOP INFO SMS (Credito residuo)
 #define INFO_NUMBER "4243688"
@@ -998,9 +1002,9 @@ void loop()
    
   unsigned long currentMillis = millis();
 
-  // VERIFICA OGNI 5 secondi (intervalcc) se ci sono SMS da processare
+  // VERIFICA OGNI 5 secondi (INTERVAL_CC) se ci sono SMS da processare
   // Gestisce la richieste via SMS
-  if (currentMillis - previousMilliscc > intervalcc)
+  if (currentMillis - previousMilliscc > INTERVAL_CC)
    {
       previousMilliscc = currentMillis;  
       
@@ -1604,7 +1608,7 @@ if (message[0] == 'F')
 
   // VERIFICA OGNI SECONDO se ci sono state variazioni sulla rete elettrica.
 
-if (currentMillis - previousMillisMs > intervalMs)
+if (currentMillis - previousMillisMs > INTERVAL_MS)
 {
  previousMillisMs = currentMillis;     
 
@@ -1706,7 +1710,7 @@ if (PowerVoltage >= 200.0)
 /* RESET GIORNALIERO 
 Gestisce l'evento di avvenuto reset del GSM controllando giorno e l'ora
 (il controllo viene effettuato ogni 15 Minuti) */
-if (currentMillis - previousMillisora > intervalora) 
+if (currentMillis - previousMillisora > INTERVAL_ORA) 
         {
             previousMillisora = currentMillis;
             gprs.getDateTime(locDateTime);
