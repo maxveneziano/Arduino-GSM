@@ -1725,8 +1725,8 @@ if (currentMillis - previousMillisora > INTERVAL_ORA)
                     sprintf(outmessage, "%s RESET Giornaliero", locDateTime);
                 // Scrive su Serial una sola volta ma manda messaggio SMS completo          
                     DEBUG_PRINTLN(outmessage);
-
-                    if (gprs.sendSMS(phoneAut[0], outmessage))
+                   
+  /* SALVA SMS DI RESET                  if (gprs.sendSMS(phoneAut[0], outmessage))
                                     { 
                                       DEBUG_PRINT(F ("Send SMS Succeed!\r\n"));
                                       //Serial.print (F ("Send SMS Succeed!\r\n"));
@@ -1736,6 +1736,7 @@ if (currentMillis - previousMillisora > INTERVAL_ORA)
                                         DEBUG_PRINT (F("Send SMS failed!\r\n"));
                                         //Serial.print (F("Send SMS failed!\r\n"));
 			                          } // close the Else
+                                      */
                     
                     DEBUG_PRINTLN(F (" Ora faccio Reset "));
                     //Serial.print (F (" Devo fare Reset "));
