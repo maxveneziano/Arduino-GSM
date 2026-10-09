@@ -160,6 +160,8 @@ con EPTELIN=12 ed EPTELPRO=16:
 //#define E2PROMFAC // Factory Reset
 #define DEBUG_EN
 
+
+// Stampa su Serial messaggi di Debug
 #ifdef DEBUG_EN
   #define DEBUG_PRINT(msg) Serial.print(msg)
   #define DEBUG_PRINTLN(msg) Serial.println(msg)
@@ -169,6 +171,9 @@ con EPTELIN=12 ed EPTELPRO=16:
   #define DEBUG_PRINTLN(msg)
 
 #endif
+
+// Abilitazione test SMS di reset
+//#define TEST_SMS_RESET_EN
 
 #include <Arduino.h>
 #include "GPRS_Shield_Arduino.h"
@@ -1722,22 +1727,25 @@ if (currentMillis - previousMillisora > INTERVAL_ORA)
 	
             if (TimeToReset() == true)
                 {
-                    sprintf(outmessage, "%s RESET Giornaliero", locDateTime);
+                  sprintf(outmessage, "%s RESET Giornaliero", locDateTime);
                 // Scrive su Serial una sola volta ma manda messaggio SMS completo          
-                    DEBUG_PRINTLN(outmessage);
+                  DEBUG_PRINTLN(outmessage);
                    
-  /* SALVA SMS DI RESET                  if (gprs.sendSMS(phoneAut[0], outmessage))
-                                    { 
-                                      DEBUG_PRINT(F ("Send SMS Succeed!\r\n"));
-                                      //Serial.print (F ("Send SMS Succeed!\r\n"));
-		                            }
-                                    else
-                                      {
-                                        DEBUG_PRINT (F("Send SMS failed!\r\n"));
-                                        //Serial.print (F("Send SMS failed!\r\n"));
-			                          } // close the Else
-                                      */
-                    
+  
+#ifdef TEST_SMS_RESET_EN
+
+  // TEST SMS DI RESET
+                if (gprs.sendSMS(phoneAut[0], outmessage))
+                    { 
+                      DEBUG_PRINT(F ("Send SMS Succeed!\r\n"));
+                      //Serial.print (F ("Send SMS Succeed!\r\n"));
+		            }
+                    else
+                    {
+                      DEBUG_PRINT (F("Send SMS failed!\r\n"));
+                    //Serial.print (F("Send SMS failed!\r\n"));
+			        } // close the Else
+#endif
                     DEBUG_PRINTLN(F (" Ora faccio Reset "));
                     //Serial.print (F (" Devo fare Reset "));
                     initapp();
