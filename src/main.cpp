@@ -1630,7 +1630,7 @@ DEBUG_PRINTLN(PowerVoltage);
   mm = (locDateTime[12] - '0') * 10 + (locDateTime[13] - '0');
 
   DEBUG_PRINT(F("ORA, MIN --> "));
-  //Serial.print (F("ORA, MIN --> "));
+  //Serial.print (F("ORA, MIN --> "));....
   DEBUG_PRINT(hh);
   //Serial.print(hh);
   DEBUG_PRINT(F(":"));
